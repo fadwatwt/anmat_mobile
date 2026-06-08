@@ -1,0 +1,8 @@
+Starting project at H:\Company\anmaat-system\anmat_mobile
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Waiting on http://localhost:8082
+1 package may need updating. Run npx expo install --check for details.
+Logs for your project will appear below.
+Error [ERR_STREAM_PREMATURE_CLOSE]: Premature close
