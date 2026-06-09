@@ -1,313 +1,539 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Building2, FolderKanban, CheckSquare, Users, TrendingUp, TrendingDown,
+  Clock, XCircle, HelpCircle, AlertTriangle, Info, CheckCircle,
+  ChevronDown, MoreHorizontal, Edit, Lock, Calendar, DollarSign,
+  Briefcase, ListChecks,
+} from 'lucide-react-native';
 import { Badge } from '../components/Badge';
-import { BarChart } from '../components/BarChart';
-import { DoughnutChart } from '../components/DoughnutChart';
 import { EmptyState } from '../components/EmptyState';
+import { DonutChart } from '../charts/DonutChart';
+import { BarChart } from '../charts/BarChart';
+import { GroupedBarChart } from '../charts/GroupedBarChart';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { extractErrorMessage, http } from '../lib/http';
-import { fetchAnalytics } from '../services/dashboard';
-import { ApiResponse } from '../types';
 import { font, radii, spacing } from '../theme';
-import { Calendar, CheckSquare, DollarSign, Users } from 'lucide-react-native';
+import {
+  fetchAdminAnalytics,
+  fetchAdminSubscriptions,
+  fetchIndustriesOrganizationsCount,
+  fetchAdminOrganizations,
+  fetchSubscriberAnalyticsOverview,
+  fetchSubscriberTaskStats,
+  fetchSubscriberDepartments,
+  fetchSubscriberProjects,
+  fetchOrganizationLogs,
+  fetchEmployeeAnalyticsOverview,
+  fetchEmployeeTaskStats,
+  fetchEmployeeTasks,
+  fetchEmployeeLogs,
+} from '../services/dashboard';
+import type {
+  AdminAnalytics, AnalyticsOverview, TaskStatistics, DepartmentRating,
+  DashboardProject, ActivityLogItem, SubscriptionBasic, IndustryCount,
+  EmployeeDashboardTask,
+} from '../types';
+
+// ===== Color Maps (web-matching) =====
 
 const statusColorMap: Record<string, string> = {
-  completed: '#38C793',
-  in_progress: '#375DFB',
-  active: '#375DFB',
-  open: '#375DFB',
-  late_completed: '#F17B2C',
-  cancelled: '#DF1C41',
-  overdue: '#DF1C41',
-  on_hold: '#6B7280',
-  pending: '#FACC15',
+  open: '#375DFB', in_progress: '#F17B2C', completed: '#38C793',
+  completed_before_due_date: '#38C793', late_completed: '#F17B2C',
+  cancelled: '#DF1C41', overdue: '#9E1C1C', on_hold: '#6B7280',
+  pending: '#FACC15', active: '#375DFB',
 };
 
-const extraColors = ['#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B'];
+const statusLabelMap: Record<string, string> = {
+  active: 'Active', open: 'Active', in_progress: 'In Progress',
+  completed: 'Completed', completed_before_due_date: 'Completed',
+  late_completed: 'Late Completed', cancelled: 'Cancelled',
+  overdue: 'Overdue', on_hold: 'On Hold', pending: 'Pending',
+};
 
-function getProjectStatusVariant(s?: string): 'success' | 'warning' | 'danger' | 'info' | 'default' {
-  if (!s) return 'default';
-  const l = s.toLowerCase();
-  if (l === 'completed' || l === 'completed_before_due_date') return 'success';
-  if (l === 'in_progress' || l === 'active') return 'info';
-  if (l === 'on_hold') return 'warning';
-  if (l === 'cancelled' || l === 'overdue') return 'danger';
+const donutColors = ['#375DFB', '#38C793', '#F17B2C', '#DF1C41', '#7E3AF2', '#FBBC05', '#0F9D58', '#4285F4', '#DB4437', '#673AB7'];
+
+function statusVariant(s?: string): 'success' | 'warning' | 'danger' | 'info' | 'default' {
+  const l = (s || '').toLowerCase();
+  if (['completed', 'completed_before_due_date', 'paid', 'approved', 'active'].includes(l)) return 'success';
+  if (['in_progress', 'open'].includes(l)) return 'info';
+  if (['on_hold', 'pending', 'scheduled'].includes(l)) return 'warning';
+  if (['cancelled', 'overdue', 'rejected', 'terminated', 'expired', 'inactive'].includes(l)) return 'danger';
   return 'default';
 }
 
-function getProjectStatusLabel(s?: string): string {
-  if (!s) return 'Pending';
-  const map: Record<string, string> = {
-    active: 'Active', open: 'Active', in_progress: 'Active',
-    completed: 'Completed', completed_before_due_date: 'Completed',
-    late_completed: 'Late Completed', cancelled: 'Cancelled',
-    overdue: 'Overdue', on_hold: 'On Hold', pending: 'Pending',
-  };
-  return map[s.toLowerCase()] || s;
+function statusLabel(s?: string): string {
+  return statusLabelMap[(s || '').toLowerCase()] || s || 'Pending';
 }
 
-function formatDate(d?: string) {
+function fmtDate(d?: string) {
   if (!d) return '--';
-  return new Date(d).toLocaleDateString('ar');
+  return new Date(d).toLocaleDateString('ar-SA');
 }
 
-type AnalyticsData = {
-  overview?: { totalProjects?: number; totalTasks?: number; totalDepartments?: number; totalEmployees?: number };
-  tasksSummary?: { name: string; value: number }[];
-  departmentsRanking?: { rank: number; name: string; rating: number; performance: number }[];
-  recentProjects?: any[];
-  [key: string]: any;
-};
+// ===== Summary Card =====
+
+function SummaryCard({ title, value, icon: Icon, color, trend }: {
+  title: string; value: number | string; icon: any; color: string; trend?: { value: number; up: boolean };
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={[s.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={[s.summaryIconWrap, { backgroundColor: color + '18' }]}>
+        <Icon size={22} color={color} strokeWidth={1.5} />
+      </View>
+      <View style={s.summaryInfo}>
+        <Text style={[s.summaryTitle, { color: colors.textMuted }]}>{title}</Text>
+        <View style={s.summaryValueRow}>
+          <Text style={[s.summaryValue, { color: colors.ink }]}>{value}</Text>
+          {trend && (
+            <View style={[s.trendBadge, { backgroundColor: trend.up ? '#E7F8ED' : '#FEE2E5' }]}>
+              {trend.up ? <TrendingUp size={12} color="#1F7A3F" /> : <TrendingDown size={12} color="#C9372C" />}
+              <Text style={[s.trendText, { color: trend.up ? '#1F7A3F' : '#C9372C' }]}>{Math.abs(trend.value)}%</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ===== Admin Dashboard =====
+
+function AdminDashboardContent() {
+  const { colors } = useTheme();
+  const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
+  const [subscriptions, setSubscriptions] = useState<SubscriptionBasic[]>([]);
+  const [industries, setIndustries] = useState<IndustryCount[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [a, subs, inds] = await Promise.all([
+          fetchAdminAnalytics(),
+          fetchAdminSubscriptions(1, 5),
+          fetchIndustriesOrganizationsCount(),
+        ]);
+        setAnalytics(a);
+        setSubscriptions(subs.data || []);
+        setIndustries(inds || []);
+      } catch (e) {
+        console.error('Admin dashboard error:', e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) return <ActivityIndicator style={s.loadingState} color={colors.primary} />;
+
+  const summaryCards = [
+    { title: 'Total Companies', value: analytics?.totalCompanies ?? 0, icon: Building2, color: '#375DFB', trend: { value: 12, up: true } },
+    { title: 'Active Projects', value: analytics?.totalProjects ?? 0, icon: FolderKanban, color: '#7E3AF2', trend: { value: 8, up: true } },
+    { title: 'Total Tasks', value: analytics?.totalTasks ?? 0, icon: CheckSquare, color: '#F17B2C', trend: { value: 3, up: false } },
+    { title: 'System Users', value: analytics?.totalUsers ?? 0, icon: Users, color: '#38C793', trend: { value: 5, up: true } },
+  ];
+
+  const industryData = (industries || []).map((ind, i) => ({
+    key: ind._id, value: ind.organizations_count, color: donutColors[i % donutColors.length], label: ind.name,
+  }));
+
+  const subscriptionData = (analytics?.companiesSubscriptionsMonthly || []).map(m => ({
+    key: m.name, value: m.total, label: m.name,
+  }));
+
+  return (
+    <View style={s.section}>
+      <View style={s.summaryGrid}>
+        {summaryCards.map(c => <SummaryCard key={c.title} {...c} />)}
+      </View>
+
+      <View style={s.chartsRow}>
+        {industryData.length > 0 && (
+          <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Industries</Text>
+            <DonutChart data={industryData} subtitle="ORGANIZATIONS" size={140} strokeWidth={24} />
+          </View>
+        )}
+        {subscriptionData.length > 0 && (
+          <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Subscriptions</Text>
+            <BarChart data={subscriptionData} color="#38C793" height={180} barSize={20} />
+          </View>
+        )}
+      </View>
+
+      <View style={[s.tableCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[s.sectionTitle, { color: colors.ink }]}>Recent Subscriptions</Text>
+        {subscriptions.length === 0 ? (
+          <Text style={[s.emptyText, { color: colors.textMuted }]}>No subscriptions</Text>
+        ) : (
+          <View>
+            <View style={[s.tableHead, { backgroundColor: colors.background }]}>
+              {['Subscriber', 'Company', 'Status', 'Start', 'Expiration'].map(h => (
+                <Text key={h} style={[s.th, { color: colors.textMuted }]}>{h}</Text>
+              ))}
+            </View>
+            {subscriptions.map(sub => (
+              <View key={sub._id} style={[s.tableRow2, { borderBottomColor: colors.border }]}>
+                <Text style={[s.td2, { color: colors.ink }]} numberOfLines={1}>{sub.subscriber?.name}</Text>
+                <Text style={[s.td2, { color: colors.ink }]} numberOfLines={1}>{sub.organization?.name}</Text>
+                <View><Badge label={statusLabel(sub.status)} variant={statusVariant(sub.status)} size="sm" /></View>
+                <Text style={[s.td2, { color: colors.textMuted }]}>{fmtDate(sub.starts_at)}</Text>
+                <Text style={[s.td2, { color: colors.textMuted }]}>{fmtDate(sub.expires_at)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// ===== Subscriber Dashboard =====
+
+function SubscriberDashboardContent() {
+  const { colors } = useTheme();
+  const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
+  const [taskStats, setTaskStats] = useState<TaskStatistics | null>(null);
+  const [departments, setDepartments] = useState<DepartmentRating[]>([]);
+  const [projects, setProjects] = useState<DashboardProject[]>([]);
+  const [logs, setLogs] = useState<ActivityLogItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [ov, ts, deps, projs, lgs] = await Promise.all([
+          fetchSubscriberAnalyticsOverview(),
+          fetchSubscriberTaskStats().catch(() => null),
+          fetchSubscriberDepartments().catch(() => []),
+          fetchSubscriberProjects(1, 5).catch(() => ({ data: [] })),
+          fetchOrganizationLogs(5).catch(() => []),
+        ]);
+        setOverview(ov);
+        setTaskStats(ts);
+        setDepartments(deps);
+        setProjects(projs.data || []);
+        setLogs(lgs || []);
+      } catch (e) {
+        console.error('Subscriber dashboard error:', e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) return <ActivityIndicator style={s.loadingState} color={colors.primary} />;
+
+  const statCards = [
+    { title: 'المهام', value: overview?.total_tasks ?? 0, icon: CheckSquare, color: '#375DFB' },
+    { title: 'المشاريع', value: overview?.total_projects ?? 0, icon: FolderKanban, color: '#7E3AF2' },
+    { title: 'الأقسام', value: overview?.total_departments ?? 0, icon: Building2, color: '#F17B2C' },
+    { title: 'الموظفين', value: overview?.total_employees ?? 0, icon: Users, color: '#38C793' },
+  ];
+
+  const statusLabels: Record<string, string> = {
+    open: 'Open', in_progress: 'In Progress', completed: 'Completed',
+    late_completed: 'Late Completed', cancelled: 'Cancelled',
+    on_hold: 'On Hold', pending: 'Pending', overdue: 'Overdue',
+  };
+  const taskDonutData = taskStats ? Object.entries(taskStats.status_counts || {}).map(([key, value], i) => ({
+    key, value, color: statusColorMap[key] || donutColors[i % donutColors.length], label: statusLabels[key] || key,
+  })) : [];
+
+  const deptBarData = departments.map(d => ({
+    key: d._id, value: Math.round((d.rate || 0) * 5), label: d.name.length > 6 ? d.name.slice(0, 6) + '..' : d.name,
+    color: '#375DFB',
+  }));
+
+  return (
+    <View style={s.section}>
+      <View style={s.summaryGrid}>
+        {statCards.map(c => <SummaryCard key={c.title} {...c} />)}
+      </View>
+
+      <View style={s.chartsRow}>
+        {taskDonutData.length > 0 && (
+          <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Tasks Summary</Text>
+            <DonutChart data={taskDonutData} total={taskStats?.total} subtitle="TASKS" size={140} strokeWidth={24} />
+          </View>
+        )}
+        {deptBarData.length > 0 && (
+          <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Departments</Text>
+            <BarChart data={deptBarData} yDomain={[0, 5]} height={180} barSize={20} />
+          </View>
+        )}
+      </View>
+
+      {projects.length > 0 && (
+        <View style={[s.tableCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={s.sectionHeader}>
+            <Text style={[s.sectionTitle, { color: colors.ink }]}>Projects Overview</Text>
+            <TouchableOpacity><Text style={[s.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>
+          </View>
+          <View style={[s.tableHead, { backgroundColor: colors.background }]}>
+            {['Project', 'Department', 'Status', 'Progress', 'Delivery'].map(h => (
+              <Text key={h} style={[s.th, { color: colors.textMuted }]}>{h}</Text>
+            ))}
+          </View>
+          {projects.map(p => (
+            <View key={p._id} style={[s.tableRow2, { borderBottomColor: colors.border }]}>
+              <Text style={[s.td2, s.tdName, { color: colors.ink }]} numberOfLines={1}>{p.name || p.title}</Text>
+              <Text style={[s.td2, { color: colors.textMuted }]} numberOfLines={1}>{p.department?.name || '-'}</Text>
+              <View><Badge label={statusLabel(p.status)} variant={statusVariant(p.status)} size="sm" /></View>
+              <View style={s.progressWrap}>
+                <View style={[s.progressTrack, { backgroundColor: colors.background }]}>
+                  <View style={[s.progressFill, { backgroundColor: statusColorMap[p.status || ''] || colors.primary, width: `${p.progress || 0}%` as any }]} />
+                </View>
+                <Text style={[s.progressText, { color: colors.textMuted }]}>{p.progress || 0}%</Text>
+              </View>
+              <Text style={[s.td2, { color: colors.textMuted }]}>{fmtDate(p.due_date)}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {logs.length > 0 && (
+        <View style={[s.logsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[s.sectionTitle, { color: colors.ink }]}>Activity Logs</Text>
+          {logs.map((log, i) => (
+            <View key={log._id || i} style={[s.logItem, i < logs.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
+              <View style={[s.logDot, { backgroundColor: colors.primary }]} />
+              <View style={s.logContent}>
+                <Text style={[s.logAction, { color: colors.ink }]} numberOfLines={1}>{log.action || log.description || 'Activity'}</Text>
+                <Text style={[s.logTime, { color: colors.textMuted }]}>{fmtDate(log.createdAt)}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ===== Employee Dashboard =====
+
+function EmployeeDashboardContent() {
+  const { colors } = useTheme();
+  const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
+  const [taskStats, setTaskStats] = useState<TaskStatistics | null>(null);
+  const [tasks, setTasks] = useState<EmployeeDashboardTask[]>([]);
+  const [logs, setLogs] = useState<ActivityLogItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [ov, ts, tks, lgs] = await Promise.all([
+          fetchEmployeeAnalyticsOverview(),
+          fetchEmployeeTaskStats().catch(() => null),
+          fetchEmployeeTasks(1, 5).catch(() => ({ data: [] })),
+          fetchEmployeeLogs(5).catch(() => []),
+        ]);
+        setOverview(ov);
+        setTaskStats(ts);
+        setTasks(tks.data || []);
+        setLogs(lgs || []);
+      } catch (e) {
+        console.error('Employee dashboard error:', e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) return <ActivityIndicator style={s.loadingState} color={colors.primary} />;
+
+  const statCards = [
+    { title: 'مهامي', value: overview?.total_tasks ?? 0, icon: CheckSquare, color: '#375DFB' },
+    { title: 'المشاريع', value: overview?.total_projects ?? 0, icon: FolderKanban, color: '#7E3AF2' },
+    { title: 'الحضور', value: overview?.total_departments ?? 0, icon: Clock, color: '#F17B2C' },
+    { title: 'الطلبات', value: overview?.total_employees ?? 0, icon: ListChecks, color: '#38C793' },
+  ];
+
+  const statusLabels: Record<string, string> = {
+    open: 'Open', in_progress: 'In Progress', completed: 'Completed',
+    late_completed: 'Late Completed', cancelled: 'Cancelled',
+    on_hold: 'On Hold', pending: 'Pending', overdue: 'Overdue',
+  };
+  const taskDonutData = taskStats ? Object.entries(taskStats.status_counts || {}).map(([key, value], i) => ({
+    key, value, color: statusColorMap[key] || donutColors[i % donutColors.length], label: statusLabels[key] || key,
+  })) : [];
+
+  const green = '#38C793', orange = '#F17B2C';
+  const performanceGroups = [
+    { key: 'on_time', label: 'On Time', bars: [{ key: 'on_time', value: tasks.filter(t => t.status === 'completed' || t.status === 'completed_before_due_date').length, color: green, label: 'On-Time' }] },
+    { key: 'late', label: 'Late', bars: [{ key: 'late', value: tasks.filter(t => t.status === 'late_completed').length, color: orange, label: 'Late' }] },
+  ];
+
+  return (
+    <View style={s.section}>
+      <View style={s.summaryGrid}>
+        {statCards.map(c => <SummaryCard key={c.title} {...c} />)}
+      </View>
+
+      <View style={s.chartsRow}>
+        {taskDonutData.length > 0 && (
+          <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Tasks Summary</Text>
+            <DonutChart data={taskDonutData} total={taskStats?.total} subtitle="TASKS" size={140} strokeWidth={24} />
+          </View>
+        )}
+        {tasks.length > 0 && (
+          <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Performance</Text>
+            <GroupedBarChart groups={performanceGroups} height={160} />
+            <View style={s.legendRow}>
+              <View style={s.legendItem}><View style={[s.legendDot2, { backgroundColor: green }]} /><Text style={[s.legendLabel2, { color: colors.textMuted }]}>On-Time</Text></View>
+              <View style={s.legendItem}><View style={[s.legendDot2, { backgroundColor: orange }]} /><Text style={[s.legendLabel2, { color: colors.textMuted }]}>Late</Text></View>
+            </View>
+          </View>
+        )}
+      </View>
+
+      {tasks.length > 0 && (
+        <View style={[s.tableCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={s.sectionHeader}>
+            <Text style={[s.sectionTitle, { color: colors.ink }]}>My Tasks</Text>
+            <TouchableOpacity><Text style={[s.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>
+          </View>
+          <View style={[s.tableHead, { backgroundColor: colors.background }]}>
+            {['Task', 'Department', 'Status', 'Due Date'].map(h => (
+              <Text key={h} style={[s.th, { color: colors.textMuted }]}>{h}</Text>
+            ))}
+          </View>
+          {tasks.map(t => (
+            <View key={t._id} style={[s.tableRow2, { borderBottomColor: colors.border }]}>
+              <Text style={[s.td2, s.tdName, { color: colors.ink }]} numberOfLines={1}>{t.title || t.name}</Text>
+              <Text style={[s.td2, { color: colors.textMuted }]} numberOfLines={1}>{t.department?.name || '-'}</Text>
+              <View><Badge label={statusLabel(t.status)} variant={statusVariant(t.status)} size="sm" /></View>
+              <Text style={[s.td2, { color: colors.textMuted }]}>{fmtDate(t.due_date)}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {logs.length > 0 && (
+        <View style={[s.logsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[s.sectionTitle, { color: colors.ink }]}>Recent Activity</Text>
+          {logs.map((log, i) => (
+            <View key={log._id || i} style={[s.logItem, i < logs.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
+              <View style={[s.logDot, { backgroundColor: colors.primary }]} />
+              <View style={s.logContent}>
+                <Text style={[s.logAction, { color: colors.ink }]} numberOfLines={1}>{log.action || log.description || 'Activity'}</Text>
+                <Text style={[s.logTime, { color: colors.textMuted }]}>{fmtDate(log.createdAt)}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ===== Main Dashboard Screen =====
 
 export default function DashboardScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const userType = user?.type;
-  const isSubscriber = userType === 'Subscriber';
 
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  const [projects, setProjects] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
-
-  const loadAll = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    setError('');
-    try {
-      const rawAnalytics = await fetchAnalytics(user);
-      setAnalytics(rawAnalytics as AnalyticsData);
-
-      if (isSubscriber) {
-        const [projRes, logRes] = await Promise.all([
-          http.get<ApiResponse<any[]>>('/api/subscriber/organization/projects').catch(() => null),
-          http.get<ApiResponse<any[]>>('/api/activity-logs/my-organization', { params: { limit: 10 } }).catch(() => null),
-        ]);
-        if (projRes?.data?.data) setProjects(projRes.data.data);
-        if (logRes?.data?.data) setLogs(logRes.data.data);
-      }
-    } catch (e) {
-      setError(extractErrorMessage(e));
-    } finally {
-      setLoading(false);
+  const content = () => {
+    switch (userType) {
+      case 'Admin': return <AdminDashboardContent />;
+      case 'Subscriber': return <SubscriberDashboardContent />;
+      case 'Employee': return <EmployeeDashboardContent />;
+      default: return <EmptyState title="Dashboard" message="Unknown user type" icon="❓" />;
     }
-  }, [user, isSubscriber]);
-
-  useEffect(() => { loadAll(); }, [loadAll]);
-
-  const overview = analytics?.overview;
-  const tasksSummary = analytics?.tasksSummary || [];
-  const departmentsRanking = analytics?.departmentsRanking || [];
-
-  const chartData = tasksSummary.length > 0
-    ? {
-        total: tasksSummary.reduce((s, t) => s + t.value, 0),
-        records: tasksSummary.map((t, i) => ({
-          title: t.name.charAt(0).toUpperCase() + t.name.slice(1).replace(/_/g, ' '),
-          value: t.value,
-          color: statusColorMap[t.name.toLowerCase()] || extraColors[i % extraColors.length],
-        })),
-      }
-    : null;
-
-  const statCardsData = [
-    { key: 'tasks', label: 'المهام', icon: CheckSquare, value: overview?.totalTasks ?? 0 },
-    { key: 'projects', label: 'المشاريع', icon: Users, value: overview?.totalProjects ?? 0 },
-    { key: 'departments', label: 'الأقسام', icon: Calendar, value: overview?.totalDepartments ?? 0 },
-    { key: 'employees', label: 'الموظفين', icon: DollarSign, value: overview?.totalEmployees ?? 0 },
-  ];
-
-  if (loading && !analytics) {
-    return (
-      <View style={[styles.centerLoading, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
-    );
-  }
-
-  if (error && !analytics) {
-    return (
-      <View style={[styles.centerLoading, { backgroundColor: colors.background }]}>
-        <EmptyState title="تعذر التحميل" message={error} icon="⚠️" />
-      </View>
-    );
-  }
+  };
 
   return (
     <FlatList
-      contentContainerStyle={styles.scrollContent}
-      data={['stats', 'charts', 'projects', 'logs']}
-      keyExtractor={(item) => item}
-      onRefresh={loadAll}
-      refreshing={loading}
+      contentContainerStyle={s.scrollContent}
+      data={['main']}
+      keyExtractor={() => 'main'}
       showsVerticalScrollIndicator={false}
-      renderItem={({ item: section }) => {
-        switch (section) {
-          case 'stats':
-            return (
-              <View>
-                <View style={styles.greetingSection}>
-                  <Text style={[styles.eyebrow, { color: colors.primary }]}>لوحة التحكم</Text>
-                  <Text style={[styles.greeting, { color: colors.ink }]}>أهلاً {user?.name || user?.email}</Text>
-                </View>
-                <View style={styles.statsGrid}>
-                  {statCardsData.map((card) => (
-                    <View key={card.key} style={styles.statCardWrap}>
-                      <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>{card.label}</Text>
-                        <Text style={[styles.statValue, { color: colors.primary }]}>{card.value}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            );
-
-          case 'charts':
-            if (!isSubscriber || (!chartData && departmentsRanking.length === 0)) return null;
-            return (
-              <View style={styles.chartsRow}>
-                {chartData && (
-                  <View style={styles.chartCol}>
-                    <DoughnutChart data={chartData.records} total={chartData.total} centerTitle="TASKS" />
-                  </View>
-                )}
-                {departmentsRanking.length > 0 && (
-                  <View style={styles.chartCol}>
-                    <BarChart
-                      data={departmentsRanking.map((d) => ({ name: d.name, rate: d.rating || d.performance }))}
-                      title="Departments"
-                    />
-                  </View>
-                )}
-              </View>
-            );
-
-          case 'projects':
-            if (!isSubscriber) return null;
-            return (
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={[styles.sectionTitle, { color: colors.tableTitle }]}>Projects Overview</Text>
-                  <TouchableOpacity>
-                    <Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text>
-                  </TouchableOpacity>
-                </View>
-                {projects.length === 0 ? (
-                  <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <Text style={[styles.emptyText, { color: colors.textMuted }]}>No projects yet</Text>
-                  </View>
-                ) : (
-                  <View style={[styles.tableCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <View style={[styles.tableHeader, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
-                      <Text style={[styles.th, { color: colors.textMuted }]}>Project</Text>
-                      <Text style={[styles.th, { color: colors.textMuted }]}>Dept</Text>
-                      <Text style={[styles.th, { color: colors.textMuted }]}>Status</Text>
-                      <Text style={[styles.th, { color: colors.textMuted }]}>Progress</Text>
-                      <Text style={[styles.th, { color: colors.textMuted }]}>Due</Text>
-                    </View>
-                    {projects.slice(0, 5).map((proj, i) => (
-                      <View key={proj._id || i} style={[styles.tableRow, { borderBottomColor: colors.border }]}>
-                        <Text style={[styles.td, styles.tdName, { color: colors.textCell }]} numberOfLines={1}>
-                          {proj.name || proj.title || 'Untitled'}
-                        </Text>
-                        <Text style={[styles.td, { color: colors.textMuted }]} numberOfLines={1}>
-                          {proj.department_id?.name || '-'}
-                        </Text>
-                        <View style={styles.td}>
-                          <Badge label={getProjectStatusLabel(proj.status)} variant={getProjectStatusVariant(proj.status)} size="sm" />
-                        </View>
-                        <View style={styles.td}>
-                          <View style={styles.progressWrap}>
-                            <View style={[styles.progressTrack, { backgroundColor: colors.background }]}>
-                              <View style={[styles.progressFill, { backgroundColor: colors.primary, width: `${proj.progress || 0}%` }]} />
-                            </View>
-                            <Text style={[styles.progressText, { color: colors.textMuted }]}>{proj.progress || 0}%</Text>
-                          </View>
-                        </View>
-                        <Text style={[styles.td, { color: colors.textMuted }]}>{formatDate(proj.due_date)}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            );
-
-          case 'logs':
-            if (!isSubscriber) return null;
-            return (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.tableTitle }]}>Activity Logs</Text>
-                {logs.length === 0 ? (
-                  <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <Text style={[styles.emptyText, { color: colors.textMuted }]}>No recent activity</Text>
-                  </View>
-                ) : (
-                  <View style={[styles.logsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    {logs.slice(0, 5).map((log, i) => (
-                      <View key={log._id || i} style={[styles.logItem, i < 4 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
-                        <View style={[styles.logDot, { backgroundColor: colors.primary }]} />
-                        <View style={styles.logContent}>
-                          <Text style={[styles.logAction, { color: colors.ink }]} numberOfLines={1}>
-                            {log.action || log.description || 'Activity'}
-                          </Text>
-                          {log.createdAt && (
-                            <Text style={[styles.logTime, { color: colors.textMuted }]}>
-                              {formatDate(log.createdAt)}
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            );
-
-          default:
-            return null;
-        }
-      }}
+      ListHeaderComponent={
+        <View style={s.greetingSection}>
+          <Text style={[s.eyebrow, { color: colors.primary }]}>Dashboard Overview</Text>
+          <Text style={[s.greeting, { color: colors.ink }]}>
+            Welcome back, {user?.name || user?.email || 'User'}
+          </Text>
+        </View>
+      }
+      renderItem={() => content()}
     />
   );
 }
 
-const styles = StyleSheet.create({
-  centerLoading: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-  chartCol: { flex: 1, minWidth: 200 },
-  chartsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, paddingBottom: spacing.md },
-  emptyCard: { alignItems: 'center', borderWidth: 1, borderRadius: radii.xxl, padding: spacing.xl },
-  emptyText: { fontSize: font.sizes.sm },
-  greeting: { fontSize: font.sizes.xxl, fontWeight: font.weights.bold, textAlign: 'right' },
-  greetingSection: { gap: spacing.xs, marginBottom: spacing.md },
-  eyebrow: { fontSize: font.sizes.sm, fontWeight: font.weights.extrabold, textAlign: 'right' },
-  logAction: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
-  logContent: { flex: 1, gap: 2 },
-  logDot: { borderRadius: 4, height: 8, marginTop: 4, width: 8 },
-  logItem: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, paddingVertical: spacing.sm },
-  logTime: { fontSize: font.sizes.xs },
-  logsCard: { borderRadius: radii.xxl, borderWidth: 1, padding: spacing.md },
-  progressFill: { borderRadius: radii.full, height: '100%' },
-  progressText: { fontSize: font.sizes.xs, minWidth: 30, textAlign: 'right' },
-  progressTrack: { borderRadius: radii.full, flex: 1, height: 6, overflow: 'hidden' },
-  progressWrap: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: spacing.xs },
-  scrollContent: { gap: spacing.md, paddingBottom: spacing.xxl },
-  section: { gap: spacing.sm },
-  sectionHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+// ===== Styles =====
+
+const s = StyleSheet.create({
+  scrollContent: { gap: spacing.md, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
+  greetingSection: { gap: spacing.xs, marginBottom: spacing.sm },
+  eyebrow: { fontSize: font.sizes.sm, fontWeight: font.weights.extrabold },
+  greeting: { fontSize: font.sizes.xxl, fontWeight: font.weights.bold },
+  loadingState: { flex: 1, justifyContent: 'center', padding: spacing.xl },
+  section: { gap: spacing.md },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   sectionTitle: { fontSize: font.sizes.lg, fontWeight: font.weights.semibold },
   seeAll: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
-  statCard: { borderWidth: 1, borderRadius: radii.xxl, gap: spacing.sm, minHeight: 90, padding: spacing.md },
-  statCardWrap: { width: '48%' },
-  statLabel: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
-  statValue: { fontSize: font.sizes.xxl, fontWeight: font.weights.bold },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'space-between', paddingBottom: spacing.sm },
-  td: { flex: 1, fontSize: font.sizes.xs },
+
+  // Summary cards
+  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  summaryCard: {
+    width: '48%', borderRadius: radii.xxl, borderWidth: 1, padding: spacing.md,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 2,
+  },
+  summaryIconWrap: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  summaryInfo: { flex: 1, gap: 2 },
+  summaryTitle: { fontSize: font.sizes.xs, fontWeight: font.weights.medium },
+  summaryValueRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  summaryValue: { fontSize: font.sizes.xl, fontWeight: font.weights.bold },
+  trendBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4 },
+  trendText: { fontSize: 10, fontWeight: font.weights.semibold },
+
+  // Charts
+  chartsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chartCard: {
+    flex: 1, minWidth: '46%', borderRadius: radii.xxl, borderWidth: 1, padding: spacing.md,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 2,
+  },
+  chartCardTitle: { fontSize: font.sizes.base, fontWeight: font.weights.semibold, marginBottom: spacing.sm },
+
+  // Tables
+  tableCard: { borderRadius: radii.xl, borderWidth: 1, padding: spacing.md, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 2 },
+  tableHead: { flexDirection: 'row', paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderRadius: radii.lg, marginTop: spacing.sm },
+  th: { flex: 1, fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
+  tableRow2: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1 },
+  td2: { flex: 1, fontSize: font.sizes.xs },
   tdName: { fontWeight: font.weights.medium },
-  th: { flex: 1, fontSize: font.sizes.xs, fontWeight: font.weights.semibold, textAlign: 'left' },
-  tableCard: { borderRadius: radii.xl, borderWidth: 1, overflow: 'hidden' },
-  tableHeader: { alignItems: 'center', borderBottomWidth: 1, flexDirection: 'row', paddingHorizontal: spacing.sm, paddingVertical: spacing.sm },
-  tableRow: { alignItems: 'center', borderBottomWidth: 1, flexDirection: 'row', paddingHorizontal: spacing.sm, paddingVertical: spacing.sm },
+
+  // Progress bar
+  progressWrap: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: spacing.xs },
+  progressTrack: { flex: 1, height: 6, borderRadius: radii.full, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: radii.full },
+  progressText: { fontSize: font.sizes.xs, minWidth: 28 },
+
+  // Logs
+  logsCard: { borderRadius: radii.xxl, borderWidth: 1, padding: spacing.md, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 2 },
+  logItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
+  logDot: { width: 8, height: 8, borderRadius: 4 },
+  logContent: { flex: 1, gap: 2 },
+  logAction: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  logTime: { fontSize: font.sizes.xs },
+
+  // Legend
+  legendRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.md, marginTop: spacing.sm },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  legendDot2: { width: 8, height: 8, borderRadius: 4 },
+  legendLabel2: { fontSize: font.sizes.xs },
+
+  // Empty
+  emptyText: { fontSize: font.sizes.sm, textAlign: 'center', padding: spacing.md },
 });

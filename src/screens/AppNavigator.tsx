@@ -1,18 +1,24 @@
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer } from '@react-navigation/native';
 
 import { useAuth } from '../context/AuthContext';
 import { DashboardLayout } from '../layout/DashboardLayout';
+import { NavigationProvider, useAppNavigation } from '../context/NavigationContext';
 import { useTheme } from '../context/ThemeContext';
 
 import LoginScreen from './LoginScreen';
 import DashboardScreen from './DashboardScreen';
 import ProjectsScreen from './ProjectsScreen';
 import TasksScreen from './TasksScreen';
-import AttendanceScreen from './AttendanceScreen';
+import { AttendanceScreen } from './AttendanceScreen';
 import SettingsScreen from './SettingsScreen';
 import PlaceholderScreen from './PlaceholderScreen';
+import { HREmployeesScreen } from './HREmployeesScreen';
+import { EmployeeDetailScreen } from './EmployeeDetailScreen';
+import { CreateEmployeeScreen } from './CreateEmployeeScreen';
+import { EditEmployeeScreen } from './EditEmployeeScreen';
 
 const screens: Record<string, { title: string; icon: string }> = {
   Dashboard: { title: 'Dashboard', icon: '🏠' },
@@ -25,6 +31,9 @@ const screens: Record<string, { title: string; icon: string }> = {
   HR_Leaves: { title: 'Leaves', icon: '🏖' },
   HR_Salary: { title: 'Salary', icon: '💰' },
   HR_Requests: { title: 'Requests', icon: '📝' },
+  HR_EmployeeDetail: { title: 'Employee Profile', icon: '👤' },
+  HR_CreateEmployee: { title: 'Add Employee', icon: '➕' },
+  HR_EditEmployee: { title: 'Edit Employee', icon: '✏️' },
   Projects: { title: 'Projects', icon: '📁' },
   Tasks: { title: 'Tasks', icon: '✅' },
   Attendance: { title: 'Attendance', icon: '📅' },
@@ -44,10 +53,21 @@ const screens: Record<string, { title: string; icon: string }> = {
   Settings: { title: 'Settings', icon: '⚙' },
 };
 
-function getScreenComponent(route: string) {
+function ScreenRenderer({ route }: { route: string }) {
+  const { routeParams } = useAppNavigation();
+
   switch (route) {
     case 'Dashboard':
       return <DashboardScreen />;
+    case 'HR':
+    case 'HR_Employees':
+      return <HREmployeesScreen />;
+    case 'HR_EmployeeDetail':
+      return <EmployeeDetailScreen />;
+    case 'HR_CreateEmployee':
+      return <CreateEmployeeScreen />;
+    case 'HR_EditEmployee':
+      return <EditEmployeeScreen />;
     case 'Projects':
       return <ProjectsScreen />;
     case 'Tasks':
@@ -82,12 +102,16 @@ export default function AppNavigator() {
 
   return (
     <SafeAreaProvider>
-      <DashboardLayout
-        currentRoute={currentRoute}
-        onNavigate={setCurrentRoute}
-      >
-        {getScreenComponent(currentRoute)}
-      </DashboardLayout>
+      <NavigationContainer>
+        <DashboardLayout
+          currentRoute={currentRoute}
+          onNavigate={setCurrentRoute}
+        >
+          <NavigationProvider onNavigate={setCurrentRoute}>
+            <ScreenRenderer route={currentRoute} />
+          </NavigationProvider>
+        </DashboardLayout>
+      </NavigationContainer>
     </SafeAreaProvider>
   );
 }

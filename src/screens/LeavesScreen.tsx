@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { font, radii, spacing } from '../theme';
 
-export function AttendanceScreen() {
+export function LeavesScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const isSubscriber = user?.type === 'Subscriber';
@@ -12,17 +12,17 @@ export function AttendanceScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <Text style={styles.icon}>📅</Text>
-        <Text style={[styles.title, { color: colors.ink }]}>الحضور والانصراف</Text>
+        <Text style={styles.icon}>🏖</Text>
+        <Text style={[styles.title, { color: colors.ink }]}>الإجازات</Text>
         <Text style={[styles.description, { color: colors.textMuted }]}>
-          إدارة سجلات الحضور والانصراف للموظفين
+          إدارة إجازات الموظفين
         </Text>
         <Text style={[styles.comingSoon, { color: colors.ink }]}>قيد التطوير - سيتم إضافة:</Text>
         <View style={styles.features}>
-          <Text style={[styles.feature, { color: colors.textMuted }]}>• عرض سجلات الحضور اليومية</Text>
-          <Text style={[styles.feature, { color: colors.textMuted }]}>• إضافة/تعديل سجلات الحضور</Text>
-          <Text style={[styles.feature, { color: colors.textMuted }]}>• فلترة حسب الموظف/التاريخ/الحالة</Text>
-          <Text style={[styles.feature, { color: colors.textMuted }]}>• تقارير الحضور الشهرية</Text>
+          <Text style={[styles.feature, { color: colors.textMuted }]}>• عرض طلبات الإجازات (سنوية، مرضية، طارئة...)</Text>
+          <Text style={[styles.feature, { color: colors.textMuted }]}>• إضافة طلب إجازة جديد</Text>
+          <Text style={[styles.feature, { color: colors.textMuted }]}>• الموافقة/رفض الطلبات</Text>
+          <Text style={[styles.feature, { color: colors.textMuted }]}>• رصيد الإجازات لكل موظف</Text>
         </View>
         {isSubscriber && (
           <Text style={[styles.note, { color: colors.primary }]}>متاح للـ Subscriber فقط</Text>
