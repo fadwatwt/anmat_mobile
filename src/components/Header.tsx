@@ -1,8 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Menu, Bell, MessageSquare, Sun, Moon } from 'lucide-react-native';
+import { Menu, Bell, MessageSquare, Sun, Moon, Globe } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { font, radii, spacing } from '../theme';
 
@@ -14,11 +15,16 @@ type Props = {
 export function Header({ onMenuPress, title }: Props) {
   const { user } = useAuth();
   const { colors, isDark, toggleTheme } = useTheme();
+  const { locale, setLocale, isRTL } = useLocale();
   const insets = useSafeAreaInsets();
 
+  const toggleLanguage = () => {
+    setLocale(locale === 'ar' ? 'en' : 'ar');
+  };
+
   return (
-    <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: insets.top }]}>
-      <View style={styles.left}>
+    <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: insets.top, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+      <View style={[styles.sideSection, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn}>
           <Menu size={20} color={colors.ink} />
         </TouchableOpacity>
@@ -29,13 +35,17 @@ export function Header({ onMenuPress, title }: Props) {
         ) : null}
       </View>
 
-      <View style={styles.right}>
+      <View style={[styles.sideSection, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <TouchableOpacity onPress={toggleLanguage} style={styles.iconBtn}>
+          <Globe size={18} color={colors.textMuted} />
+          <Text style={[styles.langText, { color: colors.textMuted }]}>{locale === 'ar' ? 'EN' : 'AR'}</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={toggleTheme} style={styles.iconBtn}>
           {isDark ? <Sun size={18} color={colors.textMuted} /> : <Moon size={18} color={colors.textMuted} />}
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconBtn}>
           <Bell size={18} color={colors.textMuted} />
-          <View style={[styles.badge, { backgroundColor: colors.danger }]} />
+          <View style={[styles.badge, { backgroundColor: colors.danger, [isRTL ? 'left' : 'right']: 3 }]} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconBtn}>
           <MessageSquare size={18} color={colors.textMuted} />
@@ -66,33 +76,32 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
     height: 7,
     position: 'absolute',
-    right: 3,
     top: 3,
     width: 7,
   },
   header: {
     alignItems: 'center',
     borderBottomWidth: 1,
-    flexDirection: 'row',
     height: 72,
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
   },
   iconBtn: {
-    padding: spacing.xs,
-  },
-  left: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: 2,
+    padding: spacing.xs,
+  },
+  langText: {
+    fontSize: font.sizes.xs,
+    fontWeight: font.weights.bold,
   },
   menuBtn: {
     padding: 4,
   },
-  right: {
+  sideSection: {
     alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   title: {
     fontSize: font.sizes.base,

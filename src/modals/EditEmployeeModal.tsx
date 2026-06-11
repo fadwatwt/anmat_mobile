@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Modal } from '../components/Modal';
 import { useTheme } from '../context/ThemeContext';
+import { useLocale } from '../context/LanguageContext';
 import { updateEmployee, fetchDepartments } from '../services/employees';
 import { font, radii, spacing } from '../theme';
 import type { Department, EmployeeDetailItem } from '../types';
@@ -45,6 +47,8 @@ type Props = {
 
 export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const { isRTL } = useLocale();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -90,8 +94,8 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
 
   const deptOptions = useMemo(() => {
     const opts = departments.map(d => ({ id: d._id, label: d.name }));
-    return [{ id: 'none', label: 'No Department' }, ...opts];
-  }, [departments]);
+    return [{ id: 'none', label: t('No Department') }, ...opts];
+  }, [departments, t]);
 
   const positionOptions = useMemo(() => {
     if (!form.department_id || form.department_id === 'none') return [];
@@ -138,7 +142,7 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
       onSuccess?.();
       onClose();
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to update employee');
+      Alert.alert(t('Error'), e?.message || t('Failed to update employee'));
     } finally {
       setSaving(false);
     }
@@ -146,7 +150,7 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
 
   const renderSelect = (options: { id: string; label: string }[], value: string | null, onChange: (v: string) => void, placeholder: string) => (
     <View style={selStyles.wrap}>
-      <Text style={[selStyles.placeholder, { color: colors.textMuted }]}>{placeholder}</Text>
+      <Text style={[selStyles.placeholder, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{placeholder}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={selStyles.chips}>
           {(options || []).map(opt => {
@@ -157,7 +161,7 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
                 onPress={() => onChange(opt.id)}
                 style={[selStyles.chip, active && { backgroundColor: colors.primary }, { borderColor: colors.border }]}
               >
-                <Text style={[selStyles.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink }]}>{opt.label}</Text>
+                <Text style={[selStyles.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{opt.label}</Text>
               </TouchableOpacity>
             );
           })}
@@ -168,7 +172,7 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
 
   const renderMultiSelect = (options: { id: string; label: string }[], value: string[], onChange: (v: string[]) => void, placeholder: string) => (
     <View style={selStyles.wrap}>
-      <Text style={[selStyles.placeholder, { color: colors.textMuted }]}>{placeholder}</Text>
+      <Text style={[selStyles.placeholder, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{placeholder}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={selStyles.chips}>
           {options.map(opt => {
@@ -179,7 +183,7 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
                 onPress={() => onChange(active ? value.filter(v => v !== opt.id) : [...value, opt.id])}
                 style={[selStyles.chip, active && { backgroundColor: colors.primary }, { borderColor: colors.border }]}
               >
-                <Text style={[selStyles.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink }]}>{opt.label}</Text>
+                <Text style={[selStyles.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{opt.label}</Text>
               </TouchableOpacity>
             );
           })}
@@ -196,58 +200,58 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
   });
 
   return (
-    <Modal visible={visible} onClose={onClose} title="Edit Employee" size="full">
+    <Modal visible={visible} onClose={onClose} title={t('Edit Employee')} size="full">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={baseStyles.flex}>
         <ScrollView style={baseStyles.flex} contentContainerStyle={baseStyles.scrollContent} keyboardShouldPersistTaps="handled">
           {step === 1 && (
             <View style={baseStyles.sectionCard}>
-              <Text style={[baseStyles.sectionTitle, { color: colors.primary, borderLeftColor: colors.primary }]}>Personal Information</Text>
-              <EditField label="Full Name" required value={form.name} onChangeText={v => updateField('name', v)} colors={colors} inputStyle={inputStyle} />
+              <Text style={[baseStyles.sectionTitle, { color: colors.primary, borderLeftColor: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Personal Information')}</Text>
+              <EditField label={t('Full Name')} required value={form.name} onChangeText={v => updateField('name', v)} colors={colors} inputStyle={inputStyle} isRTL={isRTL} />
               <View style={baseStyles.row}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[baseStyles.label, { color: colors.ink }]}>Email</Text>
+                  <Text style={[baseStyles.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Email')}</Text>
                   <TextInput value={employeeData?.user?.email || ''} editable={false} style={[baseStyles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textMuted }]} />
                 </View>
-                <EditField label="Phone" required value={form.phone} onChangeText={v => updateField('phone', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="phone-pad" />
+                <EditField label={t('Phone')} required value={form.phone} onChangeText={v => updateField('phone', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="phone-pad" isRTL={isRTL} />
               </View>
-              <EditField label="Date of Birth" value={form.date_of_birth} onChangeText={v => updateField('date_of_birth', v)} colors={colors} inputStyle={inputStyle} placeholder="YYYY-MM-DD" />
-              <Text style={[baseStyles.subSectionTitle, { color: colors.ink, borderLeftColor: colors.primary }]}>Location</Text>
+              <EditField label={t('Date of Birth')} value={form.date_of_birth} onChangeText={v => updateField('date_of_birth', v)} colors={colors} inputStyle={inputStyle} placeholder={t('YYYY-MM-DD')} isRTL={isRTL} />
+              <Text style={[baseStyles.subSectionTitle, { color: colors.ink, borderLeftColor: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Location')}</Text>
               <View style={baseStyles.row}>
-                <View style={{ flex: 1 }}>{renderSelect(COUNTRIES, form.country, v => updateField('country', v), 'Country')}</View>
-                <View style={{ flex: 1 }}>{renderSelect(CITIES, form.city, v => updateField('city', v), 'City')}</View>
+                <View style={{ flex: 1 }}>{renderSelect(COUNTRIES, form.country, v => updateField('country', v), t('Country'))}</View>
+                <View style={{ flex: 1 }}>{renderSelect(CITIES, form.city, v => updateField('city', v), t('City'))}</View>
               </View>
             </View>
           )}
 
           {step === 2 && (
             <View style={baseStyles.sectionCard}>
-              <Text style={[baseStyles.sectionTitle, { color: colors.primary, borderLeftColor: colors.primary }]}>Employment Details</Text>
+              <Text style={[baseStyles.sectionTitle, { color: colors.primary, borderLeftColor: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employment Details')}</Text>
               <View style={baseStyles.row}>
-                <View style={{ flex: 1 }}>{renderSelect(deptOptions, form.department_id, v => { updateField('department_id', v === 'none' ? null : v); updateField('position_id', null); }, 'Department')}</View>
-                <View style={{ flex: 1 }}>{renderSelect(positionOptions, form.position_id, v => updateField('position_id', v), 'Position')}</View>
+                <View style={{ flex: 1 }}>{renderSelect(deptOptions, form.department_id, v => { updateField('department_id', v === 'none' ? null : v); updateField('position_id', null); }, t('Department'))}</View>
+                <View style={{ flex: 1 }}>{renderSelect(positionOptions, form.position_id, v => updateField('position_id', v), t('Position'))}</View>
               </View>
 
-              <Text style={[baseStyles.subSectionTitle, { color: colors.ink, borderLeftColor: colors.primary }]}>Financial & Schedule</Text>
+              <Text style={[baseStyles.subSectionTitle, { color: colors.ink, borderLeftColor: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Financial & Schedule')}</Text>
               <View style={baseStyles.row}>
-                <EditField label="Salary" required value={String(form.salary)} onChangeText={v => updateField('salary', Number(v) || 0)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" />
-                <View style={{ flex: 1 }}>{renderSelect(SHIFT_TYPES, form.shift_type, v => updateField('shift_type', v), 'Shift Type')}</View>
+                <EditField label={t('Salary')} required value={String(form.salary)} onChangeText={v => updateField('salary', Number(v) || 0)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" isRTL={isRTL} />
+                <View style={{ flex: 1 }}>{renderSelect(SHIFT_TYPES, form.shift_type, v => updateField('shift_type', v), t('Shift Type'))}</View>
               </View>
 
               {form.shift_type === 'HOURS' ? (
-                <EditField label="Work Hours" required value={String(form.work_hours)} onChangeText={v => updateField('work_hours', Number(v) || 0)} colors={colors} inputStyle={inputStyle} keyboardType="numeric" />
+                <EditField label={t('Work Hours')} required value={String(form.work_hours)} onChangeText={v => updateField('work_hours', Number(v) || 0)} colors={colors} inputStyle={inputStyle} keyboardType="numeric" isRTL={isRTL} />
               ) : (
                 <View style={baseStyles.row}>
-                  <EditField label="Shift Start" required value={form.shift_start_time} onChangeText={v => updateField('shift_start_time', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} placeholder="09:00" />
-                  <EditField label="Shift End" required value={form.shift_end_time} onChangeText={v => updateField('shift_end_time', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} placeholder="17:00" />
+                  <EditField label={t('Shift Start')} required value={form.shift_start_time} onChangeText={v => updateField('shift_start_time', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} placeholder={t('09:00')} isRTL={isRTL} />
+                  <EditField label={t('Shift End')} required value={form.shift_end_time} onChangeText={v => updateField('shift_end_time', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} placeholder={t('17:00')} isRTL={isRTL} />
                 </View>
               )}
 
               <View style={baseStyles.row}>
-                <EditField label="Yearly Days-Off" required value={String(form.yearly_day_offs)} onChangeText={v => updateField('yearly_day_offs', Number(v) || 0)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" />
-                <EditField label="Storage Quota (MB)" value={form.storage_quota === null ? '' : String(form.storage_quota)} onChangeText={v => updateField('storage_quota', v === '' ? null : Number(v))} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" placeholder="Leave empty for unlimited" />
+                <EditField label={t('Yearly Days-Off')} required value={String(form.yearly_day_offs)} onChangeText={v => updateField('yearly_day_offs', Number(v) || 0)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" isRTL={isRTL} />
+                <EditField label={t('Storage Quota (MB)')} value={form.storage_quota === null ? '' : String(form.storage_quota)} onChangeText={v => updateField('storage_quota', v === '' ? null : Number(v))} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" placeholder={t('Leave empty for unlimited')} isRTL={isRTL} />
               </View>
 
-              {renderMultiSelect(WEEKEND_DAYS, form.weekend_days, v => updateField('weekend_days', v), 'Weekend Days')}
+              {renderMultiSelect(WEEKEND_DAYS, form.weekend_days, v => updateField('weekend_days', v), t('Weekend Days'))}
             </View>
           )}
         </ScrollView>
@@ -255,16 +259,16 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
         <View style={baseStyles.footer}>
           {step > 1 && (
             <TouchableOpacity style={[baseStyles.footerBtn, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setStep(step - 1)}>
-              <Text style={[baseStyles.footerBtnText, { color: colors.primary }]}>Back</Text>
+              <Text style={[baseStyles.footerBtnText, { color: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Back')}</Text>
             </TouchableOpacity>
           )}
           {step < 2 ? (
             <TouchableOpacity style={[baseStyles.footerBtn, { backgroundColor: colors.primary }]} onPress={() => setStep(step + 1)}>
-              <Text style={[baseStyles.footerBtnText, { color: '#FFF' }]}>Next</Text>
+              <Text style={[baseStyles.footerBtnText, { color: '#FFF', textAlign: isRTL ? 'right' : 'left' }]}>{t('Next')}</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={[baseStyles.footerBtn, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={saving}>
-              <Text style={[baseStyles.footerBtnText, { color: '#FFF' }]}>{saving ? 'Saving...' : 'Save Changes'}</Text>
+              <Text style={[baseStyles.footerBtnText, { color: '#FFF', textAlign: isRTL ? 'right' : 'left' }]}>{saving ? t('Saving...') : t('Save Changes')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -273,13 +277,13 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
   );
 }
 
-function EditField({ label, value, onChangeText, colors, inputStyle, containerStyle, placeholder, keyboardType, secureTextEntry, required }: {
-  label: string; value: string; onChangeText: (v: string) => void; colors: any; inputStyle: (f: boolean) => any; containerStyle?: any; placeholder?: string; keyboardType?: any; secureTextEntry?: boolean; required?: boolean;
+function EditField({ label, value, onChangeText, colors, inputStyle, containerStyle, placeholder, keyboardType, secureTextEntry, required, isRTL }: {
+  label: string; value: string; onChangeText: (v: string) => void; colors: any; inputStyle: (f: boolean) => any; containerStyle?: any; placeholder?: string; keyboardType?: any; secureTextEntry?: boolean; required?: boolean; isRTL: boolean;
 }) {
   const [focused, setFocused] = useState(false);
   return (
     <View style={[{ marginBottom: spacing.sm }, containerStyle]}>
-      <Text style={[baseStyles.label, { color: colors.ink }]}>{label}{required ? ' *' : ''}</Text>
+      <Text style={[baseStyles.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{label}{required ? ' *' : ''}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}

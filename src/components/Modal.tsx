@@ -1,6 +1,7 @@
 import React from 'react';
 import { Dimensions, Modal as RNModal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { X } from 'lucide-react-native';
+import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { font, radii, spacing } from '../theme';
 
@@ -23,6 +24,7 @@ const sizeStyles: Record<string, { maxWidth: number; maxHeight: number }> = {
 
 export function Modal({ visible, onClose, title, children, size = 'md' }: Props) {
   const { colors } = useTheme();
+  const { isRTL } = useLocale();
   if (!visible) return null;
 
   const sizeStyle = sizeStyles[size] || sizeStyles.md;
@@ -32,8 +34,8 @@ export function Modal({ visible, onClose, title, children, size = 'md' }: Props)
       <Pressable style={styles.overlay} onPress={onClose}>
         <View style={[styles.container, { backgroundColor: colors.surface }, sizeStyle]}>
           {title && (
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
+            <View style={[styles.header, { borderBottomColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <Text style={[styles.title, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{title}</Text>
               <Pressable onPress={onClose} style={styles.closeBtn}>
                 <X size={20} color={colors.textMuted} />
               </Pressable>

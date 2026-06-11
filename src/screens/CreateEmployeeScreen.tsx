@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, Check, User, Briefcase } from 'lucide-react-native';
 import { createEmployee, fetchDepartments, fetchPositions } from '../services/employees';
 import { Department, Position } from '../types';
 import { useTheme } from '../context/ThemeContext';
-import { useAppNavigation } from '../context/NavigationContext';
+import { useNavigation } from '@react-navigation/native';
 import { font, radii, spacing } from '../theme';
+import { useLocale } from '../context/LanguageContext';
 
 const employmentTypes = [
-  { label: 'دوام كامل', value: 'full_time' },
-  { label: 'دوام جزئي', value: 'part_time' },
-  { label: 'عقد', value: 'contract' },
-  { label: 'متدرب', value: 'intern' },
+  { label: 'Full Time', value: 'full_time' },
+  { label: 'Part Time', value: 'part_time' },
+  { label: 'Contract', value: 'contract' },
+  { label: 'Intern', value: 'intern' },
 ] as const;
 
 const genders = [
-  { label: 'ذكر', value: 'male' },
-  { label: 'أنثى', value: 'female' },
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' },
 ] as const;
 
 type StepProps = {
@@ -26,61 +28,65 @@ type StepProps = {
 };
 
 function PersonalInfoStep({ form, setForm, colors }: StepProps) {
+  const { t } = useTranslation();
+  const { isRTL } = useLocale();
   return (
     <ScrollView style={styles.stepScroll} showsVerticalScrollIndicator={false}>
-      <Text style={[styles.stepTitle, { color: colors.ink }]}>المعلومات الشخصية</Text>
+      <Text style={[styles.stepTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Personal Information')}</Text>
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>الاسم الأول *</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.first_name || ''} onChangeText={v => setForm(p => ({ ...p, first_name: v }))} placeholder="الاسم الأول" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('First Name *')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.first_name || ''} onChangeText={v => setForm(p => ({ ...p, first_name: v }))} placeholder={t('First Name')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>الاسم الأخير *</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.last_name || ''} onChangeText={v => setForm(p => ({ ...p, last_name: v }))} placeholder="الاسم الأخير" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Last Name *')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.last_name || ''} onChangeText={v => setForm(p => ({ ...p, last_name: v }))} placeholder={t('Last Name')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>البريد الإلكتروني *</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.email || ''} onChangeText={v => setForm(p => ({ ...p, email: v }))} placeholder="email@example.com" keyboardType="email-address" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Email *')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.email || ''} onChangeText={v => setForm(p => ({ ...p, email: v }))} placeholder={t('email@example.com')} keyboardType="email-address" placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>رقم الهاتف</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.phone || ''} onChangeText={v => setForm(p => ({ ...p, phone: v }))} placeholder="05xxxxxxxx" keyboardType="phone-pad" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Phone Number')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.phone || ''} onChangeText={v => setForm(p => ({ ...p, phone: v }))} placeholder={t('05xxxxxxxx')} keyboardType="phone-pad" placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>الجنس</Text>
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Gender')}</Text>
       <View style={styles.optionsRow}>
         {genders.map(g => (
           <TouchableOpacity key={g.value} style={[styles.optionBtn, { borderColor: colors.border }, form.gender === g.value && { borderColor: colors.primary, backgroundColor: colors.primaryLight }]} onPress={() => setForm(p => ({ ...p, gender: g.value }))}>
-            <Text style={[styles.optionText, { color: colors.textMuted }, form.gender === g.value && { color: colors.primary }]}>{g.label}</Text>
+            <Text style={[styles.optionText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }, form.gender === g.value && { color: colors.primary }]}>{t(g.label)}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>الجنسية</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.nationality || ''} onChangeText={v => setForm(p => ({ ...p, nationality: v }))} placeholder="الجنسية" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Nationality')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.nationality || ''} onChangeText={v => setForm(p => ({ ...p, nationality: v }))} placeholder={t('Nationality')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>البلد</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.country || ''} onChangeText={v => setForm(p => ({ ...p, country: v }))} placeholder="البلد" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Country')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.country || ''} onChangeText={v => setForm(p => ({ ...p, country: v }))} placeholder={t('Country')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>المدينة</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.city || ''} onChangeText={v => setForm(p => ({ ...p, city: v }))} placeholder="المدينة" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('City')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.city || ''} onChangeText={v => setForm(p => ({ ...p, city: v }))} placeholder={t('City')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>العنوان</Text>
-      <TextInput style={[styles.inputMultiline, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.address || ''} onChangeText={v => setForm(p => ({ ...p, address: v }))} placeholder="العنوان الكامل" multiline numberOfLines={3} placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Address')}</Text>
+      <TextInput style={[styles.inputMultiline, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.address || ''} onChangeText={v => setForm(p => ({ ...p, address: v }))} placeholder={t('Full Address')} multiline numberOfLines={3} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>تاريخ الميلاد</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.date_of_birth || ''} onChangeText={v => setForm(p => ({ ...p, date_of_birth: v }))} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Date of Birth')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.date_of_birth || ''} onChangeText={v => setForm(p => ({ ...p, date_of_birth: v }))} placeholder={t('YYYY-MM-DD')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.sectionLabel, { color: colors.ink }]}>جهة اتصال طارئة</Text>
+      <Text style={[styles.sectionLabel, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Emergency Contact')}</Text>
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>الاسم</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.emergency_contact_name || ''} onChangeText={v => setForm(p => ({ ...p, emergency_contact_name: v }))} placeholder="الاسم" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Name')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.emergency_contact_name || ''} onChangeText={v => setForm(p => ({ ...p, emergency_contact_name: v }))} placeholder={t('Name')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>رقم الهاتف</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.emergency_contact_phone || ''} onChangeText={v => setForm(p => ({ ...p, emergency_contact_phone: v }))} placeholder="رقم الهاتف" keyboardType="phone-pad" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Phone Number')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.emergency_contact_phone || ''} onChangeText={v => setForm(p => ({ ...p, emergency_contact_phone: v }))} placeholder={t('Phone Number')} keyboardType="phone-pad" placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>صلة القرابة</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.emergency_contact_relation || ''} onChangeText={v => setForm(p => ({ ...p, emergency_contact_relation: v }))} placeholder="صلة القرابة" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Relationship')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.emergency_contact_relation || ''} onChangeText={v => setForm(p => ({ ...p, emergency_contact_relation: v }))} placeholder={t('Relationship')} placeholderTextColor={colors.textMuted} />
     </ScrollView>
   );
 }
 
 function WorkInfoStep({ form, setForm, colors }: StepProps) {
+  const { t } = useTranslation();
+  const { isRTL } = useLocale();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
 
@@ -91,76 +97,78 @@ function WorkInfoStep({ form, setForm, colors }: StepProps) {
 
   return (
     <ScrollView style={styles.stepScroll} showsVerticalScrollIndicator={false}>
-      <Text style={[styles.stepTitle, { color: colors.ink }]}>معلومات العمل</Text>
+      <Text style={[styles.stepTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Work Information')}</Text>
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>القسم</Text>
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Department')}</Text>
       <View style={styles.optionsRow}>
         {departments.map(d => (
           <TouchableOpacity key={d._id} style={[styles.optionBtn, { borderColor: colors.border }, form.department_id === d._id && { borderColor: colors.primary, backgroundColor: colors.primaryLight }]} onPress={() => setForm(p => ({ ...p, department_id: d._id }))}>
-            <Text style={[styles.optionText, { color: colors.textMuted }, form.department_id === d._id && { color: colors.primary }]}>{d.name}</Text>
+            <Text style={[styles.optionText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }, form.department_id === d._id && { color: colors.primary }]}>{d.name}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>المنصب</Text>
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Position')}</Text>
       <View style={styles.optionsRow}>
         {positions.map(p => (
           <TouchableOpacity key={p._id} style={[styles.optionBtn, { borderColor: colors.border }, form.position_id === p._id && { borderColor: colors.primary, backgroundColor: colors.primaryLight }]} onPress={() => setForm(prev => ({ ...prev, position_id: p._id }))}>
-            <Text style={[styles.optionText, { color: colors.textMuted }, form.position_id === p._id && { color: colors.primary }]}>{p.name}</Text>
+            <Text style={[styles.optionText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }, form.position_id === p._id && { color: colors.primary }]}>{p.name}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>الرقم الوظيفي</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.employee_id || ''} onChangeText={v => setForm(p => ({ ...p, employee_id: v }))} placeholder="EMP-001" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employee ID')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.employee_id || ''} onChangeText={v => setForm(p => ({ ...p, employee_id: v }))} placeholder={t('EMP-001')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>تاريخ التعيين</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.hire_date || ''} onChangeText={v => setForm(p => ({ ...p, hire_date: v }))} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Hire Date')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.hire_date || ''} onChangeText={v => setForm(p => ({ ...p, hire_date: v }))} placeholder={t('YYYY-MM-DD')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>نوع التوظيف</Text>
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employment Type')}</Text>
       <View style={styles.optionsRow}>
         {employmentTypes.map(et => (
           <TouchableOpacity key={et.value} style={[styles.optionBtn, { borderColor: colors.border }, form.employment_type === et.value && { borderColor: colors.primary, backgroundColor: colors.primaryLight }]} onPress={() => setForm(p => ({ ...p, employment_type: et.value }))}>
-            <Text style={[styles.optionText, { color: colors.textMuted }, form.employment_type === et.value && { color: colors.primary }]}>{et.label}</Text>
+            <Text style={[styles.optionText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }, form.employment_type === et.value && { color: colors.primary }]}>{t(et.label)}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>الراتب</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.salary != null ? String(form.salary) : ''} onChangeText={v => setForm(p => ({ ...p, salary: v ? Number(v) : undefined }))} placeholder="0" keyboardType="numeric" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Salary')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.salary != null ? String(form.salary) : ''} onChangeText={v => setForm(p => ({ ...p, salary: v ? Number(v) : undefined }))} placeholder={t('0')} keyboardType="numeric" placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>جدول العمل</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.work_schedule || ''} onChangeText={v => setForm(p => ({ ...p, work_schedule: v }))} placeholder="9:00 AM - 5:00 PM" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Work Schedule')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.work_schedule || ''} onChangeText={v => setForm(p => ({ ...p, work_schedule: v }))} placeholder={t('9:00 AM - 5:00 PM')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.sectionLabel, { color: colors.ink }]}>معلومات بنكية</Text>
+      <Text style={[styles.sectionLabel, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Bank Information')}</Text>
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>اسم البنك</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.bank_name || ''} onChangeText={v => setForm(p => ({ ...p, bank_name: v }))} placeholder="اسم البنك" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Bank Name')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.bank_name || ''} onChangeText={v => setForm(p => ({ ...p, bank_name: v }))} placeholder={t('Bank Name')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>رقم الحساب البنكي</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.bank_account || ''} onChangeText={v => setForm(p => ({ ...p, bank_account: v }))} placeholder="رقم الحساب" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Bank Account Number')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.bank_account || ''} onChangeText={v => setForm(p => ({ ...p, bank_account: v }))} placeholder={t('Account Number')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted }]}>الرقم الضريبي</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.tax_number || ''} onChangeText={v => setForm(p => ({ ...p, tax_number: v }))} placeholder="الرقم الضريبي" placeholderTextColor={colors.textMuted} />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Tax Number')}</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.tax_number || ''} onChangeText={v => setForm(p => ({ ...p, tax_number: v }))} placeholder={t('Tax Number')} placeholderTextColor={colors.textMuted} />
     </ScrollView>
   );
 }
 
 export function CreateEmployeeScreen() {
-  const { goBack } = useAppNavigation();
+  const { t } = useTranslation();
+  const navigation = useNavigation();
   const { colors } = useTheme();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<Partial<any>>({});
+  const { isRTL } = useLocale();
 
   const updateForm = (updater: (prev: Partial<any>) => Partial<any>) => {
     setForm(prev => ({ ...prev, ...updater(prev) }));
   };
 
   const validateStep1 = () => {
-    if (!form.first_name?.trim()) { Alert.alert('خطأ', 'الرجاء إدخال الاسم الأول'); return false; }
-    if (!form.last_name?.trim()) { Alert.alert('خطأ', 'الرجاء إدخال الاسم الأخير'); return false; }
-    if (!form.email?.trim()) { Alert.alert('خطأ', 'الرجاء إدخال البريد الإلكتروني'); return false; }
+    if (!form.first_name?.trim()) { Alert.alert(t('Error'), t('Please enter first name')); return false; }
+    if (!form.last_name?.trim()) { Alert.alert(t('Error'), t('Please enter last name')); return false; }
+    if (!form.email?.trim()) { Alert.alert(t('Error'), t('Please enter email')); return false; }
     return true;
   };
 
@@ -168,10 +176,10 @@ export function CreateEmployeeScreen() {
     setSubmitting(true);
     try {
       await createEmployee(form as any);
-      Alert.alert('تم', 'تم إضافة الموظف بنجاح');
-      goBack();
+      Alert.alert(t('Success'), t('Employee added successfully'));
+      navigation.goBack();
     } catch (e: any) {
-      Alert.alert('خطأ', e?.response?.data?.message || 'فشل في إضافة الموظف');
+      Alert.alert(t('Error'), e?.response?.data?.message || t('Failed to add employee'));
     } finally {
       setSubmitting(false);
     }
@@ -180,10 +188,10 @@ export function CreateEmployeeScreen() {
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={goBack} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ArrowLeft size={24} color={colors.ink} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.ink }]}>إضافة موظف جديد</Text>
+        <Text style={[styles.headerTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Add New Employee')}</Text>
         <View style={styles.backBtn} />
       </View>
 
@@ -208,18 +216,18 @@ export function CreateEmployeeScreen() {
       <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         {step === 1 ? (
           <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: colors.primary }]} onPress={() => { if (validateStep1()) setStep(2); }}>
-            <Text style={styles.primaryBtnText}>التالي</Text>
+            <Text style={[styles.primaryBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Next')}</Text>
             <ArrowRight size={20} color="#FFF" />
           </TouchableOpacity>
         ) : (
           <View style={styles.footerRow}>
             <TouchableOpacity style={[styles.secondaryBtn, { borderColor: colors.border }]} onPress={() => setStep(1)}>
               <ArrowRight size={20} color={colors.ink} />
-              <Text style={[styles.secondaryBtnText, { color: colors.ink }]}>السابق</Text>
+              <Text style={[styles.secondaryBtnText, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Previous')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: colors.primary }]} onPress={handleSubmit} disabled={submitting}>
               {submitting ? <ActivityIndicator color="#FFF" /> : <Check size={20} color="#FFF" />}
-              <Text style={styles.primaryBtnText}>{submitting ? 'جاري الحفظ...' : 'حفظ'}</Text>
+              <Text style={[styles.primaryBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>{submitting ? t('Saving...') : t('Save')}</Text>
             </TouchableOpacity>
           </View>
         )}

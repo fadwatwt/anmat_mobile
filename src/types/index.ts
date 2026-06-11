@@ -120,8 +120,26 @@ export type TaskItem = {
   description?: string;
   status?: string;
   priority?: string;
+  start_date?: string;
   due_date?: string;
+  end_date?: string;
+  progress?: number;
+  is_template?: boolean;
+  project_id?: string;
+  project?: { _id: string; name: string };
+  department_id?: string;
+  department?: { _id: string; name: string };
+  assignee_id?: string;
+  assignee?: { _id: string; name: string; email?: string; avatar?: string };
+  creator?: { _id: string; name: string; email?: string };
+  ratings?: Array<{ rate_time?: number; rate_content?: number; rate_video?: number; comment?: string }>;
+  rate?: number;
+  stages?: any[];
+  comments?: any[];
+  created_by?: string;
+  appointment_id?: string;
   createdAt?: string;
+  updatedAt?: string;
 };
 
 export type AttendanceItem = {

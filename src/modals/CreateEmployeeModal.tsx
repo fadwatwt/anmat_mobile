@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Modal } from '../components/Modal';
 import { useTheme } from '../context/ThemeContext';
+import { useLocale } from '../context/LanguageContext';
 import { font, radii, spacing } from '../theme';
 import { createEmployee, fetchDepartments } from '../services/employees';
 import type { Department } from '../types';
@@ -44,6 +46,8 @@ type Props = {
 
 export function CreateEmployeeModal({ visible, onClose, onSuccess }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const { isRTL } = useLocale();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -68,8 +72,8 @@ export function CreateEmployeeModal({ visible, onClose, onSuccess }: Props) {
 
   const deptOptions = useMemo(() => {
     const opts = departments.map(d => ({ id: d._id, label: d.name }));
-    return [{ id: 'none', label: 'No Department' }, ...opts];
-  }, [departments]);
+    return [{ id: 'none', label: t('No Department') }, ...opts];
+  }, [departments, t]);
 
   const positionOptions = useMemo(() => {
     if (!form.department_id || form.department_id === 'none') return [];
@@ -113,7 +117,7 @@ export function CreateEmployeeModal({ visible, onClose, onSuccess }: Props) {
       onSuccess?.();
       onClose();
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to create employee');
+      Alert.alert(t('Error'), e?.message || t('Failed to create employee'));
     } finally {
       setSaving(false);
     }
@@ -121,7 +125,7 @@ export function CreateEmployeeModal({ visible, onClose, onSuccess }: Props) {
 
   const renderSelect = (options: { id: string; label: string }[], value: string | null, onChange: (v: string) => void, placeholder: string) => (
     <View style={selectStyles.wrap}>
-      <Text style={[selectStyles.placeholder, { color: colors.textMuted }]}>{placeholder}</Text>
+      <Text style={[selectStyles.placeholder, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{placeholder}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={selectStyles.scroll}>
         <View style={selectStyles.chips}>
           {(options || []).map(opt => {
@@ -132,7 +136,7 @@ export function CreateEmployeeModal({ visible, onClose, onSuccess }: Props) {
                 onPress={() => onChange(opt.id)}
                 style={[selectStyles.chip, active && { backgroundColor: colors.primary }, { borderColor: colors.border }]}
               >
-                <Text style={[selectStyles.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink }]}>{opt.label}</Text>
+                <Text style={[selectStyles.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{opt.label}</Text>
               </TouchableOpacity>
             );
           })}
@@ -143,7 +147,7 @@ export function CreateEmployeeModal({ visible, onClose, onSuccess }: Props) {
 
   const renderMultiSelect = (options: { id: string; label: string }[], value: string[], onChange: (v: string[]) => void, placeholder: string) => (
     <View style={selectStyles.wrap}>
-      <Text style={[selectStyles.placeholder, { color: colors.textMuted }]}>{placeholder}</Text>
+      <Text style={[selectStyles.placeholder, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{placeholder}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={selectStyles.scroll}>
         <View style={selectStyles.chips}>
           {options.map(opt => {
@@ -154,7 +158,7 @@ export function CreateEmployeeModal({ visible, onClose, onSuccess }: Props) {
                 onPress={() => onChange(active ? value.filter(v => v !== opt.id) : [...value, opt.id])}
                 style={[selectStyles.chip, active && { backgroundColor: colors.primary }, { borderColor: colors.border }]}
               >
-                <Text style={[selectStyles.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink }]}>{opt.label}</Text>
+                <Text style={[selectStyles.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{opt.label}</Text>
               </TouchableOpacity>
             );
           })}
@@ -171,59 +175,59 @@ export function CreateEmployeeModal({ visible, onClose, onSuccess }: Props) {
   });
 
   return (
-    <Modal visible={visible} onClose={onClose} title="Add New Employee" size="full">
+    <Modal visible={visible} onClose={onClose} title={t('Add New Employee')} size="full">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           {step === 1 && (
             <View style={styles.sectionCard}>
-              <Text style={[styles.sectionTitle, { color: colors.primary, borderLeftColor: colors.primary }]}>Personal Information</Text>
-              <InputField label="Full Name" required value={form.name} onChangeText={v => updateField('name', v)} colors={colors} inputStyle={inputStyle} />
+              <Text style={[styles.sectionTitle, { color: colors.primary, borderLeftColor: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Personal Information')}</Text>
+              <InputField label={t('Full Name')} required value={form.name} onChangeText={v => updateField('name', v)} colors={colors} inputStyle={inputStyle} isRTL={isRTL} />
               <View style={styles.row}>
-                <InputField label="Email" required={!false} value={form.email} onChangeText={v => updateField('email', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="email-address" />
-                <InputField label="Phone" required value={form.phone} onChangeText={v => updateField('phone', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="phone-pad" />
+                <InputField label={t('Email')} required={!false} value={form.email} onChangeText={v => updateField('email', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="email-address" isRTL={isRTL} />
+                <InputField label={t('Phone')} required value={form.phone} onChangeText={v => updateField('phone', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="phone-pad" isRTL={isRTL} />
               </View>
               <View style={styles.row}>
-                <InputField label="Password" required value={form.password} onChangeText={v => updateField('password', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} secureTextEntry />
-                <InputField label="Confirm Password" required value={form.password_confirmation} onChangeText={v => updateField('password_confirmation', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} secureTextEntry />
+                <InputField label={t('Password')} required value={form.password} onChangeText={v => updateField('password', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} secureTextEntry isRTL={isRTL} />
+                <InputField label={t('Confirm Password')} required value={form.password_confirmation} onChangeText={v => updateField('password_confirmation', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} secureTextEntry isRTL={isRTL} />
               </View>
-              <InputField label="Date of Birth" value={form.date_of_birth} onChangeText={v => updateField('date_of_birth', v)} colors={colors} inputStyle={inputStyle} placeholder="YYYY-MM-DD" />
-              <Text style={[styles.subSectionTitle, { color: colors.ink, borderLeftColor: colors.primary }]}>Location</Text>
+              <InputField label={t('Date of Birth')} value={form.date_of_birth} onChangeText={v => updateField('date_of_birth', v)} colors={colors} inputStyle={inputStyle} placeholder={t('YYYY-MM-DD')} isRTL={isRTL} />
+              <Text style={[styles.subSectionTitle, { color: colors.ink, borderLeftColor: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Location')}</Text>
               <View style={styles.row}>
-                <View style={{ flex: 1 }}>{renderSelect(COUNTRIES, form.country, v => updateField('country', v), 'Country')}</View>
-                <View style={{ flex: 1 }}>{renderSelect(CITIES, form.city, v => updateField('city', v), 'City')}</View>
+                <View style={{ flex: 1 }}>{renderSelect(COUNTRIES, form.country, v => updateField('country', v), t('Country'))}</View>
+                <View style={{ flex: 1 }}>{renderSelect(CITIES, form.city, v => updateField('city', v), t('City'))}</View>
               </View>
             </View>
           )}
 
           {step === 2 && (
             <View style={styles.sectionCard}>
-              <Text style={[styles.sectionTitle, { color: colors.primary, borderLeftColor: colors.primary }]}>Employment Details</Text>
+              <Text style={[styles.sectionTitle, { color: colors.primary, borderLeftColor: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employment Details')}</Text>
               <View style={styles.row}>
-                <View style={{ flex: 1 }}>{renderSelect(deptOptions, form.department_id, v => { updateField('department_id', v === 'none' ? null : v); updateField('position_id', null); }, 'Department')}</View>
-                <View style={{ flex: 1 }}>{renderSelect(positionOptions, form.position_id, v => updateField('position_id', v), 'Position')}</View>
+                <View style={{ flex: 1 }}>{renderSelect(deptOptions, form.department_id, v => { updateField('department_id', v === 'none' ? null : v); updateField('position_id', null); }, t('Department'))}</View>
+                <View style={{ flex: 1 }}>{renderSelect(positionOptions, form.position_id, v => updateField('position_id', v), t('Position'))}</View>
               </View>
 
-              <Text style={[styles.subSectionTitle, { color: colors.ink, borderLeftColor: colors.primary }]}>Financial & Schedule</Text>
+              <Text style={[styles.subSectionTitle, { color: colors.ink, borderLeftColor: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Financial & Schedule')}</Text>
               <View style={styles.row}>
-                <InputField label="Salary" required value={String(form.salary)} onChangeText={v => updateField('salary', Number(v) || 0)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" />
-                <View style={{ flex: 1 }}>{renderSelect(SHIFT_TYPES, form.shift_type, v => updateField('shift_type', v), 'Shift Type')}</View>
+                <InputField label={t('Salary')} required value={String(form.salary)} onChangeText={v => updateField('salary', Number(v) || 0)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" isRTL={isRTL} />
+                <View style={{ flex: 1 }}>{renderSelect(SHIFT_TYPES, form.shift_type, v => updateField('shift_type', v), t('Shift Type'))}</View>
               </View>
 
               {form.shift_type === 'HOURS' ? (
-                <InputField label="Work Hours" required value={String(form.work_hours)} onChangeText={v => updateField('work_hours', Number(v) || 0)} colors={colors} inputStyle={inputStyle} keyboardType="numeric" />
+                <InputField label={t('Work Hours')} required value={String(form.work_hours)} onChangeText={v => updateField('work_hours', Number(v) || 0)} colors={colors} inputStyle={inputStyle} keyboardType="numeric" isRTL={isRTL} />
               ) : (
                 <View style={styles.row}>
-                  <InputField label="Shift Start" required value={form.shift_start_time} onChangeText={v => updateField('shift_start_time', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} placeholder="09:00" />
-                  <InputField label="Shift End" required value={form.shift_end_time} onChangeText={v => updateField('shift_end_time', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} placeholder="17:00" />
+                  <InputField label={t('Shift Start')} required value={form.shift_start_time} onChangeText={v => updateField('shift_start_time', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} placeholder={t('09:00')} isRTL={isRTL} />
+                  <InputField label={t('Shift End')} required value={form.shift_end_time} onChangeText={v => updateField('shift_end_time', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} placeholder={t('17:00')} isRTL={isRTL} />
                 </View>
               )}
 
               <View style={styles.row}>
-                <InputField label="Yearly Days-Off" required value={String(form.yearly_day_offs)} onChangeText={v => updateField('yearly_day_offs', Number(v) || 0)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" />
-                <InputField label="Storage Quota (MB)" value={form.storage_quota === null ? '' : String(form.storage_quota)} onChangeText={v => updateField('storage_quota', v === '' ? null : Number(v))} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" placeholder="Leave empty for unlimited" />
+                <InputField label={t('Yearly Days-Off')} required value={String(form.yearly_day_offs)} onChangeText={v => updateField('yearly_day_offs', Number(v) || 0)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" isRTL={isRTL} />
+                <InputField label={t('Storage Quota (MB)')} value={form.storage_quota === null ? '' : String(form.storage_quota)} onChangeText={v => updateField('storage_quota', v === '' ? null : Number(v))} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="numeric" placeholder={t('Leave empty for unlimited')} isRTL={isRTL} />
               </View>
 
-              {renderMultiSelect(WEEKEND_DAYS, form.weekend_days, v => updateField('weekend_days', v), 'Weekend Days')}
+              {renderMultiSelect(WEEKEND_DAYS, form.weekend_days, v => updateField('weekend_days', v), t('Weekend Days'))}
             </View>
           )}
         </ScrollView>
@@ -231,16 +235,16 @@ export function CreateEmployeeModal({ visible, onClose, onSuccess }: Props) {
         <View style={styles.footer}>
           {step > 1 && (
             <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setStep(step - 1)}>
-              <Text style={[styles.footerBtnText, { color: colors.primary }]}>Back</Text>
+              <Text style={[styles.footerBtnText, { color: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Back')}</Text>
             </TouchableOpacity>
           )}
           {step < 2 ? (
             <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.primary }]} onPress={() => setStep(step + 1)}>
-              <Text style={[styles.footerBtnText, { color: '#FFF' }]}>Next</Text>
+              <Text style={[styles.footerBtnText, { color: '#FFF', textAlign: isRTL ? 'right' : 'left' }]}>{t('Next')}</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={saving}>
-              <Text style={[styles.footerBtnText, { color: '#FFF' }]}>{saving ? 'Saving...' : 'Save'}</Text>
+              <Text style={[styles.footerBtnText, { color: '#FFF', textAlign: isRTL ? 'right' : 'left' }]}>{saving ? t('Saving...') : t('Save')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -249,13 +253,13 @@ export function CreateEmployeeModal({ visible, onClose, onSuccess }: Props) {
   );
 }
 
-function InputField({ label, value, onChangeText, colors, inputStyle, containerStyle, placeholder, keyboardType, secureTextEntry, required }: {
-  label: string; value: string; onChangeText: (v: string) => void; colors: any; inputStyle: (f: boolean) => any; containerStyle?: any; placeholder?: string; keyboardType?: any; secureTextEntry?: boolean; required?: boolean;
+function InputField({ label, value, onChangeText, colors, inputStyle, containerStyle, placeholder, keyboardType, secureTextEntry, required, isRTL }: {
+  label: string; value: string; onChangeText: (v: string) => void; colors: any; inputStyle: (f: boolean) => any; containerStyle?: any; placeholder?: string; keyboardType?: any; secureTextEntry?: boolean; required?: boolean; isRTL: boolean;
 }) {
   const [focused, setFocused] = useState(false);
   return (
     <View style={[{ marginBottom: spacing.sm }, containerStyle]}>
-      <Text style={[styles.label, { color: colors.ink }]}>{label}{required ? ' *' : ''}</Text>
+      <Text style={[styles.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{label}{required ? ' *' : ''}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}

@@ -8,16 +8,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { API_URL } from '../config/api';
 import { useAuth } from '../context/AuthContext';
+import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { font, radii, spacing } from '../theme';
 
 export default function LoginScreen() {
   const { login } = useAuth();
   const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,7 +30,7 @@ export default function LoginScreen() {
 
   async function handleLogin() {
     if (!email.trim() || !password) {
-      setError('أدخل البريد الإلكتروني وكلمة المرور');
+      setError(t('Enter email and password'));
       return;
     }
 
@@ -35,7 +39,7 @@ export default function LoginScreen() {
     try {
       await login(email, password);
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : 'فشل تسجيل الدخول');
+      setError(loginError instanceof Error ? loginError.message : t('Login failed'));
     } finally {
       setLoading(false);
     }
@@ -57,8 +61,8 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.textCell }]}>تسجيل الدخول</Text>
-            <Text style={[styles.subtitle, { color: colors.textMuted }]}>أدخل بياناتك للوصول إلى حسابك</Text>
+            <Text style={[styles.title, { color: colors.textCell }]}>{t('Sign In')}</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t('Enter your details to access your account')}</Text>
           </View>
 
           <View style={styles.form}>
@@ -68,9 +72,9 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 keyboardType="email-address"
                 onChangeText={setEmail}
-                placeholder="البريد الإلكتروني"
+                placeholder={t('Email')}
                 placeholderTextColor={colors.textMuted}
-                style={[styles.input, { color: colors.ink }]}
+                style={[styles.input, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}
                 textContentType="emailAddress"
                 value={email}
               />
@@ -80,15 +84,15 @@ export default function LoginScreen() {
               <Text style={styles.inputIcon}>🔒</Text>
               <TextInput
                 onChangeText={setPassword}
-                placeholder="كلمة المرور"
+                placeholder={t('Password')}
                 placeholderTextColor={colors.textMuted}
                 secureTextEntry={secureEntry}
-                style={[styles.input, { color: colors.ink }]}
+                style={[styles.input, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}
                 textContentType="password"
                 value={password}
               />
               <TouchableOpacity onPress={() => setSecureEntry(!secureEntry)} style={styles.eyeBtn}>
-                <Text style={[styles.eyeText, { color: colors.primary }]}>{secureEntry ? 'إظهار' : 'إخفاء'}</Text>
+                <Text style={[styles.eyeText, { color: colors.primary }]}>{secureEntry ? t('Show') : t('Hide')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -98,11 +102,11 @@ export default function LoginScreen() {
               </View>
             ) : null}
 
-            <Button label="دخول" loading={loading} onPress={handleLogin} size="lg" />
+            <Button label={t('Login')} loading={loading} onPress={handleLogin} size="lg" />
           </View>
 
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: colors.textMuted }]}>Anmat - نظام إدارة المؤسسات</Text>
+            <Text style={[styles.footerText, { color: colors.textMuted }]}>Anmat - {t('Organization Management System')}</Text>
             <Text style={[styles.footerApi, { color: colors.textMuted }]}>{API_URL}</Text>
           </View>
         </View>
@@ -160,7 +164,6 @@ const styles = StyleSheet.create({
     fontSize: font.sizes.base,
     minHeight: 48,
     paddingHorizontal: spacing.sm,
-    textAlign: 'right',
   },
   inputIcon: {
     fontSize: 16,

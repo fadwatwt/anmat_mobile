@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Modal } from '../components/Modal';
 import { useTheme } from '../context/ThemeContext';
+import { useLocale } from '../context/LanguageContext';
 import { fetchDepartments, fetchEmployees, assignEmployeesToDepartment } from '../services/employees';
 import { font, radii, spacing } from '../theme';
 import type { Department, EmployeeDetailItem } from '../types';
@@ -15,6 +17,8 @@ type Props = {
 
 export function AssignDepartmentModal({ visible, onClose, onSuccess, initialEmployee }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const { isRTL } = useLocale();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<EmployeeDetailItem[]>([]);
   const [selectedDept, setSelectedDept] = useState('');
@@ -49,24 +53,24 @@ export function AssignDepartmentModal({ visible, onClose, onSuccess, initialEmpl
   };
 
   const handleSave = async () => {
-    if (!selectedDept) { Alert.alert('Error', 'Please select a department'); return; }
-    if (selectedEmps.length === 0) { Alert.alert('Error', 'Please select at least one employee'); return; }
+    if (!selectedDept) { Alert.alert(t('Error'), t('Please select a department')); return; }
+    if (selectedEmps.length === 0) { Alert.alert(t('Error'), t('Please select at least one employee')); return; }
     setSaving(true);
     try {
       await assignEmployeesToDepartment(selectedDept, selectedEmps);
       onSuccess?.();
       onClose();
     } catch (e: any) {
-      Alert.alert('Error', e?.data?.message || 'Failed to assign employees');
+      Alert.alert(t('Error'), e?.data?.message || t('Failed to assign employees'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal visible={visible} onClose={onClose} title={initialEmployee ? 'Assign Department' : 'Assign Department to Employees'} size="md">
+    <Modal visible={visible} onClose={onClose} title={initialEmployee ? t('Assign Department') : t('Assign Department to Employees')} size="md">
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={[s.label, { color: colors.ink }]}>Select Department <Text style={s.required}>*</Text></Text>
+        <Text style={[s.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Select Department')} <Text style={s.required}>*</Text></Text>
         <View style={s.chips}>
           {departments.map(d => {
             const active = selectedDept === d._id;
@@ -76,7 +80,7 @@ export function AssignDepartmentModal({ visible, onClose, onSuccess, initialEmpl
                 onPress={() => setSelectedDept(d._id)}
                 style={[s.chip, active && { backgroundColor: colors.primary }, { borderColor: colors.border }]}
               >
-                <Text style={[s.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink }]}>{d.name}</Text>
+                <Text style={[s.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{d.name}</Text>
               </TouchableOpacity>
             );
           })}
@@ -84,29 +88,29 @@ export function AssignDepartmentModal({ visible, onClose, onSuccess, initialEmpl
 
         {!initialEmployee && (
           <>
-            <Text style={[s.label, { color: colors.ink }]}>Select Employees <Text style={s.required}>*</Text></Text>
-            <Text style={s.hint}>(Only employees without department)</Text>
+            <Text style={[s.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Select Employees')} <Text style={s.required}>*</Text></Text>
+            <Text style={[s.hint, { textAlign: isRTL ? 'right' : 'left' }]}>{t('(Only employees without department)')}</Text>
             <View style={[s.empList, { borderColor: colors.border }]}>
               {employeesWithoutDept.length === 0 ? (
-                <Text style={s.empty}>No employees without department</Text>
+                <Text style={[s.empty, { textAlign: 'center' }]}>{t('No employees without department')}</Text>
               ) : (
                 employeesWithoutDept.map(emp => (
                   <TouchableOpacity key={emp._id} onPress={() => toggleEmployee(emp._id)} style={s.empRow}>
                     <View style={[s.checkbox, selectedEmps.includes(emp._id) && { backgroundColor: colors.primary, borderColor: colors.primary }]} />
-                    <Text style={[s.empName, { color: colors.ink }]}>{emp.user?.name || 'Unknown'}</Text>
-                    <Text style={s.empEmail}>{emp.user?.email}</Text>
+                    <Text style={[s.empName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{emp.user?.name || t('Unknown')}</Text>
+                    <Text style={[s.empEmail, { textAlign: isRTL ? 'right' : 'left' }]}>{emp.user?.email}</Text>
                   </TouchableOpacity>
                 ))
               )}
             </View>
             {selectedEmps.length > 0 && (
-              <Text style={s.selectedCount}>Selected: {selectedEmps.length} employee(s)</Text>
+              <Text style={[s.selectedCount, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Selected')}: {selectedEmps.length} {t('employee(s)')}</Text>
             )}
           </>
         )}
 
         <TouchableOpacity onPress={handleSave} disabled={saving} style={[s.btn, { backgroundColor: colors.primary }, saving && s.btnDisabled]}>
-          <Text style={s.btnText}>{saving ? 'Assigning...' : 'Assign Department'}</Text>
+          <Text style={[s.btnText, { textAlign: isRTL ? 'right' : 'left' }]}>{saving ? t('Assigning...') : t('Assign Department')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </Modal>

@@ -1,5 +1,7 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { font, radii, spacing } from '../theme';
 
@@ -25,16 +27,19 @@ type Props<T> = {
 export function Table<T>({
   data,
   columns,
-  emptyMessage = 'لا توجد بيانات',
+  emptyMessage: emptyMessageProp,
   keyExtractor,
   ListEmptyComponent,
   onRefresh,
   refreshing,
 }: Props<T>) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const { isRTL } = useLocale();
+  const emptyMessage = emptyMessageProp ?? t('No data');
 
   const renderHeader = () => (
-    <View style={[styles.headerRow, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+    <View style={[styles.headerRow, { backgroundColor: colors.background, borderBottomColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
       {columns.map((col) => (
         <View
           key={col.key}
@@ -46,7 +51,7 @@ export function Table<T>({
           <Text
             style={[
               styles.headerText,
-              { color: colors.textMuted },
+              { color: colors.textMuted, writingDirection: isRTL ? 'rtl' : 'ltr' },
               col.align === 'left' && styles.textLeft,
               col.align === 'center' && styles.textCenter,
               col.align === 'right' && styles.textRight,
@@ -60,7 +65,7 @@ export function Table<T>({
   );
 
   const renderItem = ({ item, index }: { item: T; index: number }) => (
-    <View style={[styles.row, { borderBottomColor: colors.border }]}>
+    <View style={[styles.row, { borderBottomColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
       {columns.map((col) => (
         <View
           key={col.key}
@@ -77,7 +82,7 @@ export function Table<T>({
               numberOfLines={2}
               style={[
                 styles.cellText,
-                { color: colors.textCell },
+                { color: colors.textCell, writingDirection: isRTL ? 'rtl' : 'ltr' },
                 col.align === 'left' && styles.textLeft,
                 col.align === 'center' && styles.textCenter,
                 col.align === 'right' && styles.textRight,
@@ -101,7 +106,7 @@ export function Table<T>({
         ListEmptyComponent={
           ListEmptyComponent || (
             <View style={styles.empty}>
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{emptyMessage}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{emptyMessage}</Text>
             </View>
           )
         }
@@ -121,7 +126,6 @@ const styles = StyleSheet.create({
   },
   cellText: {
     fontSize: font.sizes.sm,
-    writingDirection: 'rtl',
   },
   container: {
     borderWidth: 1,
@@ -134,7 +138,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: font.sizes.sm,
-    writingDirection: 'rtl',
   },
   headerCell: {
     alignItems: 'center',
@@ -145,19 +148,16 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     borderBottomWidth: 1,
-    flexDirection: 'row-reverse',
   },
   headerText: {
     fontSize: font.sizes.xs,
     fontWeight: font.weights.semibold,
-    writingDirection: 'rtl',
   },
   listContent: {
     paddingBottom: spacing.md,
   },
   row: {
     borderBottomWidth: 1,
-    flexDirection: 'row-reverse',
   },
   textCenter: {
     textAlign: 'center',

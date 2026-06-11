@@ -8,11 +8,19 @@ export type Project = {
   description?: string;
   status?: string;
   progress?: number;
+  start_date?: string;
   startDate?: string;
   due_date?: string;
   endDate?: string;
   department_id?: { name: string; _id: string };
+  department?: { name: string; _id: string };
+  assignees_ids?: string[];
   assignees?: { name: string; image?: string; _id: string }[];
+  manager_id?: string;
+  manager?: { _id: string; name: string; email?: string; avatar?: string };
+  overall_rating?: number;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type Department = {

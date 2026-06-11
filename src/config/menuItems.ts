@@ -24,139 +24,139 @@ import {
 } from 'lucide-react-native';
 
 export type MenuItemType = {
-  title: string;
+  titleKey: string;
   route: string;
   icon: typeof LayoutDashboard;
   allowedTo: ('Admin' | 'Subscriber' | 'Employee')[];
-  children?: { title: string; route: string }[];
+  children?: { titleKey: string; route: string }[];
 };
 
 export const menuItems: MenuItemType[] = [
   {
-    title: 'Dashboard',
+    titleKey: 'Dashboard',
     route: 'Dashboard',
     icon: LayoutDashboard,
     allowedTo: ['Admin', 'Subscriber', 'Employee'],
   },
   {
-    title: 'Subscriptions',
+    titleKey: 'Subscriptions',
     route: 'Subscriptions',
     icon: CreditCard,
     allowedTo: ['Subscriber'],
   },
   {
-    title: 'HR Management',
+    titleKey: 'HR Management',
     route: 'HR',
     icon: Users,
     allowedTo: ['Subscriber', 'Employee'],
     children: [
-      { title: 'Employees', route: 'HR_Employees' },
-      { title: 'Departments', route: 'HR_Departments' },
-      { title: 'Positions', route: 'HR_Positions' },
-      { title: 'Attendances', route: 'HR_Attendances' },
-      { title: 'Leaves', route: 'HR_Leaves' },
-      { title: 'Salary', route: 'HR_Salary' },
-      { title: 'Requests', route: 'HR_Requests' },
+      { titleKey: 'Employees', route: 'HR_Employees' },
+      { titleKey: 'Departments', route: 'HR_Departments' },
+      { titleKey: 'Positions', route: 'HR_Positions' },
+      { titleKey: 'Attendances', route: 'HR_Attendances' },
+      { titleKey: 'Leaves', route: 'HR_Leaves' },
+      { titleKey: 'Salary', route: 'HR_Salary' },
+      { titleKey: 'Requests', route: 'HR_Requests' },
     ],
   },
   {
-    title: 'Projects',
+    titleKey: 'Projects',
     route: 'Projects',
     icon: FolderKanban,
     allowedTo: ['Subscriber', 'Employee'],
   },
   {
-    title: 'Tasks',
+    titleKey: 'Tasks',
     route: 'Tasks',
     icon: CheckSquare,
     allowedTo: ['Subscriber', 'Employee'],
   },
   {
-    title: 'Attendance',
+    titleKey: 'Attendance',
     route: 'Attendance',
     icon: Calendar,
     allowedTo: ['Employee'],
   },
   {
-    title: 'Salary',
+    titleKey: 'Salary',
     route: 'Salary',
     icon: DollarSign,
     allowedTo: ['Employee'],
   },
   {
-    title: 'Short Leaves',
+    titleKey: 'Short Leaves',
     route: 'Leaves',
     icon: Clock,
     allowedTo: ['Employee'],
   },
   {
-    title: 'Requests',
+    titleKey: 'Requests',
     route: 'Requests',
     icon: ClipboardList,
     allowedTo: ['Employee'],
   },
   {
-    title: 'Agenda',
+    titleKey: 'Agenda',
     route: 'Agenda',
     icon: BookOpen,
     allowedTo: ['Subscriber', 'Employee'],
   },
   {
-    title: 'Analytics',
+    titleKey: 'Analytics',
     route: 'Analytics',
     icon: BarChart3,
     allowedTo: ['Admin', 'Subscriber', 'Employee'],
   },
   {
-    title: 'Conversations',
+    titleKey: 'Conversations',
     route: 'Conversations',
     icon: MessageSquare,
     allowedTo: ['Subscriber', 'Employee'],
   },
   {
-    title: 'Social Media',
+    titleKey: 'Social Media',
     route: 'SocialMedia',
     icon: Share2,
     allowedTo: ['Subscriber', 'Employee'],
   },
   {
-    title: 'AI Assistant',
+    titleKey: 'AI Assistant',
     route: 'AI',
     icon: Bot,
     allowedTo: ['Admin', 'Subscriber', 'Employee'],
   },
   {
-    title: 'Subscribers',
+    titleKey: 'Subscribers',
     route: 'Subscribers',
     icon: Tag,
     allowedTo: ['Admin'],
   },
   {
-    title: 'Industries',
+    titleKey: 'Industries',
     route: 'Industries',
     icon: Building2,
     allowedTo: ['Admin'],
   },
   {
-    title: 'System Admins',
+    titleKey: 'System Admins',
     route: 'SystemAdmins',
     icon: UserCheck,
     allowedTo: ['Admin'],
   },
   {
-    title: 'Support Tickets',
+    titleKey: 'Support Tickets',
     route: 'SupportTickets',
     icon: Ticket,
     allowedTo: ['Admin', 'Subscriber'],
   },
   {
-    title: 'Money Methods',
+    titleKey: 'Money Methods',
     route: 'MoneyMethods',
     icon: Wallet,
     allowedTo: ['Admin'],
   },
   {
-    title: 'Settings',
+    titleKey: 'Settings',
     route: 'Settings',
     icon: Settings,
     allowedTo: ['Admin', 'Subscriber', 'Employee'],

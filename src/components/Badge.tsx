@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { font, radii } from '../theme';
 
@@ -12,6 +13,7 @@ type Props = {
 
 export function Badge({ label, size = 'sm', variant = 'default' }: Props) {
   const { colors } = useTheme();
+  const { isRTL } = useLocale();
 
   const variantStyles: Record<BadgeVariant, { bg: string; text: string; border: string }> = {
     danger: { bg: colors.dangerBg, border: '#FECDD3', text: colors.dangerText },
@@ -31,7 +33,7 @@ export function Badge({ label, size = 'sm', variant = 'default' }: Props) {
         size === 'md' && styles.md,
       ]}
     >
-      <Text style={[styles.text, { color: style.text }]}>{label}</Text>
+      <Text style={[styles.text, { color: style.text, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{label}</Text>
     </View>
   );
 }
@@ -51,6 +53,5 @@ const styles = StyleSheet.create({
   text: {
     fontSize: font.sizes.xs,
     fontWeight: font.weights.semibold,
-    writingDirection: 'rtl',
   },
 });

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { API_URL, REQUEST_TIMEOUT } from '../config/api';
 
 let authToken: string | null = null;
+let currentLanguage: string = 'en';
 
 export const http = axios.create({
   baseURL: API_URL,
@@ -13,12 +14,16 @@ http.interceptors.request.use((config) => {
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
   }
-
+  config.headers['Accept-Language'] = currentLanguage;
   return config;
 });
 
 export function setAuthToken(token: string | null) {
   authToken = token;
+}
+
+export function setLanguageHeader(lang: string) {
+  currentLanguage = lang;
 }
 
 export function extractErrorMessage(error: unknown) {

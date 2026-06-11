@@ -1,92 +1,174 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Edit3, Trash2 } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
 import { Badge } from '../components/Badge';
-import { EmptyState } from '../components/EmptyState';
+import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
-import { extractErrorMessage } from '../lib/http';
-import { completeTask, fetchTasks } from '../services/tasks';
-import { font, radii, spacing } from '../theme';
+import { ListScreen } from '../generators/ListScreen';
+import { fetchTasks, deleteTask } from '../services/tasks';
 import { TaskItem } from '../types';
+import { font } from '../theme';
 
-const priorityMap: Record<string, { label: string; variant: 'danger' | 'warning' | 'info' | 'default' }> = {
-  urgent: { label: 'عاجل', variant: 'danger' },
-  high: { label: 'مرتفع', variant: 'danger' },
-  medium: { label: 'متوسط', variant: 'info' },
-  low: { label: 'منخفض', variant: 'default' },
+const priorityVariant: Record<string, 'danger' | 'warning' | 'info' | 'default'> = {
+  urgent: 'danger',
+  high: 'danger',
+  medium: 'info',
+  low: 'default',
 };
 
-function getPriority(key?: string) {
-  if (!key) return { label: 'عادي', variant: 'default' as const };
-  return priorityMap[key.toLowerCase()] || { label: key, variant: 'default' as const };
-}
+const priorityLabels: Record<string, string> = {
+  urgent: 'Urgent',
+  high: 'High',
+  medium: 'Medium',
+  low: 'Low',
+};
+
+const statusVariant: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'default'> = {
+  open: 'default',
+  pending: 'warning',
+  'in-progress': 'info',
+  completed: 'success',
+  done: 'success',
+  rejected: 'danger',
+  cancelled: 'danger',
+  delayed: 'warning',
+};
+
+const statusLabels: Record<string, string> = {
+  open: 'Open',
+  pending: 'Pending',
+  'in-progress': 'In Progress',
+  completed: 'Completed',
+  done: 'Done',
+  rejected: 'Rejected',
+  cancelled: 'Cancelled',
+  delayed: 'Delayed',
+};
+
+const fetchData = async (_params: any) => {
+  const data = await fetchTasks();
+  return { data, total: data.length };
+};
 
 export default function TasksScreen() {
+  const { t } = useTranslation();
   const { colors } = useTheme();
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const { isRTL } = useLocale();
+  const navigation = useNavigation<any>();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try { setTasks(await fetchTasks()); } catch (e) { setError(extractErrorMessage(e)); } finally { setLoading(false); }
-  }, []);
+  const handleDelete = (item: TaskItem) => {
+    Alert.alert(t('Delete'), t('Are you sure?'), [
+      { text: t('Cancel'), style: 'cancel' },
+      { text: t('Delete'), style: 'destructive', onPress: async () => { try { await deleteTask(item._id); } catch {} } },
+    ]);
+  };
 
-  useEffect(() => { load(); }, [load]);
-
-  async function handleComplete(id: string) {
-    setActiveId(id);
-    try { await completeTask(id); await load(); } catch (e) { setError(extractErrorMessage(e)); } finally { setActiveId(null); }
-  }
+  const columns = [
+    {
+      key: 'title',
+      titleKey: 'Task',
+      width: 200,
+      render: (item: TaskItem) => (
+        <View style={{ gap: 2 }}>
+          <Text style={{ color: colors.ink, fontWeight: font.weights.semibold, fontSize: font.sizes.sm, textAlign: isRTL ? 'right' : 'left' }} numberOfLines={1}>
+            {item.title || item.name || '--'}
+          </Text>
+          {item.description && (
+            <Text style={{ color: colors.textMuted, fontSize: font.sizes.xs, textAlign: isRTL ? 'right' : 'left' }} numberOfLines={1}>
+              {item.description}
+            </Text>
+          )}
+        </View>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'project',
+      titleKey: 'Project',
+      width: 110,
+      render: (item: TaskItem) => (
+        <Text style={{ color: colors.ink, fontSize: font.sizes.sm, textAlign: isRTL ? 'right' : 'left' }} numberOfLines={1}>
+          {item.project?.name || '--'}
+        </Text>
+      ),
+    },
+    {
+      key: 'department',
+      titleKey: 'Department',
+      width: 130,
+      render: (item: TaskItem) => (
+        <Text style={{ color: colors.ink, fontSize: font.sizes.sm, textAlign: isRTL ? 'right' : 'left' }} numberOfLines={1}>
+          {item.department?.name || '--'}
+        </Text>
+      ),
+    },
+    {
+      key: 'assignee',
+      titleKey: 'Assignee',
+      width: 130,
+      render: (item: TaskItem) => (
+        <Text style={{ color: colors.ink, fontSize: font.sizes.sm, textAlign: isRTL ? 'right' : 'left' }} numberOfLines={1}>
+          {item.assignee?.name || '--'}
+        </Text>
+      ),
+    },
+    {
+      key: 'priority',
+      titleKey: 'Priority',
+      width: 90,
+      render: (item: TaskItem) => {
+        const p = (item.priority || '').toLowerCase();
+        return <Badge label={t(priorityLabels[p] || item.priority || '--')} variant={priorityVariant[p] || 'default'} />;
+      },
+    },
+    {
+      key: 'status',
+      titleKey: 'Status',
+      width: 110,
+      render: (item: TaskItem) => {
+        const s = (item.status || '').toLowerCase();
+        return <Badge label={t(statusLabels[s] || item.status || '--')} variant={statusVariant[s] || 'default'} />;
+      },
+    },
+    {
+      key: 'progress',
+      titleKey: 'Progress',
+      width: 100,
+      render: (item: TaskItem) => (
+        <Text style={{ color: colors.ink, fontWeight: font.weights.semibold, fontSize: font.sizes.sm, textAlign: 'center' }}>
+          {item.progress ?? 0}%
+        </Text>
+      ),
+    },
+    {
+      key: 'due_date',
+      titleKey: 'Due Date',
+      width: 100,
+      render: (item: TaskItem) => (
+        <Text style={{ color: colors.textMuted, fontSize: font.sizes.xs, textAlign: isRTL ? 'right' : 'left' }}>
+          {item.due_date || '--'}
+        </Text>
+      ),
+    },
+  ];
 
   return (
-    <View style={styles.container}>
-      {loading && !tasks.length ? <ActivityIndicator color={colors.primary} /> : null}
-      {error ? <EmptyState title="خطأ" message={error} icon="⚠️" /> : null}
-      <FlatList
-        contentContainerStyle={styles.list}
-        data={tasks}
-        keyExtractor={(item) => item._id}
-        ListEmptyComponent={!loading && !error ? <EmptyState title="لا توجد مهام" message="ستظهر المهام هنا" icon="📋" /> : null}
-        onRefresh={load}
-        refreshing={loading}
-        renderItem={({ item }) => {
-          const title = item.title || item.name || 'مهمة بدون عنوان';
-          const isDone = item.status?.toLowerCase() === 'completed';
-          const priority = getPriority(item.priority);
-          return (
-            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <View style={styles.cardTop}>
-                <Text style={[styles.taskTitle, { color: colors.ink }]} numberOfLines={2}>{title}</Text>
-                <Badge label={isDone ? 'مكتملة' : item.status || 'جديدة'} variant={isDone ? 'success' : 'info'} />
-              </View>
-              {item.description ? <Text style={[styles.desc, { color: colors.textMuted }]} numberOfLines={2}>{item.description}</Text> : null}
-              <View style={styles.cardBottom}>
-                <Badge label={priority.label} variant={priority.variant} />
-                {!isDone ? (
-                  <Pressable disabled={activeId === item._id} onPress={() => handleComplete(item._id)} style={({ pressed }) => [styles.completeBtn, { backgroundColor: colors.primary }, pressed && { opacity: 0.85 }]}>
-                    <Text style={styles.completeText}>{activeId === item._id ? '...' : 'إنهاء'}</Text>
-                  </Pressable>
-                ) : <Text style={[styles.doneText, { color: colors.successText }]}>✓ تم</Text>}
-              </View>
-            </View>
-          );
-        }}
-      />
-    </View>
+    <ListScreen
+      columns={columns}
+      fetchData={fetchData}
+      keyExtractor={(item: TaskItem) => item._id}
+      searchable
+      searchPlaceholderKey="Search tasks..."
+      createLabelKey="New Task"
+      onCreate={() => navigation.navigate('TaskCreate')}
+      onRowPress={(item: TaskItem) => navigation.navigate('TaskDetail', { task: item })}
+      rowActions={(item: TaskItem) => [
+        { label: t('Edit'), icon: <Edit3 size={16} color="#375DFB" />, onPress: () => navigation.navigate('TaskCreate', { task: item }) },
+        { label: t('Delete'), icon: <Trash2 size={16} color="#DF1C41" />, onPress: () => handleDelete(item), destructive: true },
+      ]}
+      emptyTitleKey="No tasks found"
+      emptyMessageKey="No tasks to display"
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: radii.xxl, gap: spacing.md, padding: spacing.md },
-  cardBottom: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-  cardTop: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.sm, justifyContent: 'space-between' },
-  completeBtn: { borderRadius: radii.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  completeText: { color: '#FFF', fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
-  container: { flex: 1 },
-  desc: { fontSize: font.sizes.sm, textAlign: 'right' },
-  doneText: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
-  list: { gap: spacing.md, padding: spacing.md },
-  taskTitle: { flex: 1, fontSize: font.sizes.base, fontWeight: font.weights.bold, textAlign: 'right' },
-});

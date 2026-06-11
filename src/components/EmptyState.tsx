@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { font, radii, spacing } from '../theme';
 
@@ -10,12 +11,13 @@ type Props = {
 
 export function EmptyState({ title, message, icon }: Props) {
   const { colors } = useTheme();
+  const { isRTL } = useLocale();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {icon ? <Text style={styles.icon}>{icon}</Text> : null}
-      <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
-      <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text>
+      <Text style={[styles.title, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{title}</Text>
+      <Text style={[styles.message, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{message}</Text>
     </View>
   );
 }

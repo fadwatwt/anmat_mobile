@@ -8,22 +8,69 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronDown, X } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { font, radii, spacing } from '../theme';
 import { menuItems, MenuItemType } from '../config/menuItems';
 
+const routeToScreen: Record<string, string> = {
+  Dashboard: 'DashboardMain',
+  Subscriptions: 'Subscriptions',
+  HR: 'HRMain',
+  HR_Employees: 'HRMain',
+  HR_Departments: 'HRDepartments',
+  HR_Positions: 'HRPositions',
+  HR_Attendances: 'HRAttendances',
+  HR_Leaves: 'HRLeaves',
+  HR_Salary: 'HRSalary',
+  HR_Requests: 'HRRequests',
+  HR_EmployeeDetail: 'EmployeeDetail',
+  HR_CreateEmployee: 'CreateEmployee',
+  HR_EditEmployee: 'EditEmployee',
+  Projects: 'ProjectsMain',
+  Tasks: 'TasksMain',
+  Attendance: 'Attendance',
+  Salary: 'Salary',
+  Leaves: 'Leaves',
+  Requests: 'Requests',
+  Agenda: 'Agenda',
+  Analytics: 'Analytics',
+  Conversations: 'Conversations',
+  SocialMedia: 'SocialMedia',
+  AI: 'AI',
+  Subscribers: 'Subscribers',
+  Industries: 'Industries',
+  SystemAdmins: 'SystemAdmins',
+  SupportTickets: 'SupportTickets',
+  MoneyMethods: 'MoneyMethods',
+  Settings: 'Settings',
+};
+
 type Props = {
-  currentRoute: string;
-  onNavigate: (route: string) => void;
   onClose: () => void;
 };
 
-export function Sidebar({ currentRoute, onNavigate, onClose }: Props) {
+export function Sidebar({ onClose }: Props) {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  const { t } = useTranslation();
+  const navigation = useNavigation<any>();
   const userType = user?.type as 'Admin' | 'Subscriber' | 'Employee';
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+  const currentScreenName = useNavigationState(state => {
+    const findRoute = (s: any): string => {
+      if (!s || !s.routes) return '';
+      const route = s.routes[s.index || 0];
+      if (route.state) return findRoute(route.state);
+      return route.name;
+    };
+    return findRoute(state);
+  });
 
   const toggleExpand = (route: string) => {
     setExpandedItems((prev) => ({ ...prev, [route]: !prev[route] }));
@@ -35,19 +82,32 @@ export function Sidebar({ currentRoute, onNavigate, onClose }: Props) {
 
   const filteredItems = menuItems.filter(isItemVisible);
 
+  const handleNavigate = (route: string) => {
+    const screen = routeToScreen[route];
+    if (screen) {
+      navigation.navigate(screen);
+    }
+    onClose();
+  };
+
+  const isRouteActive = (route: string) => {
+    const screen = routeToScreen[route];
+    return screen === currentScreenName;
+  };
+
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface }]} edges={['top', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface }]} edges={['top']}>
       <View style={[styles.logoSection, { borderBottomColor: colors.border }]}>
-        <View style={styles.logoRow}>
+        <View style={[styles.logoRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <View style={[styles.logoCircle, { backgroundColor: colors.primary }]}>
             <Text style={styles.logoText}>A</Text>
           </View>
           <View style={styles.logoInfo}>
-            <Text style={[styles.logoTitle, { color: colors.ink }]} numberOfLines={1}>
-              Employees Management
+            <Text style={[styles.logoTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+              {t('Employees Management')}
             </Text>
-            <Text style={[styles.logoSubtitle, { color: colors.textMuted }]} numberOfLines={1}>
-              Employees & HR Management
+            <Text style={[styles.logoSubtitle, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+              {t('Employees & HR Management')}
             </Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -60,23 +120,22 @@ export function Sidebar({ currentRoute, onNavigate, onClose }: Props) {
         <View style={styles.menuList}>
           {filteredItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentRoute === item.route;
+            const isActive = isRouteActive(item.route);
             const isExpanded = expandedItems[item.route] || false;
             const hasChildren = item.children && item.children.length > 0;
             const isChildActive = item.children?.some(
-              (child) => currentRoute === child.route,
+              (child) => isRouteActive(child.route),
             );
 
             return (
               <View key={item.route}>
                 <TouchableOpacity
-                  style={styles.menuItem}
+                  style={[styles.menuItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
                   onPress={() => {
                     if (hasChildren) {
                       toggleExpand(item.route);
                     } else {
-                      onNavigate(item.route);
-                      onClose();
+                      handleNavigate(item.route);
                     }
                   }}
                 >
@@ -90,7 +149,7 @@ export function Sidebar({ currentRoute, onNavigate, onClose }: Props) {
                   <View
                     style={[
                       styles.menuItemContent,
-                      { backgroundColor: 'transparent' },
+                      { backgroundColor: 'transparent', flexDirection: isRTL ? 'row-reverse' : 'row' },
                       (isActive || isChildActive) && { backgroundColor: colors.primaryLight },
                     ]}
                   >
@@ -102,12 +161,12 @@ export function Sidebar({ currentRoute, onNavigate, onClose }: Props) {
                     <Text
                       style={[
                         styles.menuItemText,
-                        { color: colors.textMuted },
+                        { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' },
                         isActive && { color: colors.primary, fontWeight: font.weights.semibold },
                       ]}
                       numberOfLines={1}
                     >
-                      {item.title}
+                      {t(item.titleKey)}
                     </Text>
                     {hasChildren && (
                       <ChevronDown
@@ -120,10 +179,10 @@ export function Sidebar({ currentRoute, onNavigate, onClose }: Props) {
                 </TouchableOpacity>
 
                 {hasChildren && isExpanded && (
-                  <View style={[styles.childrenContainer, { backgroundColor: colors.primaryLight }]}>
+                  <View style={[styles.childrenContainer, { backgroundColor: colors.primaryLight }, isRTL ? { marginRight: spacing.lg + spacing.md, marginLeft: spacing.md } : { marginLeft: spacing.lg + spacing.md, marginRight: spacing.md }]}>
                     <View style={styles.childrenInner}>
                       {item.children!.map((child) => {
-                        const isChildItemActive = currentRoute === child.route;
+                        const isChildItemActive = isRouteActive(child.route);
                         return (
                           <TouchableOpacity
                             key={child.route}
@@ -131,20 +190,17 @@ export function Sidebar({ currentRoute, onNavigate, onClose }: Props) {
                               styles.childItem,
                               isChildItemActive && { backgroundColor: colors.surface },
                             ]}
-                            onPress={() => {
-                              onNavigate(child.route);
-                              onClose();
-                            }}
+                            onPress={() => handleNavigate(child.route)}
                           >
                             <Text
                               style={[
                                 styles.childText,
-                                { color: colors.textMuted },
+                                { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' },
                                 isChildItemActive && { color: colors.primary, fontWeight: font.weights.semibold },
                               ]}
                               numberOfLines={1}
                             >
-                              {child.title}
+                              {t(child.titleKey)}
                             </Text>
                           </TouchableOpacity>
                         );
@@ -177,8 +233,6 @@ const styles = StyleSheet.create({
   },
   childrenContainer: {
     borderRadius: radii.lg,
-    marginLeft: spacing.lg + spacing.md,
-    marginRight: spacing.md,
     marginBottom: spacing.xs,
     padding: spacing.sm,
   },
@@ -229,14 +283,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuItem: {
-    flexDirection: 'row',
     gap: 4,
   },
   menuItemContent: {
     alignItems: 'center',
     borderRadius: radii.lg,
     flex: 1,
-    flexDirection: 'row',
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,

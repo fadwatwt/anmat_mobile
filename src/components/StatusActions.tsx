@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MoreHorizontal } from 'lucide-react-native';
+import { useLocale } from '../context/LanguageContext';
 import { font, radii, spacing } from '../theme';
 
 export type ActionItem = {
@@ -16,6 +17,7 @@ type Props = {
 
 export function StatusActions({ actions }: Props) {
   const [visible, setVisible] = useState(false);
+  const { isRTL } = useLocale();
 
   return (
     <View>
@@ -33,7 +35,7 @@ export function StatusActions({ actions }: Props) {
                 onPress={() => { setVisible(false); action.onPress(); }}
               >
                 {action.icon && <View style={styles.menuIcon}>{action.icon}</View>}
-                <Text style={[styles.menuText, action.destructive && { color: '#DF1C41' }]}>
+                <Text style={[styles.menuText, action.destructive && { color: '#DF1C41' }, { textAlign: isRTL ? 'right' : 'left' }]}>
                   {action.label}
                 </Text>
               </TouchableOpacity>

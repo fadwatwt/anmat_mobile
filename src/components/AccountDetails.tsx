@@ -1,4 +1,5 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { useLocale } from '../context/LanguageContext';
 import { font, radii } from '../theme';
 
 type Props = {
@@ -8,13 +9,14 @@ type Props = {
 };
 
 export function AccountDetails({ name, role, imageUrl }: Props) {
+  const { isRTL } = useLocale();
   const avatarUrl = imageUrl || `https://ui-avatars.com/api/?name=${name || 'User'}&background=random`;
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
       <Image source={{ uri: avatarUrl }} style={styles.avatar} />
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>{name || 'Unknown'}</Text>
-        <Text style={styles.role} numberOfLines={1}>{role || '—'}</Text>
+        <Text style={[styles.name, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{name || 'Unknown'}</Text>
+        <Text style={[styles.role, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{role || '—'}</Text>
       </View>
     </View>
   );

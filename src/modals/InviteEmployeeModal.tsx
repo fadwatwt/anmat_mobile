@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Check, Copy } from 'lucide-react-native';
 import { Modal } from '../components/Modal';
 import { useTheme } from '../context/ThemeContext';
+import { useLocale } from '../context/LanguageContext';
 import { inviteEmployee } from '../services/employees';
 import { font, radii, spacing } from '../theme';
 import type { InvitationData } from '../types';
@@ -14,6 +16,8 @@ type Props = {
 
 export function InviteEmployeeModal({ visible, onClose }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const { isRTL } = useLocale();
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [invitation, setInvitation] = useState<InvitationData | null>(null);
@@ -28,7 +32,7 @@ export function InviteEmployeeModal({ visible, onClose }: Props) {
       const data = await inviteEmployee(email.trim());
       setInvitation(data);
     } catch (e: any) {
-      setError(e?.data?.message || e?.message || 'Failed to send invitation');
+      setError(e?.data?.message || e?.message || t('Failed to send invitation'));
     } finally {
       setSending(false);
     }
@@ -53,15 +57,15 @@ export function InviteEmployeeModal({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} onClose={handleClose} title="Invite New Employee" size="sm">
+    <Modal visible={visible} onClose={handleClose} title={t('Invite New Employee')} size="sm">
       {!invitation ? (
         <View style={s.form}>
-          {error ? <Text style={s.error}>{error}</Text> : null}
-          <Text style={[s.label, { color: colors.ink }]}>Email</Text>
+          {error ? <Text style={[s.error, { textAlign: isRTL ? 'right' : 'left' }]}>{error}</Text> : null}
+          <Text style={[s.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Email')}</Text>
           <TextInput
             value={email}
             onChangeText={setEmail}
-            placeholder="Enter employee email"
+            placeholder={t('Enter employee email')}
             placeholderTextColor={colors.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -72,7 +76,7 @@ export function InviteEmployeeModal({ visible, onClose }: Props) {
             disabled={sending || !email.trim()}
             style={[s.btn, { backgroundColor: colors.primary }, (sending || !email.trim()) && s.btnDisabled]}
           >
-            <Text style={s.btnText}>{sending ? 'Sending...' : 'Invite'}</Text>
+            <Text style={[s.btnText, { textAlign: isRTL ? 'right' : 'left' }]}>{sending ? t('Sending...') : t('Invite')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -80,25 +84,25 @@ export function InviteEmployeeModal({ visible, onClose }: Props) {
           <View style={s.iconWrap}>
             <View style={s.checkCircle}><Check size={36} color="#10B981" strokeWidth={2.5} /></View>
           </View>
-          <Text style={s.successTitle}>Invitation Sent Successfully</Text>
-          <Text style={s.successEmail}>{invitation.email}</Text>
+          <Text style={[s.successTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Invitation Sent Successfully')}</Text>
+          <Text style={[s.successEmail, { textAlign: isRTL ? 'right' : 'left' }]}>{invitation.email}</Text>
           {invitation.organization?.name && (
-            <Text style={s.orgName}>Organization: {invitation.organization.name}</Text>
+            <Text style={[s.orgName, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Organization')}: {invitation.organization.name}</Text>
           )}
           <View style={s.linkBox}>
-            <Text style={s.linkLabel}>Registration URL</Text>
+            <Text style={[s.linkLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Registration URL')}</Text>
             <View style={s.linkRow}>
               <View style={[s.linkDisplay, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <Text style={[s.linkText, { color: colors.ink }]} numberOfLines={1}>{invitation.link}</Text>
+                <Text style={[s.linkText, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{invitation.link}</Text>
               </View>
               <TouchableOpacity onPress={handleCopy} style={[s.copyBtn, { backgroundColor: copied ? '#10B981' : colors.primary }]}>
                 {copied ? <Check size={18} color="#FFF" /> : <Copy size={18} color="#FFF" />}
-                <Text style={s.copyText}>{copied ? 'Copied!' : 'Copy URL'}</Text>
+                <Text style={[s.copyText, { textAlign: isRTL ? 'right' : 'left' }]}>{copied ? t('Copied!') : t('Copy URL')}</Text>
               </TouchableOpacity>
             </View>
           </View>
           <TouchableOpacity onPress={handleClose} style={[s.btn, { backgroundColor: colors.primary }]}>
-            <Text style={s.btnText}>Done</Text>
+            <Text style={[s.btnText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Done')}</Text>
           </TouchableOpacity>
         </View>
       )}

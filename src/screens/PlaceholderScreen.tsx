@@ -1,24 +1,30 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLocale } from '../context/LanguageContext';
 import { font, radii, spacing } from '../theme';
 
 type Props = {
-  title: string;
+  titleKey?: string;
+  title?: string;
   icon?: string;
 };
 
-export default function PlaceholderScreen({ title, icon }: Props) {
+export default function PlaceholderScreen({ titleKey, title, icon }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  const displayTitle = titleKey ? t(titleKey) : title || '';
 
   return (
     <View style={[styles.container]}>
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Text style={styles.icon}>{icon || '🚧'}</Text>
-        <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>هذه الصفحة قيد التطوير</Text>
-        <Text style={[styles.userType, { color: colors.textMuted }]}>نوع المستخدم: {user?.type}</Text>
+        <Text style={[styles.title, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{displayTitle}</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('This page is under development')}</Text>
+        <Text style={[styles.userType, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('User type: ')}{user?.type}</Text>
       </View>
     </View>
   );

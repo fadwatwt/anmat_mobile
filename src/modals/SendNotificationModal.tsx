@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Bell, Info, AlertTriangle } from 'lucide-react-native';
 import { Modal } from '../components/Modal';
 import { useTheme } from '../context/ThemeContext';
+import { useLocale } from '../context/LanguageContext';
 import { fetchEmployees, fetchNotificationTypes, sendNotification, fetchDepartments } from '../services/employees';
 import { font, radii, spacing } from '../theme';
 import type { EmployeeDetailItem, NotificationType } from '../types';
@@ -26,6 +28,8 @@ type Props = {
 
 export function SendNotificationModal({ visible, onClose }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const { isRTL } = useLocale();
   const [types, setTypes] = useState<NotificationType[]>([]);
   const [employees, setEmployees] = useState<EmployeeDetailItem[]>([]);
   const [selectedType, setSelectedType] = useState('');
@@ -46,9 +50,9 @@ export function SendNotificationModal({ visible, onClose }: Props) {
   }, [visible]);
 
   const handleSend = async () => {
-    if (!selectedType) { Alert.alert('Error', 'Please select a notification type'); return; }
-    if (!title.trim()) { Alert.alert('Error', 'Please enter a title'); return; }
-    if (!message.trim()) { Alert.alert('Error', 'Please enter a message'); return; }
+    if (!selectedType) { Alert.alert(t('Error'), t('Please select a notification type')); return; }
+    if (!title.trim()) { Alert.alert(t('Error'), t('Please enter a title')); return; }
+    if (!message.trim()) { Alert.alert(t('Error'), t('Please enter a message')); return; }
 
     setSending(true);
     try {
@@ -62,7 +66,7 @@ export function SendNotificationModal({ visible, onClose }: Props) {
       });
       onClose();
     } catch (e: any) {
-      Alert.alert('Error', e?.data?.message || 'Failed to send notification');
+      Alert.alert(t('Error'), e?.data?.message || t('Failed to send notification'));
     } finally {
       setSending(false);
     }
@@ -87,9 +91,9 @@ export function SendNotificationModal({ visible, onClose }: Props) {
   }));
 
   return (
-    <Modal visible={visible} onClose={onClose} title="Send Notification" size="md">
+    <Modal visible={visible} onClose={onClose} title={t('Send Notification')} size="md">
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={[s.label, { color: colors.ink }]}>Notification Type <Text style={s.required}>*</Text></Text>
+        <Text style={[s.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Notification Type')} <Text style={s.required}>*</Text></Text>
         <View style={s.typeRow}>
           {typeOptions.map(type => (
             <TouchableOpacity
@@ -100,43 +104,43 @@ export function SendNotificationModal({ visible, onClose }: Props) {
               ]}
             >
               {type.icon}
-              <Text style={[s.typeChipText, selectedType === type.id && { color: colors.primary }]}>{type.name}</Text>
+              <Text style={[s.typeChipText, selectedType === type.id && { color: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{type.name}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={[s.label, { color: colors.ink }]}>Employees</Text>
+        <Text style={[s.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employees')}</Text>
         <View style={[s.empList, { borderColor: colors.border }]}>
           <TouchableOpacity onPress={() => toggleEmployee('all')} style={s.empRow}>
             <View style={[s.checkbox, selectedEmployees.includes('all') && { backgroundColor: colors.primary, borderColor: colors.primary }]} />
-            <Text style={[s.empName, { color: colors.ink }]}>All Employees</Text>
+            <Text style={[s.empName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('All Employees')}</Text>
           </TouchableOpacity>
           {employees.slice(0, 30).map(emp => {
             const eid = emp.user_id;
             return (
               <TouchableOpacity key={eid} onPress={() => toggleEmployee(eid)} style={s.empRow}>
                 <View style={[s.checkbox, selectedEmployees.includes(eid) && { backgroundColor: colors.primary, borderColor: colors.primary }]} />
-                <Text style={[s.empName, { color: colors.ink }]}>{emp.user?.name || 'Unknown'}</Text>
-                <Text style={s.empEmail}>{emp.user?.email}</Text>
+                <Text style={[s.empName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{emp.user?.name || t('Unknown')}</Text>
+                <Text style={[s.empEmail, { textAlign: isRTL ? 'right' : 'left' }]}>{emp.user?.email}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        <Text style={[s.label, { color: colors.ink }]}>Title <Text style={s.required}>*</Text></Text>
+        <Text style={[s.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Title')} <Text style={s.required}>*</Text></Text>
         <TextInput
           value={title}
           onChangeText={setTitle}
-          placeholder="Enter notification title..."
+          placeholder={t('Enter notification title...')}
           placeholderTextColor={colors.textMuted}
           style={[s.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.ink }]}
         />
 
-        <Text style={[s.label, { color: colors.ink }]}>Message <Text style={s.required}>*</Text></Text>
+        <Text style={[s.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Message')} <Text style={s.required}>*</Text></Text>
         <TextInput
           value={message}
           onChangeText={setMessage}
-          placeholder="Enter message..."
+          placeholder={t('Enter message...')}
           placeholderTextColor={colors.textMuted}
           multiline
           numberOfLines={4}
@@ -144,7 +148,7 @@ export function SendNotificationModal({ visible, onClose }: Props) {
         />
 
         <TouchableOpacity onPress={handleSend} disabled={sending} style={[s.btn, { backgroundColor: colors.primary }, sending && s.btnDisabled]}>
-          <Text style={s.btnText}>{sending ? 'Sending...' : 'Send'}</Text>
+          <Text style={[s.btnText, { textAlign: isRTL ? 'right' : 'left' }]}>{sending ? t('Sending...') : t('Send')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </Modal>

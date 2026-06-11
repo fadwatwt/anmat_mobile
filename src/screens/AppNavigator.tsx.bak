@@ -20,37 +20,37 @@ import { EmployeeDetailScreen } from './EmployeeDetailScreen';
 import { CreateEmployeeScreen } from './CreateEmployeeScreen';
 import { EditEmployeeScreen } from './EditEmployeeScreen';
 
-const screens: Record<string, { title: string; icon: string }> = {
-  Dashboard: { title: 'Dashboard', icon: '🏠' },
-  Subscriptions: { title: 'Subscriptions', icon: '💳' },
-  HR: { title: 'HR Management', icon: '👥' },
-  HR_Employees: { title: 'Employees', icon: '👤' },
-  HR_Departments: { title: 'Departments', icon: '🏢' },
-  HR_Positions: { title: 'Positions', icon: '💼' },
-  HR_Attendances: { title: 'Attendances', icon: '📅' },
-  HR_Leaves: { title: 'Leaves', icon: '🏖' },
-  HR_Salary: { title: 'Salary', icon: '💰' },
-  HR_Requests: { title: 'Requests', icon: '📝' },
-  HR_EmployeeDetail: { title: 'Employee Profile', icon: '👤' },
-  HR_CreateEmployee: { title: 'Add Employee', icon: '➕' },
-  HR_EditEmployee: { title: 'Edit Employee', icon: '✏️' },
-  Projects: { title: 'Projects', icon: '📁' },
-  Tasks: { title: 'Tasks', icon: '✅' },
-  Attendance: { title: 'Attendance', icon: '📅' },
-  Salary: { title: 'Salary', icon: '💰' },
-  Leaves: { title: 'Short Leaves', icon: '🕐' },
-  Requests: { title: 'Requests', icon: '📝' },
-  Agenda: { title: 'Agenda', icon: '📆' },
-  Analytics: { title: 'Analytics', icon: '📊' },
-  Conversations: { title: 'Conversations', icon: '💬' },
-  SocialMedia: { title: 'Social Media', icon: '📱' },
-  AI: { title: 'AI Assistant', icon: '🤖' },
-  Subscribers: { title: 'Subscribers', icon: '🏷' },
-  Industries: { title: 'Industries', icon: '🏗' },
-  SystemAdmins: { title: 'System Admins', icon: '🔑' },
-  SupportTickets: { title: 'Support Tickets', icon: '🎫' },
-  MoneyMethods: { title: 'Money Methods', icon: '💳' },
-  Settings: { title: 'Settings', icon: '⚙' },
+const screens: Record<string, { titleKey: string; icon: string }> = {
+  Dashboard: { titleKey: 'Dashboard', icon: '🏠' },
+  Subscriptions: { titleKey: 'Subscriptions', icon: '💳' },
+  HR: { titleKey: 'HR Management', icon: '👥' },
+  HR_Employees: { titleKey: 'Employees', icon: '👤' },
+  HR_Departments: { titleKey: 'Departments', icon: '🏢' },
+  HR_Positions: { titleKey: 'Positions', icon: '💼' },
+  HR_Attendances: { titleKey: 'Attendances', icon: '📅' },
+  HR_Leaves: { titleKey: 'Leaves', icon: '🏖' },
+  HR_Salary: { titleKey: 'Salary', icon: '💰' },
+  HR_Requests: { titleKey: 'Requests', icon: '📝' },
+  HR_EmployeeDetail: { titleKey: 'Employee Profile', icon: '👤' },
+  HR_CreateEmployee: { titleKey: 'Add Employee', icon: '➕' },
+  HR_EditEmployee: { titleKey: 'Edit Employee', icon: '✏️' },
+  Projects: { titleKey: 'Projects', icon: '📁' },
+  Tasks: { titleKey: 'Tasks', icon: '✅' },
+  Attendance: { titleKey: 'Attendance', icon: '📅' },
+  Salary: { titleKey: 'Salary', icon: '💰' },
+  Leaves: { titleKey: 'Short Leaves', icon: '🕐' },
+  Requests: { titleKey: 'Requests', icon: '📝' },
+  Agenda: { titleKey: 'Agenda', icon: '📆' },
+  Analytics: { titleKey: 'Analytics', icon: '📊' },
+  Conversations: { titleKey: 'Conversations', icon: '💬' },
+  SocialMedia: { titleKey: 'Social Media', icon: '📱' },
+  AI: { titleKey: 'AI Assistant', icon: '🤖' },
+  Subscribers: { titleKey: 'Subscribers', icon: '🏷' },
+  Industries: { titleKey: 'Industries', icon: '🏗' },
+  SystemAdmins: { titleKey: 'System Admins', icon: '🔑' },
+  SupportTickets: { titleKey: 'Support Tickets', icon: '🎫' },
+  MoneyMethods: { titleKey: 'Money Methods', icon: '💳' },
+  Settings: { titleKey: 'Settings', icon: '⚙' },
 };
 
 function ScreenRenderer({ route }: { route: string }) {
@@ -77,8 +77,8 @@ function ScreenRenderer({ route }: { route: string }) {
     case 'Settings':
       return <SettingsScreen />;
     default: {
-      const info = screens[route] || { title: route, icon: '📄' };
-      return <PlaceholderScreen title={info.title} icon={info.icon} />;
+      const info = screens[route] || { titleKey: route, icon: '📄' };
+      return <PlaceholderScreen titleKey={info.titleKey} icon={info.icon} />;
     }
   }
 }
@@ -100,12 +100,15 @@ export default function AppNavigator() {
     return <LoginScreen />;
   }
 
+  const screenInfo = screens[currentRoute] || { titleKey: currentRoute, icon: '' };
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
         <DashboardLayout
           currentRoute={currentRoute}
           onNavigate={setCurrentRoute}
+          screenTitleKey={screenInfo.titleKey}
         >
           <NavigationProvider onNavigate={setCurrentRoute}>
             <ScreenRenderer route={currentRoute} />

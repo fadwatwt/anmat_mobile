@@ -1,0 +1,37 @@
+import type { EmployeeDetailItem } from '../types';
+
+export type RootStackParamList = {
+  Login: undefined;
+  AdminSignIn: undefined;
+  ForgotPassword: undefined;
+  DashboardMain: undefined;
+  HRMain: undefined;
+  EmployeeDetail: { employee: EmployeeDetailItem } | { employee_id: string };
+  CreateEmployee: undefined;
+  EditEmployee: { employee: any };
+  HRDepartments: undefined;
+  HRPositions: undefined;
+  HRAttendances: undefined;
+  HRLeaves: undefined;
+  HRSalary: undefined;
+  HRRequests: undefined;
+  ProjectsMain: undefined;
+  ProjectDetail: { project_id: string } | { project: any };
+  ProjectCreate: { project: any } | undefined;
+  TasksMain: undefined;
+  TaskDetail: { task_id: string } | { task: any };
+  TaskCreate: { task: any } | undefined;
+  Settings: undefined;
+  Profile: undefined;
+  Subscriptions: undefined;
+  Agenda: undefined;
+  Analytics: undefined;
+  Conversations: undefined;
+  SocialMedia: undefined;
+  AI: undefined;
+  Subscribers: undefined;
+  Industries: undefined;
+  SystemAdmins: undefined;
+  SupportTickets: undefined;
+  MoneyMethods: undefined;
+};

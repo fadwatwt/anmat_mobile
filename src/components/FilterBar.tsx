@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ChevronDown } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { font, radii, spacing } from '../theme';
 
@@ -21,8 +23,11 @@ type Props = {
   searchPlaceholder?: string;
 };
 
-export function FilterBar({ filters, onSearch, searchPlaceholder = 'بحث...' }: Props) {
+export function FilterBar({ filters, onSearch, searchPlaceholder: searchPlaceholderProp }: Props) {
   const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  const { t } = useTranslation();
+  const searchPlaceholder = searchPlaceholderProp ?? t('Search...');
 
   return (
     <View style={[styles.container]}>
@@ -46,8 +51,8 @@ export function FilterBar({ filters, onSearch, searchPlaceholder = 'بحث...' }
           onPress={() => {}}
           style={[styles.filterBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
         >
-          <Text style={[styles.filterText, { color: colors.textMuted }]}>{filter.label}</Text>
-          <Text style={[styles.filterValue, { color: colors.ink }]}>{filter.value}</Text>
+          <Text style={[styles.filterText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{filter.label}</Text>
+          <Text style={[styles.filterValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{filter.value}</Text>
           <ChevronDown size={14} color={colors.textMuted} />
         </TouchableOpacity>
       ))}

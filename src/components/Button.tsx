@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { font, radii, spacing } from '../theme';
 
@@ -21,6 +22,7 @@ export function Button({
   variant = 'primary',
 }: Props) {
   const { colors } = useTheme();
+  const { isRTL } = useLocale();
 
   const variantStyles = {
     danger: { bg: colors.dangerBg, border: '#FECDD3', text: colors.dangerText },
@@ -50,7 +52,7 @@ export function Button({
       ) : (
         <View style={styles.content}>
           {icon}
-          <Text style={[styles.label, { color: v.text }]}>{label}</Text>
+          <Text style={[styles.label, { color: v.text, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{label}</Text>
         </View>
       )}
     </Pressable>
@@ -79,7 +81,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: font.sizes.sm,
     fontWeight: font.weights.semibold,
-    writingDirection: 'rtl',
   },
   lg: {
     minHeight: 52,

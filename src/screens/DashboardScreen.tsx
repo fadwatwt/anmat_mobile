@@ -13,6 +13,7 @@ import { BarChart } from '../charts/BarChart';
 import { GroupedBarChart } from '../charts/GroupedBarChart';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLocale } from '../context/LanguageContext';
 import { font, radii, spacing } from '../theme';
 import {
   fetchAdminAnalytics,
@@ -34,6 +35,7 @@ import type {
   DashboardProject, ActivityLogItem, SubscriptionBasic, IndustryCount,
   EmployeeDashboardTask,
 } from '../types';
+import { useTranslation } from 'react-i18next';
 
 // ===== Color Maps (web-matching) =====
 
@@ -66,9 +68,9 @@ function statusLabel(s?: string): string {
   return statusLabelMap[(s || '').toLowerCase()] || s || 'Pending';
 }
 
-function fmtDate(d?: string) {
+function fmtDate(d?: string, locale: string = 'en') {
   if (!d) return '--';
-  return new Date(d).toLocaleDateString('ar-SA');
+  return new Date(d).toLocaleDateString(locale);
 }
 
 // ===== Summary Card =====
@@ -77,19 +79,20 @@ function SummaryCard({ title, value, icon: Icon, color, trend }: {
   title: string; value: number | string; icon: any; color: string; trend?: { value: number; up: boolean };
 }) {
   const { colors } = useTheme();
+  const { isRTL } = useLocale();
   return (
     <View style={[s.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={[s.summaryIconWrap, { backgroundColor: color + '18' }]}>
         <Icon size={22} color={color} strokeWidth={1.5} />
       </View>
       <View style={s.summaryInfo}>
-        <Text style={[s.summaryTitle, { color: colors.textMuted }]}>{title}</Text>
+        <Text style={[s.summaryTitle, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{title}</Text>
         <View style={s.summaryValueRow}>
-          <Text style={[s.summaryValue, { color: colors.ink }]}>{value}</Text>
+          <Text style={[s.summaryValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{value}</Text>
           {trend && (
             <View style={[s.trendBadge, { backgroundColor: trend.up ? '#E7F8ED' : '#FEE2E5' }]}>
               {trend.up ? <TrendingUp size={12} color="#1F7A3F" /> : <TrendingDown size={12} color="#C9372C" />}
-              <Text style={[s.trendText, { color: trend.up ? '#1F7A3F' : '#C9372C' }]}>{Math.abs(trend.value)}%</Text>
+              <Text style={[s.trendText, { color: trend.up ? '#1F7A3F' : '#C9372C', textAlign: isRTL ? 'right' : 'left' }]}>{Math.abs(trend.value)}%</Text>
             </View>
           )}
         </View>
@@ -102,6 +105,9 @@ function SummaryCard({ title, value, icon: Icon, color, trend }: {
 
 function AdminDashboardContent() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const { locale } = useLocale();
+  const { isRTL } = useLocale();
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [subscriptions, setSubscriptions] = useState<SubscriptionBasic[]>([]);
   const [industries, setIndustries] = useState<IndustryCount[]>([]);
@@ -129,10 +135,10 @@ function AdminDashboardContent() {
   if (loading) return <ActivityIndicator style={s.loadingState} color={colors.primary} />;
 
   const summaryCards = [
-    { title: 'Total Companies', value: analytics?.totalCompanies ?? 0, icon: Building2, color: '#375DFB', trend: { value: 12, up: true } },
-    { title: 'Active Projects', value: analytics?.totalProjects ?? 0, icon: FolderKanban, color: '#7E3AF2', trend: { value: 8, up: true } },
-    { title: 'Total Tasks', value: analytics?.totalTasks ?? 0, icon: CheckSquare, color: '#F17B2C', trend: { value: 3, up: false } },
-    { title: 'System Users', value: analytics?.totalUsers ?? 0, icon: Users, color: '#38C793', trend: { value: 5, up: true } },
+    { title: t('Total Companies'), value: analytics?.totalCompanies ?? 0, icon: Building2, color: '#375DFB', trend: { value: 12, up: true } },
+    { title: t('Active Projects'), value: analytics?.totalProjects ?? 0, icon: FolderKanban, color: '#7E3AF2', trend: { value: 8, up: true } },
+    { title: t('Total Tasks'), value: analytics?.totalTasks ?? 0, icon: CheckSquare, color: '#F17B2C', trend: { value: 3, up: false } },
+    { title: t('System Users'), value: analytics?.totalUsers ?? 0, icon: Users, color: '#38C793', trend: { value: 5, up: true } },
   ];
 
   const industryData = (industries || []).map((ind, i) => ({
@@ -152,36 +158,36 @@ function AdminDashboardContent() {
       <View style={s.chartsRow}>
         {industryData.length > 0 && (
           <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Industries</Text>
+            <Text style={[s.chartCardTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Industries')}</Text>
             <DonutChart data={industryData} subtitle="ORGANIZATIONS" size={140} strokeWidth={24} />
           </View>
         )}
         {subscriptionData.length > 0 && (
           <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Subscriptions</Text>
+            <Text style={[s.chartCardTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Subscriptions')}</Text>
             <BarChart data={subscriptionData} color="#38C793" height={180} barSize={20} />
           </View>
         )}
       </View>
 
       <View style={[s.tableCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <Text style={[s.sectionTitle, { color: colors.ink }]}>Recent Subscriptions</Text>
+        <Text style={[s.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Recent Subscriptions')}</Text>
         {subscriptions.length === 0 ? (
-          <Text style={[s.emptyText, { color: colors.textMuted }]}>No subscriptions</Text>
+          <Text style={[s.emptyText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('No subscriptions')}</Text>
         ) : (
           <View>
             <View style={[s.tableHead, { backgroundColor: colors.background }]}>
-              {['Subscriber', 'Company', 'Status', 'Start', 'Expiration'].map(h => (
-                <Text key={h} style={[s.th, { color: colors.textMuted }]}>{h}</Text>
+              {[t('Subscriber'), t('Company'), t('Status'), t('Start'), t('Expiration')].map(h => (
+                <Text key={h} style={[s.th, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{h}</Text>
               ))}
             </View>
             {subscriptions.map(sub => (
               <View key={sub._id} style={[s.tableRow2, { borderBottomColor: colors.border }]}>
-                <Text style={[s.td2, { color: colors.ink }]} numberOfLines={1}>{sub.subscriber?.name}</Text>
-                <Text style={[s.td2, { color: colors.ink }]} numberOfLines={1}>{sub.organization?.name}</Text>
+                <Text style={[s.td2, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{sub.subscriber?.name}</Text>
+                <Text style={[s.td2, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{sub.organization?.name}</Text>
                 <View><Badge label={statusLabel(sub.status)} variant={statusVariant(sub.status)} size="sm" /></View>
-                <Text style={[s.td2, { color: colors.textMuted }]}>{fmtDate(sub.starts_at)}</Text>
-                <Text style={[s.td2, { color: colors.textMuted }]}>{fmtDate(sub.expires_at)}</Text>
+                <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(sub.starts_at, locale)}</Text>
+                <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(sub.expires_at, locale)}</Text>
               </View>
             ))}
           </View>
@@ -195,6 +201,9 @@ function AdminDashboardContent() {
 
 function SubscriberDashboardContent() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const { locale } = useLocale();
+  const { isRTL } = useLocale();
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   const [taskStats, setTaskStats] = useState<TaskStatistics | null>(null);
   const [departments, setDepartments] = useState<DepartmentRating[]>([]);
@@ -228,10 +237,10 @@ function SubscriberDashboardContent() {
   if (loading) return <ActivityIndicator style={s.loadingState} color={colors.primary} />;
 
   const statCards = [
-    { title: 'المهام', value: overview?.total_tasks ?? 0, icon: CheckSquare, color: '#375DFB' },
-    { title: 'المشاريع', value: overview?.total_projects ?? 0, icon: FolderKanban, color: '#7E3AF2' },
-    { title: 'الأقسام', value: overview?.total_departments ?? 0, icon: Building2, color: '#F17B2C' },
-    { title: 'الموظفين', value: overview?.total_employees ?? 0, icon: Users, color: '#38C793' },
+    { title: t('Tasks'), value: overview?.total_tasks ?? 0, icon: CheckSquare, color: '#375DFB' },
+    { title: t('Projects'), value: overview?.total_projects ?? 0, icon: FolderKanban, color: '#7E3AF2' },
+    { title: t('Departments'), value: overview?.total_departments ?? 0, icon: Building2, color: '#F17B2C' },
+    { title: t('Employees'), value: overview?.total_employees ?? 0, icon: Users, color: '#38C793' },
   ];
 
   const statusLabels: Record<string, string> = {
@@ -257,13 +266,13 @@ function SubscriberDashboardContent() {
       <View style={s.chartsRow}>
         {taskDonutData.length > 0 && (
           <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Tasks Summary</Text>
+            <Text style={[s.chartCardTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Tasks Summary')}</Text>
             <DonutChart data={taskDonutData} total={taskStats?.total} subtitle="TASKS" size={140} strokeWidth={24} />
           </View>
         )}
         {deptBarData.length > 0 && (
           <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Departments</Text>
+            <Text style={[s.chartCardTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Departments')}</Text>
             <BarChart data={deptBarData} yDomain={[0, 5]} height={180} barSize={20} />
           </View>
         )}
@@ -272,26 +281,26 @@ function SubscriberDashboardContent() {
       {projects.length > 0 && (
         <View style={[s.tableCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={s.sectionHeader}>
-            <Text style={[s.sectionTitle, { color: colors.ink }]}>Projects Overview</Text>
-            <TouchableOpacity><Text style={[s.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>
+            <Text style={[s.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Projects Overview')}</Text>
+            <TouchableOpacity><Text style={[s.seeAll, { color: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('See All')}</Text></TouchableOpacity>
           </View>
           <View style={[s.tableHead, { backgroundColor: colors.background }]}>
-            {['Project', 'Department', 'Status', 'Progress', 'Delivery'].map(h => (
-              <Text key={h} style={[s.th, { color: colors.textMuted }]}>{h}</Text>
+            {[t('Project'), t('Department'), t('Status'), t('Progress'), t('Delivery')].map(h => (
+              <Text key={h} style={[s.th, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{h}</Text>
             ))}
           </View>
           {projects.map(p => (
             <View key={p._id} style={[s.tableRow2, { borderBottomColor: colors.border }]}>
-              <Text style={[s.td2, s.tdName, { color: colors.ink }]} numberOfLines={1}>{p.name || p.title}</Text>
-              <Text style={[s.td2, { color: colors.textMuted }]} numberOfLines={1}>{p.department?.name || '-'}</Text>
+              <Text style={[s.td2, s.tdName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{p.name || p.title}</Text>
+              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{p.department?.name || '-'}</Text>
               <View><Badge label={statusLabel(p.status)} variant={statusVariant(p.status)} size="sm" /></View>
               <View style={s.progressWrap}>
                 <View style={[s.progressTrack, { backgroundColor: colors.background }]}>
                   <View style={[s.progressFill, { backgroundColor: statusColorMap[p.status || ''] || colors.primary, width: `${p.progress || 0}%` as any }]} />
                 </View>
-                <Text style={[s.progressText, { color: colors.textMuted }]}>{p.progress || 0}%</Text>
+                <Text style={[s.progressText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{p.progress || 0}%</Text>
               </View>
-              <Text style={[s.td2, { color: colors.textMuted }]}>{fmtDate(p.due_date)}</Text>
+              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(p.due_date, locale)}</Text>
             </View>
           ))}
         </View>
@@ -299,13 +308,13 @@ function SubscriberDashboardContent() {
 
       {logs.length > 0 && (
         <View style={[s.logsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[s.sectionTitle, { color: colors.ink }]}>Activity Logs</Text>
+          <Text style={[s.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Activity Logs')}</Text>
           {logs.map((log, i) => (
             <View key={log._id || i} style={[s.logItem, i < logs.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
               <View style={[s.logDot, { backgroundColor: colors.primary }]} />
               <View style={s.logContent}>
-                <Text style={[s.logAction, { color: colors.ink }]} numberOfLines={1}>{log.action || log.description || 'Activity'}</Text>
-                <Text style={[s.logTime, { color: colors.textMuted }]}>{fmtDate(log.createdAt)}</Text>
+                <Text style={[s.logAction, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{log.action || log.description || 'Activity'}</Text>
+                <Text style={[s.logTime, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(log.createdAt, locale)}</Text>
               </View>
             </View>
           ))}
@@ -319,6 +328,9 @@ function SubscriberDashboardContent() {
 
 function EmployeeDashboardContent() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const { locale } = useLocale();
+  const { isRTL } = useLocale();
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   const [taskStats, setTaskStats] = useState<TaskStatistics | null>(null);
   const [tasks, setTasks] = useState<EmployeeDashboardTask[]>([]);
@@ -349,10 +361,10 @@ function EmployeeDashboardContent() {
   if (loading) return <ActivityIndicator style={s.loadingState} color={colors.primary} />;
 
   const statCards = [
-    { title: 'مهامي', value: overview?.total_tasks ?? 0, icon: CheckSquare, color: '#375DFB' },
-    { title: 'المشاريع', value: overview?.total_projects ?? 0, icon: FolderKanban, color: '#7E3AF2' },
-    { title: 'الحضور', value: overview?.total_departments ?? 0, icon: Clock, color: '#F17B2C' },
-    { title: 'الطلبات', value: overview?.total_employees ?? 0, icon: ListChecks, color: '#38C793' },
+    { title: t('My Tasks'), value: overview?.total_tasks ?? 0, icon: CheckSquare, color: '#375DFB' },
+    { title: t('Projects'), value: overview?.total_projects ?? 0, icon: FolderKanban, color: '#7E3AF2' },
+    { title: t('Attendance'), value: overview?.total_departments ?? 0, icon: Clock, color: '#F17B2C' },
+    { title: t('Requests'), value: overview?.total_employees ?? 0, icon: ListChecks, color: '#38C793' },
   ];
 
   const statusLabels: Record<string, string> = {
@@ -366,8 +378,8 @@ function EmployeeDashboardContent() {
 
   const green = '#38C793', orange = '#F17B2C';
   const performanceGroups = [
-    { key: 'on_time', label: 'On Time', bars: [{ key: 'on_time', value: tasks.filter(t => t.status === 'completed' || t.status === 'completed_before_due_date').length, color: green, label: 'On-Time' }] },
-    { key: 'late', label: 'Late', bars: [{ key: 'late', value: tasks.filter(t => t.status === 'late_completed').length, color: orange, label: 'Late' }] },
+    { key: 'on_time', label: t('On Time'), bars: [{ key: 'on_time', value: tasks.filter(t => t.status === 'completed' || t.status === 'completed_before_due_date').length, color: green, label: t('On Time') }] },
+    { key: 'late', label: t('Late'), bars: [{ key: 'late', value: tasks.filter(t => t.status === 'late_completed').length, color: orange, label: t('Late') }] },
   ];
 
   return (
@@ -379,17 +391,17 @@ function EmployeeDashboardContent() {
       <View style={s.chartsRow}>
         {taskDonutData.length > 0 && (
           <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Tasks Summary</Text>
+            <Text style={[s.chartCardTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Tasks Summary')}</Text>
             <DonutChart data={taskDonutData} total={taskStats?.total} subtitle="TASKS" size={140} strokeWidth={24} />
           </View>
         )}
         {tasks.length > 0 && (
           <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[s.chartCardTitle, { color: colors.ink }]}>Performance</Text>
+            <Text style={[s.chartCardTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Performance')}</Text>
             <GroupedBarChart groups={performanceGroups} height={160} />
             <View style={s.legendRow}>
-              <View style={s.legendItem}><View style={[s.legendDot2, { backgroundColor: green }]} /><Text style={[s.legendLabel2, { color: colors.textMuted }]}>On-Time</Text></View>
-              <View style={s.legendItem}><View style={[s.legendDot2, { backgroundColor: orange }]} /><Text style={[s.legendLabel2, { color: colors.textMuted }]}>Late</Text></View>
+              <View style={s.legendItem}><View style={[s.legendDot2, { backgroundColor: green }]} /><Text style={[s.legendLabel2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('On Time')}</Text></View>
+              <View style={s.legendItem}><View style={[s.legendDot2, { backgroundColor: orange }]} /><Text style={[s.legendLabel2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Late')}</Text></View>
             </View>
           </View>
         )}
@@ -398,20 +410,20 @@ function EmployeeDashboardContent() {
       {tasks.length > 0 && (
         <View style={[s.tableCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={s.sectionHeader}>
-            <Text style={[s.sectionTitle, { color: colors.ink }]}>My Tasks</Text>
-            <TouchableOpacity><Text style={[s.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>
+            <Text style={[s.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('My Tasks')}</Text>
+            <TouchableOpacity><Text style={[s.seeAll, { color: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('See All')}</Text></TouchableOpacity>
           </View>
           <View style={[s.tableHead, { backgroundColor: colors.background }]}>
-            {['Task', 'Department', 'Status', 'Due Date'].map(h => (
-              <Text key={h} style={[s.th, { color: colors.textMuted }]}>{h}</Text>
+            {[t('Task'), t('Department'), t('Status'), t('Due Date')].map(h => (
+              <Text key={h} style={[s.th, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{h}</Text>
             ))}
           </View>
           {tasks.map(t => (
             <View key={t._id} style={[s.tableRow2, { borderBottomColor: colors.border }]}>
-              <Text style={[s.td2, s.tdName, { color: colors.ink }]} numberOfLines={1}>{t.title || t.name}</Text>
-              <Text style={[s.td2, { color: colors.textMuted }]} numberOfLines={1}>{t.department?.name || '-'}</Text>
+              <Text style={[s.td2, s.tdName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{t.title || t.name}</Text>
+              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{t.department?.name || '-'}</Text>
               <View><Badge label={statusLabel(t.status)} variant={statusVariant(t.status)} size="sm" /></View>
-              <Text style={[s.td2, { color: colors.textMuted }]}>{fmtDate(t.due_date)}</Text>
+              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(t.due_date, locale)}</Text>
             </View>
           ))}
         </View>
@@ -419,13 +431,13 @@ function EmployeeDashboardContent() {
 
       {logs.length > 0 && (
         <View style={[s.logsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[s.sectionTitle, { color: colors.ink }]}>Recent Activity</Text>
+          <Text style={[s.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Recent Activity')}</Text>
           {logs.map((log, i) => (
             <View key={log._id || i} style={[s.logItem, i < logs.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
               <View style={[s.logDot, { backgroundColor: colors.primary }]} />
               <View style={s.logContent}>
-                <Text style={[s.logAction, { color: colors.ink }]} numberOfLines={1}>{log.action || log.description || 'Activity'}</Text>
-                <Text style={[s.logTime, { color: colors.textMuted }]}>{fmtDate(log.createdAt)}</Text>
+                <Text style={[s.logAction, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{log.action || log.description || 'Activity'}</Text>
+                <Text style={[s.logTime, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(log.createdAt, locale)}</Text>
               </View>
             </View>
           ))}
@@ -440,6 +452,8 @@ function EmployeeDashboardContent() {
 export default function DashboardScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { t } = useTranslation();
+  const { locale, isRTL } = useLocale();
   const userType = user?.type;
 
   const content = () => {
@@ -447,7 +461,7 @@ export default function DashboardScreen() {
       case 'Admin': return <AdminDashboardContent />;
       case 'Subscriber': return <SubscriberDashboardContent />;
       case 'Employee': return <EmployeeDashboardContent />;
-      default: return <EmptyState title="Dashboard" message="Unknown user type" icon="❓" />;
+      default: return <EmptyState title="Dashboard" message={t('Unknown user type')} icon="❓" />;
     }
   };
 
@@ -459,9 +473,9 @@ export default function DashboardScreen() {
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={
         <View style={s.greetingSection}>
-          <Text style={[s.eyebrow, { color: colors.primary }]}>Dashboard Overview</Text>
-          <Text style={[s.greeting, { color: colors.ink }]}>
-            Welcome back, {user?.name || user?.email || 'User'}
+          <Text style={[s.eyebrow, { color: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Dashboard Overview')}</Text>
+          <Text style={[s.greeting, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>
+            {t('Welcome back, {{name}}', { name: user?.name || user?.email || 'User' })}
           </Text>
         </View>
       }
