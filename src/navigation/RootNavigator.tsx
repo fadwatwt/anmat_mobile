@@ -31,6 +31,10 @@ import SupportTicketsScreen from '../screens/SupportTicketsScreen';
 import MoneyMethodsScreen from '../screens/MoneyMethodsScreen';
 import AIScreen from '../screens/AIScreen';
 import ConversationsScreen from '../screens/ConversationsScreen';
+import AnalyticsScreen from '../screens/AnalyticsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import AgendaScreen from '../screens/AgendaScreen';
+import SocialMediaScreen from '../screens/SocialMediaScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 
 const Stack = createNativeStackNavigator();
@@ -110,7 +114,7 @@ export function RootNavigator() {
             {() => <Layout><SettingsScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="Profile">
-            {() => <Layout><PlaceholderScreen titleKey="Profile" /></Layout>}
+            {() => <Layout><ProfileScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="Subscriptions">
             {() => <Layout><SubscriptionsScreen /></Layout>}
@@ -131,16 +135,16 @@ export function RootNavigator() {
             {() => <Layout><MoneyMethodsScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="Agenda">
-            {() => <Layout><PlaceholderScreen titleKey="Agenda" /></Layout>}
+            {() => <Layout><AgendaScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="Analytics">
-            {() => <Layout><PlaceholderScreen titleKey="Analytics" /></Layout>}
+            {() => <Layout><AnalyticsScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="Conversations">
             {() => <Layout><ConversationsScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="SocialMedia">
-            {() => <Layout><PlaceholderScreen titleKey="Social Media" /></Layout>}
+            {() => <Layout><SocialMediaScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="AI">
             {() => <Layout><AIScreen /></Layout>}

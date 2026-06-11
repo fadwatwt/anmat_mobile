@@ -22,6 +22,7 @@ type AuthContextValue = {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -84,6 +85,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await http.get<ApiResponse<User>>('/api/user/auth');
+      if (res.data?.data) {
+        setUser(res.data.data);
+        await SecureStore.setItemAsync(USER_KEY, JSON.stringify(res.data.data));
+      }
+    } catch {
+      // Keep existing user on refresh failure
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     // Notify backend to clear current_token_id
     try {
@@ -102,8 +115,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const value = useMemo(
-    () => ({ isLoading, token, user, login, logout }),
-    [isLoading, token, user, login, logout],
+    () => ({ isLoading, token, user, login, logout, refreshUser }),
+    [isLoading, token, user, login, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

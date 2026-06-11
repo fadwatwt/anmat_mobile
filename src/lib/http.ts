@@ -22,6 +22,10 @@ export function setAuthToken(token: string | null) {
   authToken = token;
 }
 
+export function getAuthToken() {
+  return authToken;
+}
+
 export function setLanguageHeader(lang: string) {
   currentLanguage = lang;
 }
