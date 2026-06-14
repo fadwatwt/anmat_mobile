@@ -168,7 +168,7 @@ export default function ProjectsScreen() {
       keyExtractor={(item: Project) => item._id}
       searchable
       searchPlaceholderKey="Search projects..."
-      createLabelKey="New Project"
+
       onCreate={() => navigation.navigate('ProjectCreate')}
       onRowPress={(item: Project) => navigation.navigate('ProjectDetail', { project: item })}
       rowActions={(item: Project) => [

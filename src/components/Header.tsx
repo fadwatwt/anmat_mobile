@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Menu, Bell, MessageSquare, Sun, Moon, Globe } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { fetchNotifications, isUnread } from '../services/notifications';
 import { font, radii, spacing } from '../theme';
 
 type Props = {
@@ -17,6 +19,18 @@ export function Header({ onMenuPress, title }: Props) {
   const { colors, isDark, toggleTheme } = useTheme();
   const { locale, setLocale, isRTL } = useLocale();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    if (user?._id && user?.type) {
+      fetchNotifications(user._id, user.type)
+        .then((list) => { if (active) setUnreadCount(list.filter(isUnread).length); })
+        .catch(() => {});
+    }
+    return () => { active = false; };
+  }, [user?._id, user?.type]);
 
   const toggleLanguage = () => {
     setLocale(locale === 'ar' ? 'en' : 'ar');
@@ -43,9 +57,13 @@ export function Header({ onMenuPress, title }: Props) {
         <TouchableOpacity onPress={toggleTheme} style={styles.iconBtn}>
           {isDark ? <Sun size={18} color={colors.textMuted} /> : <Moon size={18} color={colors.textMuted} />}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconBtn}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Notifications')}>
           <Bell size={18} color={colors.textMuted} />
-          <View style={[styles.badge, { backgroundColor: colors.danger, [isRTL ? 'left' : 'right']: 3 }]} />
+          {unreadCount > 0 && (
+            <View style={[styles.badge, { backgroundColor: colors.danger, [isRTL ? 'left' : 'right']: 3 }]}>
+              <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconBtn}>
           <MessageSquare size={18} color={colors.textMuted} />
@@ -73,11 +91,19 @@ const styles = StyleSheet.create({
     fontWeight: font.weights.bold,
   },
   badge: {
+    alignItems: 'center',
     borderRadius: radii.full,
-    height: 7,
+    height: 15,
+    justifyContent: 'center',
+    minWidth: 15,
+    paddingHorizontal: 3,
     position: 'absolute',
-    top: 3,
-    width: 7,
+    top: 0,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: font.weights.bold,
   },
   header: {
     alignItems: 'center',

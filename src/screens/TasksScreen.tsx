@@ -160,7 +160,7 @@ export default function TasksScreen() {
       keyExtractor={(item: TaskItem) => item._id}
       searchable
       searchPlaceholderKey="Search tasks..."
-      createLabelKey="New Task"
+
       onCreate={() => navigation.navigate('TaskCreate')}
       onRowPress={(item: TaskItem) => navigation.navigate('TaskDetail', { task: item })}
       rowActions={(item: TaskItem) => [

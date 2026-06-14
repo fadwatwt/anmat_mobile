@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Activi
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, Check, User, Briefcase } from 'lucide-react-native';
 import { updateEmployee } from '../services/employees';
+import { DateField } from '../components/DateField';
 import { EmployeeDetailItem } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -151,8 +152,7 @@ export function EditEmployeeScreen() {
             <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employee ID')}</Text>
             <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.employee_id || ''} onChangeText={v => setForm(p => ({ ...p, employee_id: v }))} placeholder={t('EMP-001')} placeholderTextColor={colors.textMuted} />
 
-            <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Hire Date')}</Text>
-            <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.hire_date || ''} onChangeText={v => setForm(p => ({ ...p, hire_date: v }))} placeholder={t('YYYY-MM-DD')} placeholderTextColor={colors.textMuted} />
+            <DateField mode="date" label={t('Hire Date')} value={form.hire_date || ''} onChange={v => setForm(p => ({ ...p, hire_date: v }))} />
 
             <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employment Type')}</Text>
             <View style={styles.optionsRow}>

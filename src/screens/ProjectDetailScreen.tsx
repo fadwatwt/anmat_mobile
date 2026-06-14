@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ArrowLeft } from 'lucide-react-native';
@@ -7,7 +7,8 @@ import { Badge } from '../components/Badge';
 import { DetailScreen } from '../generators/DetailScreen';
 import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
-import { font, radii, spacing } from '../theme';
+import { fetchProjectDetails, Project } from '../services/projects';
+import { font, spacing } from '../theme';
 
 const variantMap: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'default'> = {
   active: 'success', completed: 'info', on_hold: 'warning', cancelled: 'danger', pending: 'default',
@@ -21,9 +22,18 @@ export default function ProjectDetailScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const project = route.params?.project as any;
+  const passedProject = route.params?.project as Project | undefined;
+  const projectId = passedProject?._id || route.params?.id;
+
+  // Render the passed project immediately, then refresh full details from the backend.
+  const [project, setProject] = useState<Project | undefined>(passedProject);
+
+  useEffect(() => {
+    if (!projectId) return;
+    fetchProjectDetails(projectId).then(setProject).catch(() => {});
+  }, [projectId]);
 
   const sections = useMemo(() => [
     {
@@ -71,6 +81,13 @@ export default function ProjectDetailScreen() {
 
       <DetailScreen
         sections={sections}
+        actions={[
+          {
+            labelKey: 'Edit',
+            onPress: () => navigation.navigate('ProjectCreate', { project }),
+            variant: 'primary',
+          },
+        ]}
         header={{
           title: project?.name || project?.title,
           subtitle: project?.description,

@@ -22,8 +22,36 @@ export type TwitterAccount = {
   name: string;
   AccountStatus?: string;
   Description?: string;
-  Category?: { name?: string };
+  location?: string;
+  Category?: { _id?: string; name?: string };
+  AccountBasicInfo?: { Location?: string; SecretKey?: string };
   AccountDataInfo1?: { FullName?: string; Followers?: number };
+};
+
+export type AccountCategory = {
+  _id: string;
+  name: string;
+  parent?: { _id?: string; name?: string } | null;
+  accountCount?: number;
+};
+
+export type CreateTwitterAccountPayload = {
+  name: string;
+  password: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  Category: string;
+  Description?: string;
+  SecretKey?: string;
+};
+
+export type UpdateTwitterAccountPayload = {
+  name?: string;
+  location?: string;
+  Category?: string;
+  description?: string;
+  SecretKey?: string;
 };
 
 export async function fetchSocialMediaQuota(): Promise<SocialMediaQuota> {
@@ -42,6 +70,35 @@ export async function fetchTwitterAccounts(params: { page?: number; limit?: numb
   return res.data?.data || [];
 }
 
+export async function createTwitterAccount(payload: CreateTwitterAccountPayload): Promise<void> {
+  await tweetHttp.post('/accounts/tweet', payload);
+}
+
+export async function updateTwitterAccount(id: string, payload: UpdateTwitterAccountPayload): Promise<void> {
+  await tweetHttp.put(`/accounts/${id}`, payload);
+}
+
 export async function deleteTwitterAccount(id: string): Promise<void> {
   await tweetHttp.delete(`/accounts/${id}`);
+}
+
+// ===== Account categories (external tweetAPI) =====
+export async function fetchAccountCategories(): Promise<AccountCategory[]> {
+  const res = await tweetHttp.get<AccountCategory[] | { data?: AccountCategory[] }>('/accountcategories');
+  const data = Array.isArray(res.data) ? res.data : res.data?.data;
+  return data || [];
+}
+
+export async function createAccountCategory(name: string, parent?: string): Promise<void> {
+  await tweetHttp.post('/accountcategories', parent ? { name, parent } : { name });
+}
+
+export async function updateAccountCategory(id: string, name: string, parent?: string | null): Promise<void> {
+  const payload: { name: string; parent?: string | null } = { name };
+  if (parent !== undefined) payload.parent = parent;
+  await tweetHttp.put(`/accountcategories/${id}`, payload);
+}
+
+export async function deleteAccountCategory(id: string): Promise<void> {
+  await tweetHttp.delete(`/accountcategories/${id}`);
 }

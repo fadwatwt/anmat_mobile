@@ -14,9 +14,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
+import { SelectDropdown, MultiSelectDropdown } from '../components/SelectDropdown';
 import { font, radii, spacing } from '../theme';
 
 type FieldType = 'text' | 'email' | 'phone' | 'number' | 'password' | 'multiline' | 'select' | 'chips' | 'autocomplete' | 'date';
@@ -157,8 +159,6 @@ export function FormScreen({
   const [autocompleteField, setAutocompleteField] = useState<string | null>(null);
   const [autocompleteSearch, setAutocompleteSearch] = useState('');
   const [dateField, setDateField] = useState<string | null>(null);
-  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
-  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
 
   const formatDate = (d: Date) => {
     const y = d.getFullYear();
@@ -174,76 +174,11 @@ export function FormScreen({
     return new Date();
   };
 
-  const renderCalendar = () => {
-    if (!dateField) return null;
-    const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
-    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
-    const today = new Date();
-    const selected = parseDate(values[dateField] as string);
-
-    const cells: (number | null)[] = [];
-    for (let i = 0; i < firstDay; i++) cells.push(null);
-    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-
-    return (
-      <Modal visible={!!dateField} transparent animationType="fade" onRequestClose={() => setDateField(null)}>
-        <Pressable style={s.dateOverlay} onPress={() => setDateField(null)}>
-          <Pressable style={[s.dateModal, { backgroundColor: colors.surface }]}>
-            <View style={s.dateHeader}>
-              <TouchableOpacity onPress={() => { if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(y => y - 1); } else setCalendarMonth(m => m - 1); }}>
-                <Text style={[s.dateNavBtn, { color: colors.primary }]}>{'<'}</Text>
-              </TouchableOpacity>
-              <Text style={[s.dateTitle, { color: colors.ink }]}>{monthNames[calendarMonth]} {calendarYear}</Text>
-              <TouchableOpacity onPress={() => { if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(y => y + 1); } else setCalendarMonth(m => m + 1); }}>
-                <Text style={[s.dateNavBtn, { color: colors.primary }]}>{'>'}</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={s.dateWeekdays}>
-              {dayNames.map(dn => (
-                <Text key={dn} style={[s.dateWeekday, { color: colors.textMuted }]}>{dn}</Text>
-              ))}
-            </View>
-            <View style={s.dateGrid}>
-              {cells.map((day, i) => (
-                <View key={i} style={s.dateCell}>
-                  {day ? (
-                    <TouchableOpacity
-                      style={[
-                        s.dateDay,
-                        day === selected.getDate() && calendarMonth === selected.getMonth() && calendarYear === selected.getFullYear() && { backgroundColor: colors.primary },
-                        day === today.getDate() && calendarMonth === today.getMonth() && calendarYear === today.getFullYear() && { borderColor: colors.primary, borderWidth: 1 },
-                      ]}
-                      onPress={() => {
-                        const d = new Date(calendarYear, calendarMonth, day);
-                        setValue(dateField, formatDate(d));
-                        setDateField(null);
-                      }}
-                    >
-                      <Text style={[
-                        s.dateDayText,
-                        { color: colors.ink },
-                        day === selected.getDate() && calendarMonth === selected.getMonth() && calendarYear === selected.getFullYear() && { color: '#FFF' },
-                      ]}>{day}</Text>
-                    </TouchableOpacity>
-                  ) : <View style={s.dateDay} />}
-                </View>
-              ))}
-            </View>
-            <View style={s.dateFooter}>
-              <TouchableOpacity onPress={() => { const d = new Date(); setValue(dateField, formatDate(d)); setDateField(null); }}>
-                <Text style={[s.dateTodayBtn, { color: colors.primary }]}>{t('Today')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setValue(dateField, ''); setDateField(null); }}>
-                <Text style={[s.dateTodayBtn, { color: colors.danger }]}>{t('Clear')}</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
-    );
+  const handleDateChange = (event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === 'android') setDateField(null);
+    if (event.type === 'dismissed' || !selected || !dateField) return;
+    setValue(dateField, formatDate(selected));
+    if (Platform.OS === 'ios') setDateField(null);
   };
 
   const renderField = (field: FieldConfig) => {
@@ -317,50 +252,43 @@ export function FormScreen({
         <View>
           <TouchableOpacity
             style={[s.input, { backgroundColor: colors.surface, borderColor: hasError ? colors.danger : colors.border, justifyContent: 'center' }]}
-            onPress={() => { setDateField(field.name); setCalendarMonth(parseDate(values[field.name] as string).getMonth()); setCalendarYear(parseDate(values[field.name] as string).getFullYear()); }}
+            onPress={() => setDateField(field.name)}
           >
             <Text style={{ color: values[field.name] ? colors.ink : colors.textMuted, textAlign: isRTL ? 'right' : 'left' }}>
               {values[field.name] ? values[field.name] : (field.placeholder ? t(field.placeholder) : t('Select date...'))}
             </Text>
           </TouchableOpacity>
-          {renderCalendar()}
+          {dateField === field.name && (
+            <DateTimePicker
+              value={parseDate(values[field.name] as string)}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateChange}
+            />
+          )}
         </View>
       );
     }
 
-    if (field.type === 'select' || field.type === 'chips') {
+    if (field.type === 'select') {
       return (
-        <View style={s.chipRow}>
-          {field.options?.map(opt => {
-            const isSelected = values[field.name] === opt.value ||
-              (Array.isArray(values[field.name]) && values[field.name].includes(opt.value));
-            return (
-              <TouchableOpacity
-                key={opt.value}
-                style={[
-                  s.chip,
-                  { borderColor: colors.border },
-                  isSelected && { backgroundColor: colors.primary, borderColor: colors.primary },
-                ]}
-                onPress={() => {
-                  if (field.type === 'select') {
-                    setValue(field.name, opt.value);
-                  } else {
-                    const current: string[] = Array.isArray(values[field.name]) ? [...values[field.name]] : [];
-                    const idx = current.indexOf(opt.value);
-                    if (idx >= 0) current.splice(idx, 1);
-                    else current.push(opt.value);
-                    setValue(field.name, current);
-                  }
-                }}
-              >
-                <Text style={[s.chipText, { color: isSelected ? '#FFF' : colors.ink }, isSelected && { color: '#FFF' }]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <SelectDropdown
+          options={field.options || []}
+          value={values[field.name] || ''}
+          onChange={v => setValue(field.name, v)}
+          hasError={hasError}
+        />
+      );
+    }
+
+    if (field.type === 'chips') {
+      return (
+        <MultiSelectDropdown
+          options={field.options || []}
+          value={Array.isArray(values[field.name]) ? values[field.name] : []}
+          onChange={v => setValue(field.name, v)}
+          hasError={hasError}
+        />
       );
     }
 
@@ -513,17 +441,4 @@ const s = StyleSheet.create({
   autocompleteOption: { paddingVertical: spacing.sm, borderBottomWidth: 1 },
   autocompleteOptionText: { fontSize: font.sizes.base },
   autocompleteEmpty: { paddingVertical: spacing.lg, fontSize: font.sizes.sm },
-  dateOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: spacing.md },
-  dateModal: { borderRadius: radii.xxl, padding: spacing.md },
-  dateHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
-  dateNavBtn: { fontSize: font.sizes.xl, fontWeight: font.weights.bold, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
-  dateTitle: { fontSize: font.sizes.lg, fontWeight: font.weights.bold },
-  dateWeekdays: { flexDirection: 'row', marginBottom: spacing.xs },
-  dateWeekday: { flex: 1, textAlign: 'center', fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
-  dateGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  dateCell: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
-  dateDay: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  dateDayText: { fontSize: font.sizes.sm },
-  dateFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: '#F0F1F3' },
-  dateTodayBtn: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
 });

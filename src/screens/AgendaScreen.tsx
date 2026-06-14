@@ -302,8 +302,8 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   emptyText: { fontSize: font.sizes.sm, paddingVertical: spacing.md, textAlign: 'center' },
   fab: {
-    alignItems: 'center', borderRadius: radii.full, bottom: spacing.xl, height: 56, justifyContent: 'center',
-    position: 'absolute', right: spacing.lg, width: 56,
+    alignItems: 'center', borderRadius: radii.full, bottom: spacing.xl, height: 44, justifyContent: 'center',
+    position: 'absolute', right: spacing.lg, width: 44,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 5,
   },
   loading: { flex: 1, padding: spacing.xxl },

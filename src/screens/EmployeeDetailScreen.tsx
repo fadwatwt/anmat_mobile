@@ -1,231 +1,342 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { ArrowLeft, Mail, Phone, Calendar, MapPin, Briefcase, Building2, Banknote, Clock, UserCog, Shield, Trash2, ToggleLeft, ToggleRight } from 'lucide-react-native';
+import { ArrowLeft, Trash2, ToggleLeft, ToggleRight, Plus } from 'lucide-react-native';
 import { fetchEmployeeProfile, deleteEmployee, toggleEmployeeActivity, fetchEmployeeRequests } from '../services/employees';
-import { fetchLeaves, fetchSalaryTransactions } from '../services/hr';
-import { EmployeeDetailItem, EmployeeRequest, LeaveRecord, SalaryTransaction } from '../types';
+import { fetchOrgLeaves, fetchOrgAttendances, fetchOrgSalaryTransactions, deleteOrgLeave, deleteOrgAttendance, deleteOrgSalaryTransaction, OrgAttendance, OrgLeave, OrgSalaryTransaction } from '../services/hr';
+import { EmployeeDetailItem, EmployeeRequest } from '../types';
 import { Badge } from '../components/Badge';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import type { RootStackParamList } from '../navigation/types';
+import { AddAttendanceModal } from '../modals/AddAttendanceModal';
+import { AddShortLeaveModal } from '../modals/AddShortLeaveModal';
+import { AddSalaryModal } from '../modals/AddSalaryModal';
+import { extractErrorMessage } from '../lib/http';
 import { font, radii, spacing } from '../theme';
 
 const Tab = createMaterialTopTabNavigator();
 
+// ─── Profile tab ─────────────────────────────────────────────────────────────
 function ProfileTab({ employee }: { employee: EmployeeDetailItem }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
-  const u: { name?: string; email?: string; phone?: string; is_active?: boolean } = employee.user || {};
+  const u = employee.user || {} as any;
+  const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
 
   const Row = ({ label, value }: { label: string; value?: string | number | null }) => (
     <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
-      <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
-      <Text style={[styles.rowValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{value || '—'}</Text>
+      <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{label}</Text>
+      <Text style={[styles.rowValue, { color: colors.ink, textAlign: align }]}>{value || '—'}</Text>
     </View>
   );
 
   const posTitle = typeof employee.position_id === 'object' ? employee.position_id?.title : '';
   return (
     <ScrollView style={styles.tabContent}>
-      <View style={styles.sectionCard}>
-        <Text style={[styles.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Personal Information')}</Text>
+      <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[styles.sectionTitle, { color: colors.ink, textAlign: align }]}>{t('Personal Information')}</Text>
         <Row label={t('Name')} value={u.name} />
         <Row label={t('Email')} value={u.email} />
         <Row label={t('Phone')} value={u.phone} />
         <Row label={t('Status')} value={u.is_active ? t('Active') : t('Inactive')} />
         <Row label={t('Country')} value={employee.country} />
         <Row label={t('City')} value={employee.city} />
-        {employee.date_of_birth && <Row label={t('Date of Birth')} value={new Date(employee.date_of_birth).toLocaleDateString('ar-SA')} />}
+        {employee.date_of_birth && <Row label={t('Date of Birth')} value={new Date(employee.date_of_birth).toLocaleDateString()} />}
       </View>
-
-      <View style={styles.sectionCard}>
-        <Text style={[styles.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Work Information')}</Text>
+      <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[styles.sectionTitle, { color: colors.ink, textAlign: align }]}>{t('Work Information')}</Text>
         <Row label={t('Department')} value={employee.department?.name} />
         <Row label={t('Position')} value={posTitle} />
         <Row label={t('Salary')} value={employee.salary ? `$${employee.salary.toLocaleString()}` : ''} />
         <Row label={t('Work Hours')} value={employee.work_hours ? `${employee.work_hours} hrs/day` : ''} />
         <Row label={t('Rating')} value={employee.overall_rating > 0 ? `${employee.overall_rating}/5` : t('No rating yet')} />
       </View>
-
-      {employee.createdAt && (
-        <View style={styles.sectionCard}>
-          <Text style={[styles.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Additional Info')}</Text>
-          <Row label={t('Registered')} value={new Date(employee.createdAt).toLocaleDateString('ar-SA')} />
-          <Row label={t('Registration Status')} value={employee.registration_status} />
-        </View>
-      )}
     </ScrollView>
   );
 }
 
+// ─── Attendance tab ───────────────────────────────────────────────────────────
+function AttendanceTab({ employee }: { employee: EmployeeDetailItem }) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
+  const [records, setRecords] = useState<OrgAttendance[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetchOrgAttendances({ employee_id: employee.user_id });
+      setRecords(res.data);
+    } catch { setRecords([]); } finally { setLoading(false); }
+  }, [employee.user_id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleDelete = (item: OrgAttendance) => {
+    Alert.alert(t('Delete'), t('Are you sure?'), [
+      { text: t('Cancel'), style: 'cancel' },
+      {
+        text: t('Delete'), style: 'destructive',
+        onPress: async () => {
+          try { await deleteOrgAttendance(item._id); load(); }
+          catch (e) { Alert.alert(t('Error'), extractErrorMessage(e)); }
+        },
+      },
+    ]);
+  };
+
+  if (loading) return <ActivityIndicator style={styles.loading} color={colors.primary} />;
+
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.tabContent}>
+        {records.length === 0 ? (
+          <Text style={[styles.emptyText, { color: colors.textMuted, textAlign: align }]}>{t('No attendance records')}</Text>
+        ) : (
+          records.map(r => (
+            <View key={r._id} style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <Text style={[styles.cardTitle, { color: colors.ink, textAlign: align }]}>{r.date || '--'}</Text>
+                <View style={{ flexDirection: 'row', gap: spacing.xs, alignItems: 'center' }}>
+                  {(r.late_in_minutes ?? 0) > 0
+                    ? <Badge label={`${r.late_in_minutes} ${t('min')}`} variant="warning" />
+                    : <Badge label={t('On Time')} variant="success" />
+                  }
+                  <TouchableOpacity onPress={() => handleDelete(r)}>
+                    <Text style={{ color: '#EF4444', fontSize: font.sizes.xs }}>{t('Delete')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
+                <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{t('Start Time')}</Text>
+                <Text style={[styles.rowValue, { color: colors.ink, textAlign: align }]}>{r.start_time || '--'}</Text>
+              </View>
+              <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
+                <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{t('End Time')}</Text>
+                <Text style={[styles.rowValue, { color: r.end_time ? colors.ink : '#C2540A', textAlign: align }]}>
+                  {r.end_time || t('In Progress')}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
+
+      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModalOpen(true)}>
+        <Plus size={22} color="#FFF" />
+      </TouchableOpacity>
+
+      <AddAttendanceModal
+        visible={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSaved={() => { setModalOpen(false); load(); }}
+      />
+    </View>
+  );
+}
+
+// ─── Short Leaves tab ─────────────────────────────────────────────────────────
+function LeavesTab({ employee }: { employee: EmployeeDetailItem }) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
+  const [leaves, setLeaves] = useState<OrgLeave[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetchOrgLeaves({ employee_id: employee.user_id });
+      setLeaves(res.data);
+    } catch { setLeaves([]); } finally { setLoading(false); }
+  }, [employee.user_id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleDelete = (item: OrgLeave) => {
+    Alert.alert(t('Delete Short Leave Record'), t('Are you sure?'), [
+      { text: t('Cancel'), style: 'cancel' },
+      {
+        text: t('Delete'), style: 'destructive',
+        onPress: async () => {
+          try { await deleteOrgLeave(item._id); load(); }
+          catch (e) { Alert.alert(t('Error'), extractErrorMessage(e)); }
+        },
+      },
+    ]);
+  };
+
+  if (loading) return <ActivityIndicator style={styles.loading} color={colors.primary} />;
+
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.tabContent}>
+        {leaves.length === 0 ? (
+          <Text style={[styles.emptyText, { color: colors.textMuted, textAlign: align }]}>{t('No leave records')}</Text>
+        ) : (
+          leaves.map(l => (
+            <View key={l._id} style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <Text style={[styles.cardTitle, { color: colors.ink, textAlign: align }]}>{l.date || '--'}</Text>
+                <TouchableOpacity onPress={() => handleDelete(l)}>
+                  <Text style={{ color: '#EF4444', fontSize: font.sizes.xs }}>{t('Delete')}</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
+                <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{t('Start Time')}</Text>
+                <Text style={[styles.rowValue, { color: colors.ink, textAlign: align }]}>{l.start_time || '--'}</Text>
+              </View>
+              <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
+                <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{t('End Time')}</Text>
+                <Text style={[styles.rowValue, { color: colors.ink, textAlign: align }]}>{l.end_time || '--'}</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
+
+      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModalOpen(true)}>
+        <Plus size={22} color="#FFF" />
+      </TouchableOpacity>
+
+      <AddShortLeaveModal
+        visible={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSaved={() => { setModalOpen(false); load(); }}
+        presetEmployeeId={employee.user_id}
+      />
+    </View>
+  );
+}
+
+// ─── Salary tab ───────────────────────────────────────────────────────────────
+function SalaryTab({ employee }: { employee: EmployeeDetailItem }) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
+  const [transactions, setTransactions] = useState<OrgSalaryTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetchOrgSalaryTransactions({ employee_id: employee.user_id });
+      setTransactions(res.data);
+    } catch { setTransactions([]); } finally { setLoading(false); }
+  }, [employee.user_id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleDelete = (item: OrgSalaryTransaction) => {
+    Alert.alert(t('Delete'), t('Are you sure?'), [
+      { text: t('Cancel'), style: 'cancel' },
+      {
+        text: t('Delete'), style: 'destructive',
+        onPress: async () => {
+          try { await deleteOrgSalaryTransaction(item._id); load(); }
+          catch (e) { Alert.alert(t('Error'), extractErrorMessage(e)); }
+        },
+      },
+    ]);
+  };
+
+  if (loading) return <ActivityIndicator style={styles.loading} color={colors.primary} />;
+
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.tabContent}>
+        {transactions.length === 0 ? (
+          <Text style={[styles.emptyText, { color: colors.textMuted, textAlign: align }]}>{t('No financial transactions')}</Text>
+        ) : (
+          transactions.map(tx => (
+            <View key={tx._id} style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <Text style={[styles.cardTitle, { color: colors.ink, textAlign: align }]}>
+                  {tx.amount != null ? `$${tx.amount.toLocaleString()}` : '--'}
+                </Text>
+                <TouchableOpacity onPress={() => handleDelete(tx)}>
+                  <Text style={{ color: '#EF4444', fontSize: font.sizes.xs }}>{t('Delete')}</Text>
+                </TouchableOpacity>
+              </View>
+              {tx.bonus != null && tx.bonus > 0 && (
+                <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
+                  <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{t('Bonus')}</Text>
+                  <Text style={[styles.rowValue, { color: '#10B981', textAlign: align }]}>+${tx.bonus.toLocaleString()}</Text>
+                </View>
+              )}
+              {tx.discount != null && tx.discount > 0 && (
+                <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
+                  <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{t('Deduction')}</Text>
+                  <Text style={[styles.rowValue, { color: '#EF4444', textAlign: align }]}>-${tx.discount.toLocaleString()}</Text>
+                </View>
+              )}
+              {tx.comment && (
+                <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
+                  <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{t('Comment')}</Text>
+                  <Text style={[styles.rowValue, { color: colors.ink, textAlign: align }]}>{tx.comment}</Text>
+                </View>
+              )}
+            </View>
+          ))
+        )}
+      </ScrollView>
+
+      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModalOpen(true)}>
+        <Plus size={22} color="#FFF" />
+      </TouchableOpacity>
+
+      <AddSalaryModal
+        visible={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSaved={() => { setModalOpen(false); load(); }}
+        presetEmployeeId={employee.user_id}
+      />
+    </View>
+  );
+}
+
+// ─── Requests tab ─────────────────────────────────────────────────────────────
 function RequestsTab({ employee }: { employee: EmployeeDetailItem }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
   const [requests, setRequests] = useState<EmployeeRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetchEmployeeRequests({ employee_id: employee._id });
+        const res = await fetchEmployeeRequests({ employee_id: employee.user_id });
         setRequests(Array.isArray(res?.data) ? res.data : []);
-      } catch {} finally {
-        setLoading(false);
-      }
+      } catch { } finally { setLoading(false); }
     })();
   }, []);
 
   if (loading) return <ActivityIndicator style={styles.loading} color={colors.primary} />;
-  if (!requests.length) return <Text style={[styles.emptyText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('No requests')}</Text>;
+  if (!requests.length) return <Text style={[styles.emptyText, { color: colors.textMuted, textAlign: align }]}>{t('No requests')}</Text>;
 
   return (
     <ScrollView style={styles.tabContent}>
       {requests.map(r => (
-        <View key={r._id} style={styles.sectionCard}>
-          <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{r.type}</Text>
-          <Text style={[styles.rowValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{r.status}</Text>
+        <View key={r._id} style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{r.type}</Text>
+          <Text style={[styles.rowValue, { color: colors.ink, textAlign: align }]}>{r.status}</Text>
         </View>
       ))}
     </ScrollView>
   );
 }
 
-function LeavesTab({ employee }: { employee: EmployeeDetailItem }) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const { isRTL } = useLocale();
-  const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetchLeaves({ employee_id: employee._id });
-        setLeaves(Array.isArray(res?.data) ? res.data : []);
-      } catch {} finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  if (loading) return <ActivityIndicator style={styles.loading} color={colors.primary} />;
-  if (!leaves.length) return <Text style={[styles.emptyText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('No leave records')}</Text>;
-
-  const typeLabels: Record<string, string> = {
-    annual: 'Annual', sick: 'Sick', emergency: 'Emergency',
-    maternity: 'Maternity', paternity: 'Paternity', unpaid: 'Unpaid', other: 'Other',
-  };
-  const statusVariant: Record<string, 'success' | 'danger' | 'warning' | 'default'> = {
-    approved: 'success', rejected: 'danger', pending: 'warning', cancelled: 'default',
-  };
-  const statusLabels: Record<string, string> = {
-    approved: 'Approved', rejected: 'Rejected', pending: 'Pending', cancelled: 'Cancelled',
-  };
-
-  return (
-    <ScrollView style={styles.tabContent}>
-      {leaves.map(l => (
-        <View key={l._id} style={styles.sectionCard}>
-          <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.cardTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>
-              {t(typeLabels[l.type] || l.type)}
-            </Text>
-            <Badge label={t(statusLabels[l.status] || l.status)} variant={statusVariant[l.status] || 'default'} />
-          </View>
-          <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
-            <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('From')}</Text>
-            <Text style={[styles.rowValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{l.start_date}</Text>
-          </View>
-          <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
-            <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('To')}</Text>
-            <Text style={[styles.rowValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{l.end_date}</Text>
-          </View>
-          <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
-            <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Days')}</Text>
-            <Text style={[styles.rowValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{l.days_count || '-'}</Text>
-          </View>
-          {l.reason && (
-            <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
-              <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Reason')}</Text>
-              <Text style={[styles.rowValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{l.reason}</Text>
-            </View>
-          )}
-        </View>
-      ))}
-    </ScrollView>
-  );
-}
-
-function FinancialTab({ employee }: { employee: EmployeeDetailItem }) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const { isRTL } = useLocale();
-  const [transactions, setTransactions] = useState<SalaryTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetchSalaryTransactions({ employee_id: employee._id });
-        setTransactions(Array.isArray(res?.data) ? res.data : []);
-      } catch {} finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  if (loading) return <ActivityIndicator style={styles.loading} color={colors.primary} />;
-  if (!transactions.length) return <Text style={[styles.emptyText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('No financial transactions')}</Text>;
-
-  const statusVariant: Record<string, 'success' | 'danger' | 'warning' | 'default'> = {
-    paid: 'success', cancelled: 'danger', pending: 'warning',
-  };
-  const statusLabels: Record<string, string> = {
-    paid: 'Paid', cancelled: 'Cancelled', pending: 'Pending',
-  };
-
-  return (
-    <ScrollView style={styles.tabContent}>
-      {transactions.map(tx => (
-        <View key={tx._id} style={styles.sectionCard}>
-          <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.cardTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>
-              {t(tx.type.charAt(0).toUpperCase() + tx.type.slice(1))}
-            </Text>
-            <Badge label={t(statusLabels[tx.status] || tx.status)} variant={statusVariant[tx.status] || 'default'} />
-          </View>
-          <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
-            <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Amount')}</Text>
-            <Text style={[styles.rowValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{tx.amount?.toLocaleString()}</Text>
-          </View>
-          <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
-            <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Month')}</Text>
-            <Text style={[styles.rowValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{tx.month} {tx.year}</Text>
-          </View>
-          {tx.description && (
-            <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
-              <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Description')}</Text>
-              <Text style={[styles.rowValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{tx.description}</Text>
-            </View>
-          )}
-          {tx.paid_date && (
-            <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
-              <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Paid Date')}</Text>
-              <Text style={[styles.rowValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{tx.paid_date}</Text>
-            </View>
-          )}
-        </View>
-      ))}
-    </ScrollView>
-  );
-}
-
+// ─── Main screen ──────────────────────────────────────────────────────────────
 export function EmployeeDetailScreen() {
   const { t } = useTranslation();
   const route = useRoute<any>();
@@ -241,26 +352,17 @@ export function EmployeeDetailScreen() {
   useEffect(() => {
     if (!employee && employeeId) {
       (async () => {
-        try {
-          const emp = await fetchEmployeeProfile(employeeId);
-          setEmployee(emp);
-        } catch (e) {
-          Alert.alert(t('Error'), t('Failed to load employee data'));
-        } finally {
-          setLoading(false);
-        }
+        try { setEmployee(await fetchEmployeeProfile(employeeId)); }
+        catch { Alert.alert(t('Error'), t('Failed to load employee data')); }
+        finally { setLoading(false); }
       })();
     }
   }, [employeeId]);
 
   const handleToggleActivity = async () => {
     if (!employee) return;
-    try {
-      const updated = await toggleEmployeeActivity(employee.user_id);
-      setEmployee(updated);
-    } catch (e) {
-      Alert.alert(t('Error'), t('Failed to toggle status'));
-    }
+    try { setEmployee(await toggleEmployeeActivity(employee.user_id)); }
+    catch { Alert.alert(t('Error'), t('Failed to toggle status')); }
   };
 
   const handleDelete = () => {
@@ -270,10 +372,8 @@ export function EmployeeDetailScreen() {
       {
         text: t('Delete'), style: 'destructive',
         onPress: async () => {
-          try {
-            await deleteEmployee(employee.user_id);
-            navigation.goBack();
-          } catch { Alert.alert(t('Error'), t('Failed to delete')); }
+          try { await deleteEmployee(employee.user_id); navigation.goBack(); }
+          catch { Alert.alert(t('Error'), t('Failed to delete')); }
         },
       },
     ]);
@@ -282,7 +382,7 @@ export function EmployeeDetailScreen() {
   if (loading) return <ActivityIndicator style={styles.loading} color={colors.primary} size="large" />;
   if (!employee) return <Text style={[styles.errorText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Employee not found')}</Text>;
 
-  const u: { name?: string; email?: string; phone?: string; is_active?: boolean } = employee.user || {};
+  const u = employee.user || {} as any;
   const isActive = u.is_active;
 
   return (
@@ -297,12 +397,12 @@ export function EmployeeDetailScreen() {
 
       <View style={[styles.profileCard, { backgroundColor: colors.surface }]}>
         <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-          <Text style={[styles.avatarText, { textAlign: isRTL ? 'right' : 'left' }]}>{u.name?.charAt(0)?.toUpperCase() || '?'}</Text>
+          <Text style={styles.avatarText}>{u.name?.charAt(0)?.toUpperCase() || '?'}</Text>
         </View>
-        <Text style={[styles.profileName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{u.name || t('Unknown')}</Text>
-        <Text style={[styles.profileEmail, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{u.email || ''}</Text>
+        <Text style={[styles.profileName, { color: colors.ink }]}>{u.name || t('Unknown')}</Text>
+        <Text style={[styles.profileEmail, { color: colors.textMuted }]}>{u.email || ''}</Text>
         <View style={[styles.statusBadge, { backgroundColor: isActive ? '#DCFCE7' : '#FEE2E2' }]}>
-          <Text style={[styles.statusText, { color: isActive ? '#166534' : '#991B1B', textAlign: isRTL ? 'right' : 'left' }]}>
+          <Text style={[styles.statusText, { color: isActive ? '#166534' : '#991B1B' }]}>
             {isActive ? t('Active') : t('Inactive')}
           </Text>
         </View>
@@ -312,11 +412,11 @@ export function EmployeeDetailScreen() {
         <View style={styles.actionsRow}>
           <TouchableOpacity style={styles.actionBtn} onPress={handleToggleActivity}>
             {isActive ? <ToggleLeft size={20} color="#F59E0B" /> : <ToggleRight size={20} color="#10B981" />}
-            <Text style={[styles.actionText, { textAlign: isRTL ? 'right' : 'left' }]}>{isActive ? t('Deactivate') : t('Activate')}</Text>
+            <Text style={[styles.actionText, { color: '#374151' }]}>{isActive ? t('Deactivate') : t('Activate')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={handleDelete}>
             <Trash2 size={20} color="#DF1C41" />
-            <Text style={[styles.actionText, { color: '#DF1C41', textAlign: isRTL ? 'right' : 'left' }]}>{t('Delete')}</Text>
+            <Text style={[styles.actionText, { color: '#DF1C41' }]}>{t('Delete')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -328,12 +428,14 @@ export function EmployeeDetailScreen() {
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
           tabBarLabelStyle: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
+          tabBarScrollEnabled: true,
         }}
       >
-        {<Tab.Screen name="profile" children={() => <ProfileTab employee={employee} />} />}
-        {<Tab.Screen name="requests" children={() => <RequestsTab employee={employee} />} />}
-        {<Tab.Screen name="leaves" children={() => <LeavesTab employee={employee} />} />}
-        {<Tab.Screen name="financial" children={() => <FinancialTab employee={employee} />} />}
+        <Tab.Screen name="profile" options={{ title: t('Profile') }} children={() => <ProfileTab employee={employee} />} />
+        <Tab.Screen name="attendance" options={{ title: t('Attendances') }} children={() => <AttendanceTab employee={employee} />} />
+        <Tab.Screen name="leaves" options={{ title: t('Short Leaves') }} children={() => <LeavesTab employee={employee} />} />
+        <Tab.Screen name="salary" options={{ title: t('Salary') }} children={() => <SalaryTab employee={employee} />} />
+        <Tab.Screen name="requests" options={{ title: t('Requests') }} children={() => <RequestsTab employee={employee} />} />
       </Tab.Navigator>
     </View>
   );
@@ -356,16 +458,20 @@ const styles = StyleSheet.create({
   statusText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
   actionsRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.md, paddingVertical: spacing.sm },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.lg, borderWidth: 1, borderColor: '#E5E7EB' },
-  actionText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium, color: '#374151' },
+  actionText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
   deleteBtn: { borderColor: '#FECDD3' },
-  tabContent: { padding: spacing.md },
-  sectionCard: { backgroundColor: '#FFF', borderRadius: radii.xl, padding: spacing.md, marginBottom: spacing.md, borderWidth: 1, borderColor: '#E5E7EB' },
+  tabContent: { flex: 1, padding: spacing.md },
+  sectionCard: { borderRadius: radii.xl, padding: spacing.md, marginBottom: spacing.md, borderWidth: 1 },
   sectionTitle: { fontSize: font.sizes.base, fontWeight: font.weights.semibold, marginBottom: spacing.md },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
+  cardHeader: { justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   cardTitle: { fontSize: font.sizes.base, fontWeight: font.weights.semibold },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.sm, borderBottomWidth: 1 },
   rowLabel: { fontSize: font.sizes.sm },
   rowValue: { fontSize: font.sizes.sm, fontWeight: font.weights.medium, maxWidth: '60%' },
-  placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, margin: spacing.md, borderRadius: radii.xl },
-  placeholderText: { fontSize: font.sizes.sm, marginTop: spacing.sm },
+  fab: {
+    position: 'absolute', bottom: spacing.xl, right: spacing.xl,
+    width: 44, height: 44, borderRadius: 22,
+    alignItems: 'center', justifyContent: 'center',
+    elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3,
+  },
 });

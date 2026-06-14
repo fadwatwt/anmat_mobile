@@ -6,15 +6,18 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Send, Plus, MessageSquare, Trash2, Edit3, ChevronLeft } from 'lucide-react-native';
+import { Send, Plus, MessageSquare, Trash2, Edit3, ChevronLeft, ShoppingCart } from 'lucide-react-native';
+import { MarkdownText } from '../components/MarkdownText';
 import { useTranslation } from 'react-i18next';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { font, radii, spacing } from '../theme';
@@ -34,7 +37,9 @@ export default function AIScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const flatListRef = useRef<FlatList>(null);
+  const skipNextFetch = useRef(false);
 
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [conversations, setConversations] = useState<AIConversation[]>([]);
@@ -55,8 +60,14 @@ export default function AIScreen() {
 
   useEffect(() => { loadConversations(); }, [loadConversations]);
 
+  // Re-fetch token balance every time screen comes into focus (e.g. after purchasing tokens)
+  useFocusEffect(useCallback(() => {
+    fetchTokenBalance().then(setTokenBalance).catch(() => {});
+  }, []));
+
   useEffect(() => {
     if (!currentId) return;
+    if (skipNextFetch.current) { skipNextFetch.current = false; return; }
     (async () => {
       setLoading(true);
       try {
@@ -75,8 +86,9 @@ export default function AIScreen() {
     setInput('');
     try {
       const res = await sendMessage({ message: userMsg.content!, conversation_id: currentId || undefined });
-      setMessages(prev => [...prev, res.message]);
+      if (res.message) setMessages(prev => [...prev, res.message]);
       if (res.conversation_id && res.conversation_id !== currentId) {
+        skipNextFetch.current = true;
         setCurrentId(res.conversation_id);
         loadConversations();
       }
@@ -114,23 +126,26 @@ export default function AIScreen() {
     ]);
   };
 
-  const freeRemaining = tokenBalance ? (tokenBalance.free_limit || 0) - (tokenBalance.free_consumed || 0) : 0;
-  const paidBalance = tokenBalance?.paid_balance || 0;
+  const freeRemaining = tokenBalance ? Math.max(0, (tokenBalance.free_limit || 0) - (tokenBalance.free_consumed || 0)) : 0;
+  const paidBalance = tokenBalance?.balance || 0;
   const isGated = !tokenBalance?.is_unlimited && freeRemaining <= 0 && paidBalance <= 0;
 
   const renderMessage = ({ item }: { item: AIMessage }) => {
+    if (!item) return null;
     const isUser = item.role === 'user';
+    const textColor = isUser ? '#FFF' : colors.ink;
+    const codeBg = isUser ? 'rgba(255,255,255,0.15)' : colors.background;
     return (
       <View style={[s.msgRow, isUser ? s.msgRowUser : s.msgRowAssistant]}>
         <View style={[s.msgBubble, { backgroundColor: isUser ? colors.primary : colors.surface, borderColor: colors.border }]}>
           {item.thought ? (
-            <Text style={[s.thoughtText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[s.thoughtText, { color: isUser ? 'rgba(255,255,255,0.7)' : colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
               {item.thought}
             </Text>
           ) : null}
-          <Text style={[s.msgText, { color: isUser ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>
+          <MarkdownText color={textColor} bgColor={codeBg} isRTL={isRTL}>
             {item.content || ''}
-          </Text>
+          </MarkdownText>
         </View>
       </View>
     );
@@ -194,7 +209,14 @@ export default function AIScreen() {
             {t('Free')}: {freeRemaining} | {t('Paid')}: {paidBalance}
           </Text>
           {isGated && (
-            <Text style={[s.gatedText, { color: colors.danger }]}>{t('Out of tokens')}</Text>
+            <TouchableOpacity
+              style={s.gatedBtn}
+              onPress={() => navigation.navigate('TokenPricing')}
+              activeOpacity={0.8}
+            >
+              <ShoppingCart size={13} color="#FFF" />
+              <Text style={s.gatedBtnText}>{t('Out of tokens — Buy more')}</Text>
+            </TouchableOpacity>
           )}
         </View>
       )}
@@ -218,6 +240,18 @@ export default function AIScreen() {
             </View>
           }
         />
+      )}
+
+      {/* Gated banner */}
+      {isGated && (
+        <TouchableOpacity
+          style={[s.gatedBanner, { backgroundColor: '#FEF2F2', borderTopColor: '#FECACA' }]}
+          onPress={() => navigation.navigate('TokenPricing')}
+          activeOpacity={0.85}
+        >
+          <ShoppingCart size={16} color="#EF4444" />
+          <Text style={s.gatedBannerText}>{t("You've run out of tokens. Tap to buy more.")}</Text>
+        </TouchableOpacity>
       )}
 
       {/* Input */}
@@ -256,7 +290,25 @@ const s = StyleSheet.create({
   convTitle: { flex: 1, fontSize: font.sizes.sm },
   emptyText: { padding: spacing.xl, fontSize: font.sizes.sm },
   emptyTitle: { fontSize: font.sizes.base },
-  gatedText: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
+  gatedBanner: {
+    alignItems: 'center',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  gatedBannerText: { color: '#EF4444', flex: 1, fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  gatedBtn: {
+    alignItems: 'center',
+    backgroundColor: '#EF4444',
+    borderRadius: radii.full,
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  gatedBtnText: { color: '#FFF', fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
   inputBar: {
     flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderTopWidth: 1,
@@ -266,7 +318,6 @@ const s = StyleSheet.create({
   msgRow: { flexDirection: 'row', marginBottom: spacing.xs },
   msgRowAssistant: { justifyContent: 'flex-start' },
   msgRowUser: { justifyContent: 'flex-end' },
-  msgText: { fontSize: font.sizes.base, lineHeight: 22 },
   sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   sidebar: { flex: 1, paddingTop: Platform.OS === 'ios' ? 50 : 0 },
   sidebarBtn: { padding: spacing.sm },

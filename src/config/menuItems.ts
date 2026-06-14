@@ -21,6 +21,9 @@ import {
   BookOpen,
   Tag,
   Wallet,
+  PercentCircle,
+  ShieldCheck,
+  KeyRound,
 } from 'lucide-react-native';
 
 export type MenuItemType = {
@@ -53,10 +56,6 @@ export const menuItems: MenuItemType[] = [
       { titleKey: 'Employees', route: 'HR_Employees' },
       { titleKey: 'Departments', route: 'HR_Departments' },
       { titleKey: 'Positions', route: 'HR_Positions' },
-      { titleKey: 'Attendances', route: 'HR_Attendances' },
-      { titleKey: 'Leaves', route: 'HR_Leaves' },
-      { titleKey: 'Salary', route: 'HR_Salary' },
-      { titleKey: 'Requests', route: 'HR_Requests' },
     ],
   },
   {
@@ -70,6 +69,18 @@ export const menuItems: MenuItemType[] = [
     route: 'Tasks',
     icon: CheckSquare,
     allowedTo: ['Subscriber', 'Employee'],
+  },
+  {
+    titleKey: 'My Tasks',
+    route: 'MyTasks',
+    icon: CheckSquare,
+    allowedTo: ['Employee'],
+  },
+  {
+    titleKey: 'My Projects',
+    route: 'MyProjects',
+    icon: FolderKanban,
+    allowedTo: ['Employee'],
   },
   {
     titleKey: 'Attendance',
@@ -130,6 +141,24 @@ export const menuItems: MenuItemType[] = [
     route: 'Subscribers',
     icon: Tag,
     allowedTo: ['Admin'],
+  },
+  {
+    titleKey: 'Plans',
+    route: 'Plans',
+    icon: PercentCircle,
+    allowedTo: ['Admin'],
+  },
+  {
+    titleKey: 'Roles',
+    route: 'Roles',
+    icon: ShieldCheck,
+    allowedTo: ['Admin', 'Subscriber', 'Employee'],
+  },
+  {
+    titleKey: 'Permissions',
+    route: 'Permissions',
+    icon: KeyRound,
+    allowedTo: ['Admin', 'Subscriber'],
   },
   {
     titleKey: 'Industries',

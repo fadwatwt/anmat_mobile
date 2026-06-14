@@ -63,7 +63,6 @@ type Props<T> = {
   filters?: FilterConfig[];
   actions?: ActionConfig[];
   onCreate?: () => void;
-  createLabelKey?: string;
   emptyTitleKey?: string;
   emptyMessageKey?: string;
   onRowPress?: (item: T) => void;
@@ -83,7 +82,6 @@ export function ListScreen<T extends Record<string, any>>({
   filters,
   actions,
   onCreate,
-  createLabelKey = 'Create',
   emptyTitleKey = 'No data found',
   emptyMessageKey = 'No items to display',
   onRowPress,
@@ -250,28 +248,38 @@ export function ListScreen<T extends Record<string, any>>({
     </View>
   );
 
-  const renderToolbar = () => (
-    <View style={s.toolbar}>
-      {actions?.map((action, i) => (
-        <TouchableOpacity
-          key={i}
-          style={[s.toolbarBtn, action.variant === 'secondary' ? { borderColor: colors.border, borderWidth: 1 } : { backgroundColor: colors.primary }]}
-          onPress={action.onPress}
-        >
-          {action.icon}
-          <Text style={[s.toolbarBtnText, { color: action.variant === 'secondary' ? colors.ink : '#FFF' }]}>
-            {t(action.labelKey)}
-          </Text>
-        </TouchableOpacity>
-      ))}
-      {onCreate && (
-        <TouchableOpacity style={[s.createBtn, { backgroundColor: colors.primary }]} onPress={onCreate}>
-          <Plus size={18} color="#FFF" />
-          <Text style={s.createBtnText}>{t(createLabelKey)}</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+  const renderToolbar = () => {
+    if (!actions || actions.length === 0) return null;
+    return (
+      <View style={s.toolbar}>
+        {actions.map((action, i) => (
+          <TouchableOpacity
+            key={i}
+            style={[s.toolbarBtn, action.variant === 'secondary' ? { borderColor: colors.border, borderWidth: 1 } : { backgroundColor: colors.primary }]}
+            onPress={action.onPress}
+          >
+            {action.icon}
+            <Text style={[s.toolbarBtnText, { color: action.variant === 'secondary' ? colors.ink : '#FFF' }]}>
+              {t(action.labelKey)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  const renderFAB = () => {
+    if (!onCreate) return null;
+    return (
+      <TouchableOpacity
+        style={[s.fab, { backgroundColor: colors.primary }]}
+        onPress={onCreate}
+        activeOpacity={0.85}
+      >
+        <Plus size={26} color="#FFF" />
+      </TouchableOpacity>
+    );
+  };
 
   if (loading && data.length === 0) {
     return (
@@ -279,6 +287,7 @@ export function ListScreen<T extends Record<string, any>>({
         {renderToolbar()}
         {searchable && renderSearch()}
         <ActivityIndicator color={colors.primary} size="large" />
+        {renderFAB()}
       </View>
     );
   }
@@ -289,6 +298,7 @@ export function ListScreen<T extends Record<string, any>>({
         {renderToolbar()}
         {searchable && renderSearch()}
         <EmptyState title={t(emptyTitleKey)} message={t(emptyMessageKey)} />
+        {renderFAB()}
       </View>
     );
   }
@@ -323,21 +333,28 @@ export function ListScreen<T extends Record<string, any>>({
         </View>
       </ScrollView>
       {renderPagination()}
+      {renderFAB()}
     </View>
   );
 }
 
 const s = StyleSheet.create({
   container: { flex: 1 },
-  createBtn: {
-    flexDirection: 'row',
+  fab: {
+    position: 'absolute',
+    bottom: spacing.xl,
+    right: spacing.xl,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
-    gap: spacing.xs,
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
-  createBtnText: { color: '#FFF', fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
   emptyState: { flex: 1, gap: spacing.md },
   filterChip: {
     borderRadius: radii.md, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: spacing.xs,

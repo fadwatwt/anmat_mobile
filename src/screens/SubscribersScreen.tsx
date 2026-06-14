@@ -1,27 +1,45 @@
+import React, { useCallback, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
-import { ToggleRight, ToggleLeft } from 'lucide-react-native';
+import { ToggleRight, ToggleLeft, Eye } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
 import { Badge } from '../components/Badge';
 import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { ListScreen } from '../generators/ListScreen';
 import { fetchSubscribers, toggleSubscriberActivation, Subscriber } from '../services/subscribers';
+import { extractErrorMessage } from '../lib/http';
 import { font } from '../theme';
-
-const fetchData = async (_params: any) => {
-  const data = await fetchSubscribers();
-  return { data, total: data.length };
-};
 
 export default function SubscribersScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const navigation = useNavigation<any>();
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const openDetail = (item: Subscriber) =>
+    navigation.navigate('SubscriberDetail', { subscriber_id: item._id });
+
+  const fetchData = useCallback(async () => {
+    const data = await fetchSubscribers();
+    return { data, total: data.length };
+  }, [reloadKey]);
 
   const handleToggle = (item: Subscriber) => {
     Alert.alert(t('Toggle Status'), t('Are you sure?'), [
       { text: t('Cancel'), style: 'cancel' },
-      { text: t('Confirm'), onPress: async () => { try { await toggleSubscriberActivation(item._id); } catch {} } },
+      {
+        text: t('Confirm'),
+        onPress: async () => {
+          try {
+            await toggleSubscriberActivation(item._id);
+            setReloadKey((k) => k + 1);
+          } catch (e) {
+            Alert.alert(t('Error'), extractErrorMessage(e));
+          }
+        },
+      },
     ]);
   };
 
@@ -75,6 +93,7 @@ export default function SubscribersScreen() {
 
   return (
     <ListScreen
+      key={reloadKey}
       columns={columns}
       fetchData={fetchData}
       keyExtractor={(item: Subscriber) => item._id}
@@ -82,7 +101,13 @@ export default function SubscribersScreen() {
       searchPlaceholderKey="Search subscribers..."
       emptyTitleKey="No subscribers found"
       emptyMessageKey="No subscribers to display"
+      onRowPress={openDetail}
       rowActions={(item: Subscriber) => [
+        {
+          label: t('View Details'),
+          icon: <Eye size={16} color={colors.primary} />,
+          onPress: () => openDetail(item),
+        },
         {
           label: item.is_active ? t('Deactivate') : t('Activate'),
           icon: item.is_active ? <ToggleRight size={16} color="#F59E0B" /> : <ToggleLeft size={16} color="#10B981" />,

@@ -1,11 +1,11 @@
-import { Alert, Text, View } from 'react-native';
-import { Edit3 } from 'lucide-react-native';
+import React, { useCallback, useState } from 'react';
+import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
 import { Badge } from '../components/Badge';
 import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { ListScreen } from '../generators/ListScreen';
+import { CreateTicketModal } from '../modals/CreateTicketModal';
 import { fetchSupportTickets, SupportTicket } from '../services/supportTickets';
 import { font } from '../theme';
 
@@ -25,16 +25,17 @@ const statusLabels: Record<string, string> = {
   rejected: 'Rejected',
 };
 
-const fetchData = async (_params: any) => {
-  const data = await fetchSupportTickets();
-  return { data, total: data.length };
-};
-
 export default function SupportTicketsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
-  const navigation = useNavigation<any>();
+  const [reloadKey, setReloadKey] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    const data = await fetchSupportTickets();
+    return { data, total: data.length };
+  }, [reloadKey]);
 
   const columns = [
     {
@@ -86,16 +87,24 @@ export default function SupportTicketsScreen() {
   ];
 
   return (
-    <ListScreen
-      columns={columns}
-      fetchData={fetchData}
-      keyExtractor={(item: SupportTicket) => item._id}
-      searchable
-      searchPlaceholderKey="Search tickets..."
-      createLabelKey="New Ticket"
-      onCreate={() => {}}
-      emptyTitleKey="No tickets found"
-      emptyMessageKey="No support tickets to display"
-    />
+    <>
+      <ListScreen
+        key={reloadKey}
+        columns={columns}
+        fetchData={fetchData}
+        keyExtractor={(item: SupportTicket) => item._id}
+        searchable
+        searchPlaceholderKey="Search tickets..."
+
+        onCreate={() => setModalOpen(true)}
+        emptyTitleKey="No tickets found"
+        emptyMessageKey="No support tickets to display"
+      />
+      <CreateTicketModal
+        visible={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSaved={() => { setModalOpen(false); setReloadKey((k) => k + 1); }}
+      />
+    </>
   );
 }

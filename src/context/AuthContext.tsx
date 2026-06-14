@@ -11,6 +11,7 @@ import {
 
 import { extractErrorMessage, http, setAuthToken } from '../lib/http';
 import { loginWithEmail } from '../services/auth';
+import { initPushNotifications, logoutPushNotifications } from '../services/pushNotifications';
 import { ApiResponse, User } from '../types';
 
 const TOKEN_KEY = 'anmat.accessToken';
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
             if (res.data?.data) {
               setToken(storedToken);
               setUser(res.data.data);
+              initPushNotifications();
               return;
             }
           } catch {
@@ -80,6 +82,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         SecureStore.setItemAsync(TOKEN_KEY, data.access_token),
         SecureStore.setItemAsync(USER_KEY, JSON.stringify(data.user)),
       ]);
+      initPushNotifications();
     } catch (error) {
       throw new Error(extractErrorMessage(error));
     }
@@ -98,6 +101,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const logout = useCallback(async () => {
+    logoutPushNotifications();
+
     // Notify backend to clear current_token_id
     try {
       await http.get('/api/user/auth/logout');

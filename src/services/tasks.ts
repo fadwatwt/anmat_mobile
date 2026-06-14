@@ -28,3 +28,14 @@ export async function deleteTask(id: string): Promise<void> {
 export async function completeTask(id: string) {
   return updateTask(id, { status: 'completed' });
 }
+
+// ===== Employee "My Tasks" (web: employeeTasksApi, api/employee/tasks) =====
+export async function fetchMyTasks(): Promise<TaskItem[]> {
+  const response = await http.get<ApiResponse<TaskItem[]> | TaskItem[]>('/api/employee/tasks');
+  const data = (response.data as ApiResponse<TaskItem[]>).data ?? response.data;
+  return Array.isArray(data) ? data : [];
+}
+
+export async function updateMyTaskStatus(id: string, status: string): Promise<void> {
+  await http.put(`/api/employee/tasks/${id}/status-update`, { status });
+}

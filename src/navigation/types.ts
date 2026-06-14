@@ -29,7 +29,9 @@ export type RootStackParamList = {
   Conversations: undefined;
   SocialMedia: undefined;
   AI: undefined;
+  TokenPricing: undefined;
   Subscribers: undefined;
+  SubscriberDetail: { subscriber_id: string };
   Industries: undefined;
   SystemAdmins: undefined;
   SupportTickets: undefined;

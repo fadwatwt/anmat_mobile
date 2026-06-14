@@ -1,19 +1,26 @@
 import { http } from '../lib/http';
-import { ApiResponse, AttendanceItem } from '../types';
+import { ApiResponse } from '../types';
 
-export async function fetchAttendance() {
-  const response = await http.get<ApiResponse<AttendanceItem[]> | AttendanceItem[]>(
-    '/attendance/all',
-  );
-  return Array.isArray(response.data) ? response.data : response.data.data;
+// Matches the web `employeeAttendanceApi` (api/employee/attendances).
+// Records use start_time / end_time (HH:MM) and a yyyy-MM-dd date.
+export type AttendanceRow = {
+  _id: string;
+  date?: string;
+  start_time?: string;
+  end_time?: string;
+  status?: string;
+  createdAt?: string;
+};
+
+export async function fetchMyAttendances(): Promise<AttendanceRow[]> {
+  const response = await http.get<ApiResponse<AttendanceRow[]>>('/api/employee/attendances');
+  return response.data.data ?? [];
 }
 
-export async function checkIn() {
-  const response = await http.post('/checkin');
-  return response.data;
+export async function checkIn(start_time: string): Promise<void> {
+  await http.post('/api/employee/attendances/check-in', { start_time });
 }
 
-export async function checkOut() {
-  const response = await http.post('/checkout');
-  return response.data;
+export async function checkOut(end_time: string): Promise<void> {
+  await http.put('/api/employee/attendances/check-out', { end_time });
 }

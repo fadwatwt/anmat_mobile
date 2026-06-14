@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '../components/Modal';
+import { SelectDropdown } from '../components/SelectDropdown';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { fetchDepartments, fetchEmployees, assignEmployeesToDepartment } from '../services/employees';
@@ -69,22 +70,14 @@ export function AssignDepartmentModal({ visible, onClose, onSuccess, initialEmpl
 
   return (
     <Modal visible={visible} onClose={onClose} title={initialEmployee ? t('Assign Department') : t('Assign Department to Employees')} size="md">
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+      <View style={s.scroll}>
         <Text style={[s.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Select Department')} <Text style={s.required}>*</Text></Text>
-        <View style={s.chips}>
-          {departments.map(d => {
-            const active = selectedDept === d._id;
-            return (
-              <TouchableOpacity
-                key={d._id}
-                onPress={() => setSelectedDept(d._id)}
-                style={[s.chip, active && { backgroundColor: colors.primary }, { borderColor: colors.border }]}
-              >
-                <Text style={[s.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{d.name}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <SelectDropdown
+          options={departments.map(d => ({ label: d.name, value: d._id }))}
+          value={selectedDept}
+          onChange={setSelectedDept}
+          placeholder={t('Select department...')}
+        />
 
         {!initialEmployee && (
           <>
@@ -112,7 +105,7 @@ export function AssignDepartmentModal({ visible, onClose, onSuccess, initialEmpl
         <TouchableOpacity onPress={handleSave} disabled={saving} style={[s.btn, { backgroundColor: colors.primary }, saving && s.btnDisabled]}>
           <Text style={[s.btnText, { textAlign: isRTL ? 'right' : 'left' }]}>{saving ? t('Assigning...') : t('Assign Department')}</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
     </Modal>
   );
 }
@@ -121,12 +114,6 @@ const s = StyleSheet.create({
   scroll: { gap: spacing.md, paddingBottom: spacing.lg },
   label: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
   required: { color: '#EF4444' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  chip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.full,
-    borderWidth: 1,
-  },
-  chipText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
   hint: { fontSize: font.sizes.xs, color: '#9CA3AF', marginTop: -spacing.sm },
   empList: { maxHeight: 250, borderWidth: 1, borderRadius: radii.lg, overflow: 'hidden' },
   empRow: {

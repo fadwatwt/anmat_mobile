@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Badge } from '../components/Badge';
 import { DetailScreen } from '../generators/DetailScreen';
+import { fetchTaskById } from '../services/tasks';
 import { TaskItem } from '../types';
 
 const priorityVariant: Record<string, 'danger' | 'warning' | 'info' | 'default'> = {
@@ -42,7 +44,17 @@ export default function TaskDetailScreen() {
   const { t } = useTranslation();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const task = route.params?.task as TaskItem | undefined;
+  const passedTask = route.params?.task as TaskItem | undefined;
+  const taskId = passedTask?._id || route.params?.id;
+
+  // Start with the passed-in task for instant render, then refresh from the backend.
+  const [task, setTask] = useState<TaskItem | undefined>(passedTask);
+
+  useEffect(() => {
+    if (!taskId) return;
+    fetchTaskById(taskId).then(setTask).catch(() => {});
+  }, [taskId]);
+
   const s = (task?.status || '').toLowerCase();
   const p = (task?.priority || '').toLowerCase();
 
@@ -66,9 +78,9 @@ export default function TaskDetailScreen() {
     {
       titleKey: 'Assignment',
       rows: [
-        { labelKey: 'Project', value: task?.project?.name || '--' },
-        { labelKey: 'Department', value: task?.department?.name || '--' },
-        { labelKey: 'Assignee', value: task?.assignee?.name || '--' },
+        { labelKey: 'Project', value: task?.project?.name || (task as any)?.project_id?.name || '--' },
+        { labelKey: 'Department', value: task?.department?.name || (task as any)?.department_id?.name || '--' },
+        { labelKey: 'Assignee', value: task?.assignee?.name || (task as any)?.assignee_id?.name || '--' },
       ],
     },
     {

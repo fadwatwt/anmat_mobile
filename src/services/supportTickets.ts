@@ -24,7 +24,13 @@ export async function fetchSupportTicketById(id: string): Promise<SupportTicket>
   return response.data.data;
 }
 
-export async function createSupportTicket(data: Partial<SupportTicket>): Promise<SupportTicket> {
+export type CreateTicketPayload = {
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+};
+
+export async function createSupportTicket(data: CreateTicketPayload): Promise<SupportTicket> {
   const response = await http.post<ApiResponse<SupportTicket>>('/api/support-tickets', data);
   return response.data.data;
 }

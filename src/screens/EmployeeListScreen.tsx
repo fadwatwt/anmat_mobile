@@ -280,10 +280,6 @@ export function EmployeeListScreen() {
                 <UserPlus size={16} color="#374151" />
                 <Text style={[s.inviteBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>Invite Employee</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[s.toolBtn, s.addBtn]} onPress={() => setShowCreate(true)}>
-                <Plus size={16} color="#FFF" />
-                <Text style={[s.addBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>Add New Employee</Text>
-              </TouchableOpacity>
             </>
           )}
         </View>
@@ -376,6 +372,16 @@ export function EmployeeListScreen() {
         </View>
       </View>
 
+      {/* FAB - Add Employee */}
+      {isSubscriber && (
+        <TouchableOpacity
+          style={[s.fab, { backgroundColor: colors.primary }]}
+          onPress={() => setShowCreate(true)}
+        >
+          <Plus size={26} color="#FFF" />
+        </TouchableOpacity>
+      )}
+
       {/* Modals */}
       <CreateEmployeeModal visible={showCreate} onClose={() => setShowCreate(false)} onSuccess={() => loadEmployees(1, true)} />
       <EditEmployeeModal visible={showEdit} onClose={() => { setShowEdit(false); setSelectedEmp(null); }} onSuccess={() => loadEmployees(1, true)} employeeData={selectedEmp} />
@@ -405,8 +411,21 @@ const s = StyleSheet.create({
   notifyBtnText: { color: '#375DFB', fontSize: font.sizes.sm, fontWeight: font.weights.medium },
   inviteBtn: { borderWidth: 1, borderColor: '#E5E7EB' },
   inviteBtnText: { color: '#374151', fontSize: font.sizes.sm, fontWeight: font.weights.medium },
-  addBtn: { backgroundColor: '#375DFB' },
-  addBtnText: { color: '#FFF', fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  fab: {
+    position: 'absolute',
+    bottom: spacing.xl,
+    right: spacing.xl,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
   searchBar: {
     flexDirection: 'row', alignItems: 'center', margin: spacing.md,
     paddingHorizontal: spacing.md, borderRadius: radii.lg, borderWidth: 1, height: 40,

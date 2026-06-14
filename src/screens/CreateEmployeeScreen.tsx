@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Activi
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, Check, User, Briefcase } from 'lucide-react-native';
 import { createEmployee, fetchDepartments, fetchPositions } from '../services/employees';
+import { DateField } from '../components/DateField';
 import { Department, Position } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
@@ -67,8 +68,7 @@ function PersonalInfoStep({ form, setForm, colors }: StepProps) {
       <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Address')}</Text>
       <TextInput style={[styles.inputMultiline, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.address || ''} onChangeText={v => setForm(p => ({ ...p, address: v }))} placeholder={t('Full Address')} multiline numberOfLines={3} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Date of Birth')}</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.date_of_birth || ''} onChangeText={v => setForm(p => ({ ...p, date_of_birth: v }))} placeholder={t('YYYY-MM-DD')} placeholderTextColor={colors.textMuted} />
+      <DateField mode="date" label={t('Date of Birth')} value={form.date_of_birth || ''} onChange={v => setForm(p => ({ ...p, date_of_birth: v }))} />
 
       <Text style={[styles.sectionLabel, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Emergency Contact')}</Text>
 
@@ -120,8 +120,7 @@ function WorkInfoStep({ form, setForm, colors }: StepProps) {
       <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employee ID')}</Text>
       <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.employee_id || ''} onChangeText={v => setForm(p => ({ ...p, employee_id: v }))} placeholder={t('EMP-001')} placeholderTextColor={colors.textMuted} />
 
-      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Hire Date')}</Text>
-      <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.ink }]} value={form.hire_date || ''} onChangeText={v => setForm(p => ({ ...p, hire_date: v }))} placeholder={t('YYYY-MM-DD')} placeholderTextColor={colors.textMuted} />
+      <DateField mode="date" label={t('Hire Date')} value={form.hire_date || ''} onChange={v => setForm(p => ({ ...p, hire_date: v }))} />
 
       <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employment Type')}</Text>
       <View style={styles.optionsRow}>

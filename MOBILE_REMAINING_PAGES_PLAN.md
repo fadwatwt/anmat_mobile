@@ -1,140 +1,155 @@
-# خطة استكمال صفحات نسخة الموبايل
+# خطة استكمال نسخة الموبايل لتطابق نسخة الويب
 
-> الهدف: استكمال الشاشات المتبقية في `anmat_mobile` لتطابق صفحات نسخة الويب (`anmat_front-main`) من حيث البيانات والمنطق والحالات، مع تكييف التخطيط لشاشة الهاتف **بنفس نسق الشاشات الجاهزة في الموبايل** (تبويبات MaterialTopTabs، تمرير عمودي، مولّدات ListScreen/FormScreen/DetailScreen، نظام الثيم/الـ RTL/الترجمة).
+> **الهدف:** جعل `anmat_mobile` طبق الأصل من `anmat_front-main` من حيث الصفحات والبيانات والمنطق والأدوار،
+> مع تكييف التخطيط لشاشة الهاتف بنفس نسق الموبايل الجاهز (MaterialTopTabs، ListScreen/FormScreen/DetailScreen،
+> الثيم/RTL/الترجمة). تاريخ المراجعة: **2026-06-13**.
 
-## الوضع الحالي
-
-نسخة الموبايل مكتملة تقريبًا. تبقّت **4 شاشات** ما زالت `PlaceholderScreen` في
-[src/navigation/RootNavigator.tsx](src/navigation/RootNavigator.tsx):
-
-| الشاشة | route الحالي | صفحة الويب المقابلة | الأدوار |
-|--------|--------------|----------------------|---------|
-| Agenda (الأجندة) | `Agenda` | `(dashboard)/appointments/` | Subscriber, Employee |
-| Analytics (التحليلات) | `Analytics` | `(dashboard)/analytics/` | Admin, Subscriber, Employee |
-| Social Media | `SocialMedia` | `(dashboard)/social-media/` | Subscriber, Employee |
-| Profile (الملف الشخصي) | `Profile` | `(dashboard)/profile/` | الجميع |
-
-### بنية تحتية جاهزة لإعادة الاستخدام
-- **المولّدات:** `src/generators/ListScreen.tsx` · `FormScreen.tsx` · `DetailScreen.tsx`
-- **الرسوم:** `src/charts/BarChart.tsx` · `DonutChart.tsx` · `GroupedBarChart.tsx`
-- **المكونات:** `Badge`, `Button`, `Header`, `Modal`, `Screen`, `StatusActions`, `Table`, `FilterBar`, `EmptyState`, `AccountDetails`, `StarRating`
-- **السياقات:** `ThemeContext` (colors)، `LanguageContext` (isRTL)، `AuthContext` (user.type)
-- **HTTP:** `src/lib/http.ts`
-- **خدمة dashboard.ts** فيها بالفعل كل نقاط نهاية التحليلات (analytics overview / task stats / departments) للأدوار الثلاثة.
-- **نمط التبويبات المرجعي:** `src/screens/HREmployeesScreen.tsx` (MaterialTopTabs بأيقونات lucide).
-- **DashboardScreen.tsx** (553 سطر) يستخدم نفس الرسوم والبيانات التي تحتاجها Analytics — مصدر إعادة استخدام أساسي.
-
-## ترتيب التنفيذ الموصى به (القيمة مقابل الجهد)
-
-1. **Analytics** — الأسهل: خدمة الـ API جاهزة، والرسوم موجودة، وDashboardScreen يغطي معظم المنطق.
-2. **Profile** — متوسط: 3 نسخ حسب الدور + خدمة `profile.ts` + نموذج تعديل.
-3. **Agenda** — الأكبر: 3 تبويبات (اليوم/التقويم/القائمة) + خط زمني + تقويم شهري + خدمة جديدة.
-4. **Social Media** — تبويبات Twitter/Facebook + بطاقات الحصة + ربط الحسابات + خدمة جديدة.
+تمت مراجعة `config/menuItems` في الطرفين + ملفات الشاشات + `RootNavigator.tsx` + صفحات الويب الفعلية.
 
 ---
 
-## 1) Analytics — `AnalyticsScreen.tsx`
+## ملخّص تنفيذي — الفجوات المكتشفة
 
-**صفحة الويب:** `analytics/page.jsx` تختار مكونًا حسب `userType`:
-- `_components/AdminAnalytics.jsx` (97 سطر)
-- `_components/CompanyManagerAnalytics.jsx` (239 سطر) — للـ Subscriber
-- `_components/EmployeeAnalytics.jsx` (106 سطر)
+نسخة الموبايل أنجزت المعظم (Dashboard, HR كامل, Projects, Tasks, Agenda, Analytics, Social Media,
+Profile, Conversations, AI, Subscribers, Industries, SystemAdmins, SupportTickets, MoneyMethods,
+Subscriptions, Settings). لكن توجد **3 فئات نواقص**:
 
-**خطة الموبايل:**
-- شاشة `AnalyticsScreen.tsx` تفرّع حسب `user.type` (Admin / Subscriber / Employee) داخل `ScrollView`.
-- ثلاثة مكونات فرعية: `AdminAnalytics`, `SubscriberAnalytics`, `EmployeeAnalytics` تحت `src/screens/analytics/` أو `src/components/analytics/`.
-- مكون `AnalyticsCard` (بطاقة إحصائية) مطابق لـ `_components/AnalyticsCard.jsx`.
-- إعادة استخدام `BarChart` / `DonutChart` / `GroupedBarChart` + بيانات `fetch*AnalyticsOverview` / `fetch*TaskStats` / `fetchSubscriberDepartments` من `services/dashboard.ts`.
-- حالات: تحميل (`ActivityIndicator`)، فارغ (`EmptyState`)، خطأ.
-
-**الخدمة:** لا حاجة لخدمة جديدة — `dashboard.ts` كافية. تحقق من أي مفاتيح بيانات إضافية تخص Analytics دون Dashboard.
-
-**المخرجات:** `AnalyticsScreen.tsx` + 3 مكونات + `AnalyticsCard` + مفاتيح ترجمة + استبدال placeholder في RootNavigator.
+1. **شاشات موظّف موجودة كملفات لكنها Stub + غير موصولة بالـ Navigator** (4 شاشات).
+2. **صفحات موجودة في الويب وغائبة كليًا من قائمة الموبايل** (8 صفحات).
+3. **شاشات موصولة لكن تحتاج رفع جودة لتطابق الويب** (Analytics فرعية + Notifications).
 
 ---
 
-## 2) Profile — `ProfileScreen.tsx`
+## القسم 1 — شاشات Stub غير موصولة (✅ أُنجز 2026-06-13)
 
-**صفحة الويب:** `profile/page.jsx` تفرّع حسب الدور:
-- `_components/AdminProfile.jsx` (150 سطر)
-- `_components/CompanyManagerProfile.jsx` (200 سطر)
-- `_components/EmployeeProfile.jsx` (432 سطر)
-- مجلدات فرعية: `company_manager/`, `components/`, `modals/`
+هذه الملفات موجودة لكنها بطاقة "قيد التطوير / قريبًا" فقط، **وغير مستوردة في
+[src/navigation/RootNavigator.tsx](src/navigation/RootNavigator.tsx)** — أي عند الضغط عليها من القائمة
+لا يحدث شيء (الـ route مُعرّف في `routeToScreen` بـ Sidebar لكن لا يوجد `Stack.Screen` مقابل).
 
-**خطة الموبايل:**
-- `ProfileScreen.tsx` يفرّع حسب `user.type`.
-- إعادة استخدام `AccountDetails` لعرض الحقول، و`FormScreen` لشاشة التعديل.
-- وظائف: عرض الملف، تعديل البيانات، تغيير كلمة المرور، رفع صورة (إن وُجد في الويب).
-- مودالات عبر `components/Modal.tsx`.
+| الشاشة (route) | الملف الحالي | صفحة الويب | أسطر الويب | ملاحظات |
+|----------------|--------------|-----------|-----------|---------|
+| `Attendance` (الحضور) | [AttendanceScreen.tsx](src/screens/AttendanceScreen.tsx) (stub 45س) | `(dashboard)/attendance/page.jsx` | 313 | يوجد بالفعل `services/attendance.ts` (checkin/checkout/all) — يحتاج فقط بناء الواجهة |
+| `Salary` (راتبي) | [SalaryScreen.tsx](src/screens/SalaryScreen.tsx) (stub 45س) | `(dashboard)/salary/page.jsx` | 89 | جدول معاملات الراتب (مبلغ/مكافأة/خصم/تعليق/تاريخ) |
+| `Leaves` (إجازات قصيرة) | [LeavesScreen.tsx](src/screens/LeavesScreen.tsx) (stub 45س) | `(dashboard)/leaves/page.jsx` | 40 | بسيطة نسبيًا |
+| `Requests` (طلباتي) | [RequestsScreen.tsx](src/screens/RequestsScreen.tsx) (stub 45س) | `(dashboard)/requests/page.jsx` | 211 | طلبات (إجازة/سلفة/تأخير) + إنشاء طلب |
 
-**الخدمة:** إنشاء `src/services/profile.ts` (جلب/تحديث الملف، تغيير كلمة المرور) — راجع redux APIs المقابلة في الويب لتحديد endpoints لكل دور.
-
-**المخرجات:** `ProfileScreen.tsx` + مكونات فرعية حسب الدور + `profile.ts` + أنواع + ترجمة + استبدال placeholder.
-
-> ملاحظة: حاليًا الـ route `Profile` في RootNavigator يستخدم PlaceholderScreen ولا يظهر في الـ Sidebar — يُربط من Header/قائمة الحساب.
-
----
-
-## 3) Agenda — `AgendaScreen.tsx`
-
-**صفحة الويب:** `appointments/page.jsx` (299 سطر) بثلاثة عروض عبر `AgendaHeader`:
-- **today** → `TodayView` (HourlyTimeline + TodayRightPanel) + `YesterdayTasksNotice`
-- **calendar** → `MonthlyCalendar` + `DayDetailSidebar`
-- **list** → قائمة المواعيد (upcoming/completed) + Daily Tasks
-
-مكونات الويب في `src/components/Agenda/`: `AgendaHeader`, `TodayView`, `HourlyTimeline` (272 سطر), `TodayRightPanel` (408 سطر), `MonthlyCalendar` (185 سطر), `DayDetailSidebar`, `DailyTaskCard`, `AppointmentNotes`, `CreateAgendaModal`, `AddToAgendaModal`, `YesterdayTasksNotice`, `AgendaSummaryBar`, `AgendaSearch`.
-
-**خطة الموبايل:**
-- `AgendaScreen.tsx` عبر `createMaterialTopTabNavigator` بثلاثة تبويبات (اليوم/التقويم/القائمة) على نمط `HREmployeesScreen`.
-- مكونات جديدة مكيّفة للهاتف تحت `src/components/agenda/`:
-  - `HourlyTimeline` (خط زمني 7ص–8م بكتل ملوّنة + خط الوقت الحالي).
-  - `MonthlyCalendar` (شبكة شهرية، نقاط على الأيام التي بها مواعيد).
-  - `TodayRightPanel` (الأولويات + مهام اليوم + ملاحظات) — يصبح قسمًا عموديًا أسفل الخط الزمني في الموبايل.
-  - `DailyTaskCard`, `AppointmentCard`, `YesterdayTasksNotice`, `CreateAgendaModal`.
-- العرض في الموبايل عمودي (لا أعمدة جنبًا إلى جنب).
-
-**الخدمة:** إنشاء `src/services/appointments.ts` يغطي endpoints الـ Subscriber و Employee:
-- المواعيد: `today`, `week`, `month/:year/:month`, `search`, CRUD، `complete`, `cancel`, `notes`.
-- المهام اليومية: `daily-tasks` CRUD + `complete` + `notes` + `month` + `search`.
-- المسارات تختلف بين `api/subscriber/organization/...` و `api/employee/...` حسب الدور.
-
-**المخرجات:** `AgendaScreen.tsx` + مكونات agenda + `appointments.ts` + أنواع + ترجمة + استبدال placeholder.
+**ما تم فعله (2026-06-13):**
+- `services/attendance.ts` صُحّح ليستخدم `api/employee/attendances` (+ check-in POST / check-out PUT بـ `start_time`/`end_time`).
+- أُنشئت `services/{salary,leaves,requests}.ts` بالـ endpoints الصحيحة من redux الويب.
+- أُعيدت كتابة الشاشات الأربع: AttendanceScreen (بطاقة check-in/out + سجل)، SalaryScreen (بطاقات معاملات)،
+  LeavesScreen (جدول)، RequestsScreen (3 تبويبات + إلغاء + FAB + `requests/CreateRequestModal.tsx`).
+- وُصلت الأربع في `RootNavigator.tsx` (الأسماء تطابق `routeToScreen` في Sidebar).
+- أُضيفت 9 مفاتيح i18n ناقصة في `locales/{ar,en}`. `npx tsc --noEmit` تمر نظيفة.
 
 ---
 
-## 4) Social Media — `SocialMediaScreen.tsx`
+## القسم 2 — صفحات ويب غائبة كليًا من قائمة الموبايل 🟠
 
-**صفحة الويب:** `social-media/page.jsx` (60 سطر) بتبويبات:
-- `_Tabs/Tweeter.tab.jsx` (363 سطر)
-- `_Tabs/Facebook.tab.jsx` (151 سطر)
-- `_Tabs/_components/AccountQuotaCard.jsx`
-- صفحة فرعية `categories/`
-- redux: `socialMediaQuotaApi.js`, `twitterAccountsApi.js`, مجلد `socialMedia`
+موجودة في `dashboardSideMenuItems` بالويب وغير موجودة في `menuItems.ts` بالموبايل ولا كملفات شاشات.
+**هذه أكبر فجوة في التطابق.**
 
-**خطة الموبايل:**
-- `SocialMediaScreen.tsx` بتبويبات MaterialTopTabs (Twitter / Facebook).
-- مكون `AccountQuotaCard` لعرض الحصة.
-- ربط/إدارة حسابات Twitter (قائمة الحسابات، إضافة، حذف، حالة).
-- تبويب Facebook حسب ما يوفّره الويب.
+| الصفحة | path الويب | أسطر الويب | الأدوار | الأولوية |
+|--------|-----------|-----------|---------|---------|
+| **Plans** (الباقات) + AI Token Plans | `/plans`, `/plans/ai-plans` | 320 | Admin | عالية (إدارية مهمة) |
+| **Roles** (الأدوار) | `/roles/admins`, `/roles/employees` | 240 | Admin + Subscriber/Employee | عالية |
+| **Permissions** (الصلاحيات) | `/permissions/admins`, `/permissions` | 80 | Admin + Subscriber | متوسطة |
+| **Orders** (الطلبات/المبيعات) | `/orders` | 160 | Admin | متوسطة |
+| **Companies** (الشركات) | `/companies` | 149 | Admin (قائمة MenuAdmin) | متوسطة |
+| **Notifications** (الإشعارات) | `/notifications` | 228 | الجميع | عالية (زر الجرس بالـ Header موجود لكنه غير موصول) |
+| **Timeline** (الخط الزمني) | `/time-line` | 20 | Subscriber/Employee | منخفضة (صفحة بسيطة) |
+| **My Tasks / My Projects** | `/employee/tasks`, `/employee/projects` | 183 لكل | Employee | متوسطة (قد يُعاد استخدام شاشتي Tasks/Projects بفلتر "خاص بي") |
 
-**الخدمة:** إنشاء `src/services/socialMedia.ts` (الحصة + حسابات Twitter + Facebook).
-
-**المخرجات:** `SocialMediaScreen.tsx` + تبويبات + `AccountQuotaCard` + `socialMedia.ts` + أنواع + ترجمة + استبدال placeholder.
+**الإجراء:**
+1. ~~**Notifications أولًا**~~ ✅ **أُنجز (2026-06-13):** أُنشئت `services/notifications.ts`
+   (GET `/api/notifications/:id/:type`، mark-as-read PATCH، mark-all PATCH) + `NotificationsScreen.tsx`
+   (قائمة + شريط أولوية + وضع علامة مقروء/الكل). رُبط جرس [Header.tsx](src/components/Header.tsx) ليتنقّل
+   للشاشة مع شارة عدد غير المقروء الحقيقية. أُضيف route في `RootNavigator` + عنوان في `DashboardLayout`.
+   ملاحظة: صفحة الويب `/notifications` بيانات وهمية (mock)؛ بنينا على نظام الإشعارات الحقيقي (`notificationsApi`) بدلًا منها.
+2. ~~**Plans / Roles / Permissions**~~ ✅ **أُنجز (2026-06-13):**
+   - `services/plans.ts`: subscription-plans (list/delete/toggle-activity/toggle-trial) + ai/admin/token-packages (list/delete/toggle).
+   - `services/roles.ts`: admin roles (`api/admin/roles`، perms في `admin_permissions_ids`) + subscriber roles (`api/subscriber/organization/roles`، perms في `permissions_ids`) + delete.
+   - `services/permissions.ts`: قائمة صلاحيات (admin أو subscriber).
+   - `PlansScreen.tsx` (MaterialTopTabs: باقات + حزم AI، بطاقات + toggle/delete عبر StatusActions، Admin فقط).
+   - `RolesScreen.tsx` (يتفرّع حسب نوع المستخدم: Admin↔Subscriber؛ بطاقات + شارات صلاحيات + حذف).
+   - `PermissionsScreen.tsx` (قائمة عبر ListScreen، للقراءة فقط).
+   - أُضيفت لـ `menuItems.ts` + `Sidebar.routeToScreen` + `RootNavigator` + `DashboardLayout`.
+   - **ملاحظة:** إنشاء/تعديل الباقات الكاملة (نماذج 400+ سطر بالويب) لم يُنقل — الموبايل يدعم العرض + التفعيل/الإيقاف/الحذف/التجربة. إضافة كاملة لاحقًا عند الحاجة.
+   - ⚠️ **Orders / Companies تُخطّيا عمدًا**: صفحتا الويب بيانات وهمية (mock) بلا API حقيقي (قرار المستخدم 2026-06-13).
+3. ~~**My Tasks / My Projects (Employee)**~~ ✅ **أُنجز (2026-06-13):**
+   - أُضيفت دوال موظّف للخدمات: `tasks.ts` (`fetchMyTasks` GET `api/employee/tasks`، `updateMyTaskStatus` PUT `.../status-update`)
+     و`projects.ts` (`fetchMyProjects` GET `api/employee/projects`).
+   - `MyTasksScreen.tsx` (ListScreen: مهامي + عرض + تغيير الحالة عبر Alert) و`MyProjectsScreen.tsx` (ListScreen للعرض + فتح التفاصيل).
+   - وُصلتا لـ `menuItems.ts` (Employee فقط) + Sidebar + RootNavigator + DashboardLayout.
+   - ملاحظة: نموذج التقييم (EvaluationModal) عند الحالة `done` بالويب لم يُنقل؛ التغيير السريع للحالة على الموبايل يستثني `done`.
+4. ⚠️ **Timeline تُخطّى عمدًا**: مكوّن الويب `TimeLine.jsx` بيانات وهمية ثابتة (hardcoded) بلا API — مثل Orders/Companies.
 
 ---
 
-## معايير عامة لكل شاشة (Definition of Done)
+## القسم 3 — شاشات موصولة تحتاج رفع جودة / تأكيد تطابق 🟡
 
-1. استبدال `PlaceholderScreen` المقابل في `RootNavigator.tsx` بالشاشة الحقيقية.
-2. التفرّع حسب الدور حيث يفعل الويب ذلك (Analytics, Profile).
-3. دعم RTL (`isRTL`) وألوان الثيم (`useTheme().colors`) في كل النصوص والتخطيطات.
-4. مفاتيح ترجمة في `src/locales/ar` و `src/locales/en` (إعادة استخدام مفاتيح الويب نفسها قدر الإمكان).
-5. حالات التحميل/الفارغ/الخطأ مغطّاة.
-6. الالتزام بنفس بيانات/منطق/حالات الويب، مع تخطيط مكيّف للهاتف (عمودي/تبويبات).
-7. خدمات API تحترم اختلاف مسارات Subscriber/Employee/Admin.
+| الشاشة | الحالة | ما يلزم |
+|--------|--------|---------|
+| Analytics الفرعية ([analytics/](src/screens/analytics/)) | ✅ **دُقّقت (2026-06-13)** | تستهلك نفس الـ endpoints الحقيقية (`/api/{admin\|subscriber/organization\|employee}/analytics`) وتغطّي الأقسام الأساسية لكل دور (ملخّص/أداء/تقييم المهام + أداء/آخر المشاريع) عبر DonutChart/BarChart/GaugeChart وقوائم تقدّم. **فرق مقبول:** الويب يستخدم مكتبة رسوم أغنى (~40 مكوّن)؛ الموبايل يبسّطها برسوم مخصّصة مناسبة للهاتف. لا نقص بيانات حرِج — لا إجراء مطلوب. |
+| Social Media — Facebook tab | placeholder "قريبًا" (يطابق الويب حاليًا) | لا إجراء حتى يُبنى في الويب |
+| باقي شاشات القوائم | مبنية عبر `ListScreen` | تدقيق سريع: نفس الأعمدة والإجراءات (row actions) والفلاتر الموجودة بالويب |
 
-## ملف مرجعي للويب لكل شاشة
-- Analytics: `anmat_front-main/src/app/(dashboard)/analytics/`
-- Profile: `anmat_front-main/src/app/(dashboard)/profile/`
-- Agenda: `anmat_front-main/src/app/(dashboard)/appointments/` + `src/components/Agenda/`
-- Social Media: `anmat_front-main/src/app/(dashboard)/social-media/` + `src/redux/` (socialMediaQuotaApi, twitterAccountsApi)
+---
+
+## خطة التنفيذ المقترحة (مراحل)
+
+**المرحلة A (إصلاح كسور فورية):** وصل الشاشات الأربع في القسم 1 + بناء واجهاتها الحقيقية.
+بهذا تتوقف عناصر قائمة الموظّف عن كونها "ميتة".
+
+**المرحلة B (إشعارات):** NotificationsScreen + ربط الجرس. أعلى أثر على تجربة المستخدم.
+
+**المرحلة C (الصفحات الإدارية الغائبة):** Plans, Roles, Permissions, Orders, Companies.
+
+**المرحلة D (تكميل):** My Tasks/My Projects للموظّف + Timeline + تدقيق Analytics.
+
+**معيار القبول لكل شاشة:** نفس البيانات/الأعمدة/الإجراءات/قيود الأدوار كالويب، تمرّ `npx tsc --noEmit` نظيفة،
+وتدعم RTL/الثيم/الترجمة (مع إضافة مفاتيح i18n في `locales/{ar,en}/translation.json`).
+
+---
+
+## القسم 4 — تدقيق المودالز (ويب ↔ موبايل) — 2026-06-13
+
+الويب فيه ~78 مودالًا. التصنيف بعد التدقيق الكامل:
+
+### ✅ مغطّاة (مودال موبايل أو شاشة كاملة مكافئة)
+CreateEmployee/Edit/Invite، AssignDepartment، SendNotification، EditProfile، ChangePassword،
+CreateRequest، CreateAgenda/AddToAgenda، Create/Edit Department/Position/Salary/Leave/Attendance (inline FormScreen)،
+EditTask/EditProject (شاشات)، CreateTicket.
+
+### ✅ أُضيفت في هذه الجولة (2026-06-13)
+- **Industries**: `CreateIndustryModal` (إنشاء/تعديل/حذف، `api/admin/industries`) — موصول في IndustriesScreen.
+- **System Admins**: `CreateAdminModal` (إنشاء + اختيار أدوار متعدّد، `api/admin/admins`) — موصول في SystemAdminsScreen.
+
+### ⛔ تُخطّى عمدًا — لا backend حقيقي (بيانات وهمية/GET فقط بالويب)
+هذه صفحاتها/مودالاتها في الويب mock — بناؤها بالموبايل = اختراع وظائف:
+- **HR Meetings** (CreateMeeting/Invite) — صفحة الويب mock.
+- **HR Holidays** (AddHoliday/DeleteHoliday) — mock.
+- **HR Teams** (CreateTeam/TeamRating/Evaluation) — `teamsFactory` mock.
+- **HR Chats** (CreateChatGroup/CreatePoll/ChatDetails) — "// Mock Data" (الدردشة الحقيقية = Conversations موجودة بالموبايل).
+- **Money Receiving** (CreateMoneyReceiving) — الـ API فيه GET فقط، لا mutation.
+- **Notifications** (CreateNotification/Details) — صفحة الويب mock (بنينا على نظام الإشعارات الحقيقي).
+
+### 🟡 مودالات "إدارة/إنشاء" بـ API حقيقي لكنها لم تُنقل بعد (نطاق مؤجّل)
+الشاشات موجودة للعرض؛ هذه إضافات إنشاء/إدارة متقدّمة:
+- **Plans**: CreatePlan/EditPlan/TokenPackage (نماذج 400+ سطر).
+- **Roles/Permissions**: AddRole/AddSubscriberRole/SyncPermissions/AddPermission (إنشاء أدوار + مزامنة صلاحيات).
+- **Social Media**: AddTwitterAccount/Edit/Import/AddCategory/SetQuota (إدارة حسابات تويتر).
+- **Subscriptions**: AddNewPayment/ChangeBillingInfo/IncreaseFeatures (الدفع/الفوترة).
+- **Projects**: ProjectRating/SaveAsTemplate/CreateTeam.
+- **Tasks**: EvaluationModal (تقييم عند `done`).
+- **Profile**: AddRequest/AddToDoList/EditOrganization/EditAdminProfile.
+
+### ⛔ مودالات أدوات ويب لا لزوم لها بالموبايل
+Modal.jsx (حاوية)، TabModal، LoginAccountsModal، SendAdminNotificationModal، CreateAppointmentFromTaskModal.
+
+---
+
+## مراجع سريعة
+- مصدر الحقيقة للقوائم: ويب `src/config/menuItems.js` ↔ موبايل `src/config/menuItems.ts`.
+- نمط شاشة قائمة جاهز: [SubscribersScreen.tsx](src/screens/SubscribersScreen.tsx) (يستخدم `generators/ListScreen`).
+- نمط تبويبات: AgendaScreen / SocialMediaScreen (MaterialTopTabs).
+- التوصيل: `RootNavigator.tsx` (`<Stack.Screen>`) + `Sidebar.tsx` (`routeToScreen`) + `menuItems.ts` (`allowedTo`).

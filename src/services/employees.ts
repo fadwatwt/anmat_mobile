@@ -124,15 +124,13 @@ export async function inviteEmployee(email: string): Promise<InvitationData> {
 }
 
 export async function assignEmployeesToDepartment(department_id: string, employeeIds: string[]): Promise<void> {
-  await http.put('/api/subscriber/organization/employees/assign-department', {
-    department_id,
+  await http.patch(`/api/subscriber/organization/departments/${department_id}/employees`, {
     employeeIds,
   });
 }
 
 export async function unassignEmployeesFromDepartment(department_id: string, employeeIds: string[]): Promise<void> {
-  await http.put('/api/subscriber/organization/employees/unassign-department', {
-    department_id,
+  await http.patch(`/api/subscriber/organization/departments/${department_id}/employees/unassign`, {
     employeeIds,
   });
 }
@@ -150,7 +148,7 @@ export async function sendNotification(data: {
 
 export async function fetchNotificationTypes(): Promise<NotificationType[]> {
   const response = await http.get<ApiResponse<NotificationType[]>>(
-    '/api/subscriber/notification-types'
+    '/api/subscriber-notifications/types'
   );
   return response.data.data;
 }

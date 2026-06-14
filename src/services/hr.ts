@@ -1,6 +1,64 @@
 import { http } from '../lib/http';
 import { ApiResponse, AttendanceRecord, LeaveRecord, SalaryTransaction, Department, Position, EmployeeItem } from '../types';
 
+// ─── Types that match the REAL subscriber/organization API shapes ─────────────
+export type OrgAttendance = {
+  _id: string;
+  employee_id?: string;
+  employee?: { _id?: string; name?: string; email?: string };
+  date?: string;
+  start_time?: string;
+  end_time?: string;
+  late_in_minutes?: number;
+  comment?: string;
+  createdAt?: string;
+};
+
+export type OrgLeave = {
+  _id: string;
+  employee_id?: string;
+  employee?: { _id?: string; name?: string; email?: string };
+  date?: string;
+  start_time?: string;
+  end_time?: string;
+  createdAt?: string;
+};
+
+export type OrgSalaryTransaction = {
+  _id: string;
+  employee_id?: string;
+  employee?: { _id?: string; name?: string; email?: string };
+  amount?: number;
+  bonus?: number;
+  discount?: number;
+  comment?: string;
+  createdAt?: string;
+};
+
+export type CreateAttendancePayload = {
+  employee_id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  late_in_minutes?: number;
+};
+
+export type CreateOrgLeavePayload = {
+  employee_id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+};
+
+export type CreateSalaryPayload = {
+  employee_id: string;
+  amount: number;
+  bonus?: number;
+  discount?: number;
+  comment?: string;
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
@@ -24,7 +82,77 @@ export interface ListParams {
   sort_order?: 'asc' | 'desc';
 }
 
-// ===== Attendances =====
+// ===== OrgAttendances (real API) =====
+export async function fetchOrgAttendances(params: ListParams = {}): Promise<{ data: OrgAttendance[]; total: number }> {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v != null) qs.append(k, String(v)); });
+  const res = await http.get<ApiResponse<{ data: OrgAttendance[]; total: number } | OrgAttendance[]>>(
+    `/api/subscriber/organization/attendances?${qs}`
+  );
+  const d = res.data.data as any;
+  if (Array.isArray(d)) return { data: d, total: d.length };
+  return { data: d?.data ?? [], total: d?.total ?? 0 };
+}
+
+export async function createOrgAttendance(payload: CreateAttendancePayload): Promise<OrgAttendance> {
+  const res = await http.post<ApiResponse<OrgAttendance>>('/api/subscriber/organization/attendances', payload);
+  return res.data.data;
+}
+
+export async function updateOrgAttendance(id: string, payload: Partial<CreateAttendancePayload>): Promise<OrgAttendance> {
+  const res = await http.patch<ApiResponse<OrgAttendance>>(`/api/subscriber/organization/attendances/${id}`, payload);
+  return res.data.data;
+}
+
+export async function deleteOrgAttendance(id: string): Promise<void> {
+  await http.delete(`/api/subscriber/organization/attendances/${id}`);
+}
+
+// ===== OrgLeaves / Short Leaves (real API) =====
+export async function fetchOrgLeaves(params: ListParams = {}): Promise<{ data: OrgLeave[]; total: number }> {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v != null) qs.append(k, String(v)); });
+  const res = await http.get<ApiResponse<{ data: OrgLeave[]; total: number } | OrgLeave[]>>(
+    `/api/subscriber/organization/leaves?${qs}`
+  );
+  const d = res.data.data as any;
+  if (Array.isArray(d)) return { data: d, total: d.length };
+  return { data: d?.data ?? [], total: d?.total ?? 0 };
+}
+
+export async function createOrgLeave(payload: CreateOrgLeavePayload): Promise<OrgLeave> {
+  const res = await http.post<ApiResponse<OrgLeave>>('/api/subscriber/organization/leaves', payload);
+  return res.data.data;
+}
+
+export async function deleteOrgLeave(id: string): Promise<void> {
+  await http.delete(`/api/subscriber/organization/leaves/${id}`);
+}
+
+// ===== OrgSalaryTransactions (real API) =====
+export async function fetchOrgSalaryTransactions(params: ListParams = {}): Promise<{ data: OrgSalaryTransaction[]; total: number }> {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v != null) qs.append(k, String(v)); });
+  const res = await http.get<ApiResponse<{ data: OrgSalaryTransaction[]; total: number } | OrgSalaryTransaction[]>>(
+    `/api/subscriber/organization/employees-salary-transactions?${qs}`
+  );
+  const d = res.data.data as any;
+  if (Array.isArray(d)) return { data: d, total: d.length };
+  return { data: d?.data ?? [], total: d?.total ?? 0 };
+}
+
+export async function createOrgSalaryTransaction(payload: CreateSalaryPayload): Promise<OrgSalaryTransaction> {
+  const res = await http.post<ApiResponse<OrgSalaryTransaction>>(
+    '/api/subscriber/organization/employees-salary-transactions', payload
+  );
+  return res.data.data;
+}
+
+export async function deleteOrgSalaryTransaction(id: string): Promise<void> {
+  await http.delete(`/api/subscriber/organization/employees-salary-transactions/${id}`);
+}
+
+// ===== Attendances (legacy — kept for backward compat) =====
 export async function fetchAttendances(params: ListParams = {}): Promise<PaginatedResponse<AttendanceRecord>> {
   const queryParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -150,11 +278,11 @@ export async function deleteDepartment(id: string): Promise<void> {
 }
 
 export async function assignEmployeesToDepartment(departmentId: string, employeeIds: string[]): Promise<void> {
-  await http.patch(`/api/subscriber/organization/departments/${departmentId}/employees`, { employee_ids: employeeIds });
+  await http.patch(`/api/subscriber/organization/departments/${departmentId}/employees`, { employeeIds });
 }
 
 export async function unassignEmployeesFromDepartment(departmentId: string, employeeIds: string[]): Promise<void> {
-  await http.patch(`/api/subscriber/organization/departments/${departmentId}/employees/unassign`, { employee_ids: employeeIds });
+  await http.patch(`/api/subscriber/organization/departments/${departmentId}/employees/unassign`, { employeeIds });
 }
 
 // ===== Positions =====
@@ -174,7 +302,7 @@ export async function createPosition(data: Partial<Position>): Promise<Position>
 }
 
 export async function updatePosition(id: string, data: Partial<Position>): Promise<Position> {
-  const response = await http.put<ApiResponse<Position>>(
+  const response = await http.patch<ApiResponse<Position>>(
     `/api/subscriber/organization/positions/${id}`,
     data
   );

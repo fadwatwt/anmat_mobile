@@ -3,6 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View 
 import { useTranslation } from 'react-i18next';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
+import { DateField } from '../DateField';
 import { useTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
@@ -98,22 +99,16 @@ export function CreateAgendaModal({ visible, onClose, initialTab = 'appointment'
           <Field label={t('Description')}>
             <TextInput style={[inputStyle, styles.textarea]} value={description} onChangeText={setDescription} multiline placeholder={t('Enter description')} placeholderTextColor={colors.textMuted} />
           </Field>
-          <Field label={t('Date')}>
-            <TextInput style={inputStyle} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
-          </Field>
+          <DateField mode="date" label={t('Date')} value={date} onChange={setDate} />
 
           {tab === 'appointment' && (
             <>
               <View style={[styles.row, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <View style={styles.half}>
-                  <Field label={t('Start Time')}>
-                    <TextInput style={inputStyle} value={startTime} onChangeText={setStartTime} placeholder="HH:MM" placeholderTextColor={colors.textMuted} />
-                  </Field>
+                  <DateField mode="time" label={t('Start Time')} value={startTime} onChange={setStartTime} />
                 </View>
                 <View style={styles.half}>
-                  <Field label={t('End Time')}>
-                    <TextInput style={inputStyle} value={endTime} onChangeText={setEndTime} placeholder="HH:MM" placeholderTextColor={colors.textMuted} />
-                  </Field>
+                  <DateField mode="time" label={t('End Time')} value={endTime} onChange={setEndTime} />
                 </View>
               </View>
               <Field label={t('Location')}>
@@ -155,10 +150,10 @@ function Chips({ options, value, onChange }: { options: string[]; value: string;
       {options.map((o) => (
         <TouchableOpacity
           key={o}
-          style={[styles.chip, { borderColor: colors.border }, value === o && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+          style={[styles.chip, { borderColor: value === o ? colors.primary : colors.border, backgroundColor: value === o ? colors.primary : colors.statusBg }]}
           onPress={() => onChange(o)}
         >
-          <Text style={[styles.chipText, { color: value === o ? '#FFF' : colors.textMuted }]}>{t(o)}</Text>
+          <Text style={[styles.chipText, { color: value === o ? '#FFF' : colors.ink }]}>{t(o)}</Text>
         </TouchableOpacity>
       ))}
     </View>

@@ -1,3 +1,4 @@
+import React, { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../components/Badge';
@@ -5,17 +6,20 @@ import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { ListScreen } from '../generators/ListScreen';
 import { fetchSystemAdmins, SystemAdmin } from '../services/systemAdmins';
+import { CreateAdminModal } from '../modals/CreateAdminModal';
 import { font } from '../theme';
-
-const fetchData = async (_params: any) => {
-  const data = await fetchSystemAdmins();
-  return { data, total: data.length };
-};
 
 export default function SystemAdminsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const [reloadKey, setReloadKey] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    const data = await fetchSystemAdmins();
+    return { data, total: data.length };
+  }, [reloadKey]);
 
   const columns = [
     {
@@ -56,14 +60,20 @@ export default function SystemAdminsScreen() {
   ];
 
   return (
-    <ListScreen
-      columns={columns}
-      fetchData={fetchData}
-      keyExtractor={(item: SystemAdmin) => item._id}
-      searchable
-      searchPlaceholderKey="Search admins..."
-      emptyTitleKey="No admins found"
-      emptyMessageKey="No system admins to display"
-    />
+    <>
+      <ListScreen
+        key={reloadKey}
+        columns={columns}
+        fetchData={fetchData}
+        keyExtractor={(item: SystemAdmin) => item._id}
+        searchable
+        searchPlaceholderKey="Search admins..."
+        onCreate={() => setModalOpen(true)}
+
+        emptyTitleKey="No admins found"
+        emptyMessageKey="No system admins to display"
+      />
+      <CreateAdminModal visible={modalOpen} onClose={() => setModalOpen(false)} onSaved={() => setReloadKey((k) => k + 1)} />
+    </>
   );
 }

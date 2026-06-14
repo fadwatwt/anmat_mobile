@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '../components/Modal';
+import { DateField } from '../components/DateField';
+import { SelectDropdown, MultiSelectDropdown } from '../components/SelectDropdown';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { updateEmployee, fetchDepartments } from '../services/employees';
@@ -149,47 +151,23 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
   };
 
   const renderSelect = (options: { id: string; label: string }[], value: string | null, onChange: (v: string) => void, placeholder: string) => (
-    <View style={selStyles.wrap}>
-      <Text style={[selStyles.placeholder, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{placeholder}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={selStyles.chips}>
-          {(options || []).map(opt => {
-            const active = value === opt.id;
-            return (
-              <TouchableOpacity
-                key={opt.id}
-                onPress={() => onChange(opt.id)}
-                style={[selStyles.chip, active && { backgroundColor: colors.primary }, { borderColor: colors.border }]}
-              >
-                <Text style={[selStyles.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{opt.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </ScrollView>
-    </View>
+    <SelectDropdown
+      options={options.map(o => ({ label: o.label, value: o.id }))}
+      value={value || ''}
+      onChange={onChange}
+      placeholder={placeholder}
+      label={placeholder}
+    />
   );
 
   const renderMultiSelect = (options: { id: string; label: string }[], value: string[], onChange: (v: string[]) => void, placeholder: string) => (
-    <View style={selStyles.wrap}>
-      <Text style={[selStyles.placeholder, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{placeholder}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={selStyles.chips}>
-          {options.map(opt => {
-            const active = value.includes(opt.id);
-            return (
-              <TouchableOpacity
-                key={opt.id}
-                onPress={() => onChange(active ? value.filter(v => v !== opt.id) : [...value, opt.id])}
-                style={[selStyles.chip, active && { backgroundColor: colors.primary }, { borderColor: colors.border }]}
-              >
-                <Text style={[selStyles.chipText, active && { color: '#FFF' }, { color: active ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{opt.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </ScrollView>
-    </View>
+    <MultiSelectDropdown
+      options={options.map(o => ({ label: o.label, value: o.id }))}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      label={placeholder}
+    />
   );
 
   const inputStyle = (focused: boolean) => ({
@@ -200,7 +178,7 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
   });
 
   return (
-    <Modal visible={visible} onClose={onClose} title={t('Edit Employee')} size="full">
+    <Modal visible={visible} onClose={onClose} title={t('Edit Employee')} size="full" noScroll>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={baseStyles.flex}>
         <ScrollView style={baseStyles.flex} contentContainerStyle={baseStyles.scrollContent} keyboardShouldPersistTaps="handled">
           {step === 1 && (
@@ -214,7 +192,7 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
                 </View>
                 <EditField label={t('Phone')} required value={form.phone} onChangeText={v => updateField('phone', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} keyboardType="phone-pad" isRTL={isRTL} />
               </View>
-              <EditField label={t('Date of Birth')} value={form.date_of_birth} onChangeText={v => updateField('date_of_birth', v)} colors={colors} inputStyle={inputStyle} placeholder={t('YYYY-MM-DD')} isRTL={isRTL} />
+              <DateField mode="date" label={t('Date of Birth')} value={form.date_of_birth} onChange={v => updateField('date_of_birth', v)} />
               <Text style={[baseStyles.subSectionTitle, { color: colors.ink, borderLeftColor: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Location')}</Text>
               <View style={baseStyles.row}>
                 <View style={{ flex: 1 }}>{renderSelect(COUNTRIES, form.country, v => updateField('country', v), t('Country'))}</View>
@@ -241,8 +219,12 @@ export function EditEmployeeModal({ visible, onClose, onSuccess, employeeData }:
                 <EditField label={t('Work Hours')} required value={String(form.work_hours)} onChangeText={v => updateField('work_hours', Number(v) || 0)} colors={colors} inputStyle={inputStyle} keyboardType="numeric" isRTL={isRTL} />
               ) : (
                 <View style={baseStyles.row}>
-                  <EditField label={t('Shift Start')} required value={form.shift_start_time} onChangeText={v => updateField('shift_start_time', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} placeholder={t('09:00')} isRTL={isRTL} />
-                  <EditField label={t('Shift End')} required value={form.shift_end_time} onChangeText={v => updateField('shift_end_time', v)} colors={colors} inputStyle={inputStyle} containerStyle={{ flex: 1 }} placeholder={t('17:00')} isRTL={isRTL} />
+                  <View style={{ flex: 1 }}>
+                    <DateField mode="time" label={t('Shift Start')} value={form.shift_start_time} onChange={v => updateField('shift_start_time', v)} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <DateField mode="time" label={t('Shift End')} value={form.shift_end_time} onChange={v => updateField('shift_end_time', v)} />
+                  </View>
                 </View>
               )}
 

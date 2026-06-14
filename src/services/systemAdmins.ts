@@ -26,7 +26,14 @@ export async function fetchAdminRoles(): Promise<AdminRole[]> {
   return response.data.data;
 }
 
-export async function createSystemAdmin(data: Partial<SystemAdmin>): Promise<SystemAdmin> {
+export type CreateAdminPayload = {
+  name: string;
+  email: string;
+  password: string;
+  admin_system_roles: string[];
+};
+
+export async function createSystemAdmin(data: CreateAdminPayload): Promise<SystemAdmin> {
   const response = await http.post<ApiResponse<SystemAdmin>>('/api/admin/admins', data);
   return response.data.data;
 }

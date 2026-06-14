@@ -1,24 +1,28 @@
-import React from 'react';
-import { Alert, Text } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { ListScreen } from '../generators/ListScreen';
 import { fetchPositions } from '../services/hr';
+import { CreatePositionModal } from '../modals/CreatePositionModal';
 
 export default function HRPositionsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const columns = [
     {
-      key: 'name',
+      key: 'title',
       titleKey: 'Position Name',
       width: 180,
       render: (item: any) => (
         <Text style={{ color: colors.ink, textAlign: isRTL ? 'right' : 'left' }}>
-          {item.name}
+          {item.title || item.name}
         </Text>
       ),
       sortable: true,
@@ -48,20 +52,29 @@ export default function HRPositionsScreen() {
     },
   ];
 
-  const fetchData = async (_params: any) => {
+  const fetchData = useCallback(async (_params: any) => {
+    void refreshKey;
     const data = await fetchPositions();
     return { data, total: data.length };
-  };
+  }, [refreshKey]);
 
   return (
-    <ListScreen
-      columns={columns}
-      fetchData={fetchData}
-      keyExtractor={(item: any) => item._id}
-      onCreate={() => Alert.alert(t('Coming soon'))}
-      createLabelKey="Add Position"
-      emptyTitleKey="No Positions"
-      emptyMessageKey="No positions found"
-    />
+    <>
+      <ListScreen
+        columns={columns}
+        fetchData={fetchData}
+        keyExtractor={(item: any) => item._id}
+        onCreate={() => { setEditing(null); setModalVisible(true); }}
+        onRowPress={(item: any) => { setEditing(item); setModalVisible(true); }}
+        emptyTitleKey="No Positions"
+        emptyMessageKey="No positions found"
+      />
+      <CreatePositionModal
+        visible={modalVisible}
+        position={editing}
+        onClose={() => setModalVisible(false)}
+        onSaved={() => setRefreshKey(k => k + 1)}
+      />
+    </>
   );
 }

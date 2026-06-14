@@ -19,17 +19,23 @@ export type AIConversation = {
 };
 
 export type TokenBalance = {
+  balance?: number;       // paid tokens (ai_tokens_balance)
   free_limit?: number;
   free_consumed?: number;
-  paid_balance?: number;
   is_unlimited?: boolean;
 };
 
 export type TokenPackage = {
   _id: string;
   name?: string;
+  description?: string;
   tokens?: number;
   price?: number;
+  price_cents?: number;
+  price_label?: string;
+  features?: string[];
+  is_active?: boolean;
+  sort_order?: number;
 };
 
 export async function fetchTokenBalance(): Promise<TokenBalance> {
@@ -48,13 +54,19 @@ export async function listConversations(): Promise<AIConversation[]> {
 }
 
 export async function getConversationMessages(id: string): Promise<AIMessage[]> {
-  const response = await http.get<ApiResponse<AIMessage[]>>(`/api/ai/conversations/${id}/messages`);
-  return response.data.data || response.data;
+  const response = await http.get<ApiResponse<{ conversation: any; messages: AIMessage[] }>>(`/api/ai/conversations/${id}/messages`);
+  const body = response.data.data ?? response.data;
+  // API returns { conversation, messages } — extract messages array
+  return Array.isArray(body) ? body : (body?.messages ?? []);
 }
 
 export async function sendMessage(data: { message: string; conversation_id?: string; attachments?: string[]; model?: string }): Promise<{ message: AIMessage; conversation_id: string }> {
-  const response = await http.post<ApiResponse<{ message: AIMessage; conversation_id: string }>>('/api/ai/chat', data);
-  return response.data.data || response.data;
+  const response = await http.post<ApiResponse<{ assistant_message: AIMessage; conversation_id: string }>>('/api/ai/chat', data);
+  const body = response.data.data || response.data;
+  return {
+    message: body.assistant_message,
+    conversation_id: body.conversation_id,
+  };
 }
 
 export async function renameConversation(id: string, title: string): Promise<void> {

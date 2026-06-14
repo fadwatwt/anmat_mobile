@@ -3,9 +3,10 @@ import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View 
 import { useTranslation } from 'react-i18next';
 import { Bell, Info, AlertTriangle } from 'lucide-react-native';
 import { Modal } from '../components/Modal';
+import { MultiSelectDropdown } from '../components/SelectDropdown';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
-import { fetchEmployees, fetchNotificationTypes, sendNotification, fetchDepartments } from '../services/employees';
+import { fetchEmployees, fetchNotificationTypes, sendNotification } from '../services/employees';
 import { font, radii, spacing } from '../theme';
 import type { EmployeeDetailItem, NotificationType } from '../types';
 
@@ -72,16 +73,6 @@ export function SendNotificationModal({ visible, onClose }: Props) {
     }
   };
 
-  const toggleEmployee = (id: string) => {
-    if (id === 'all') {
-      setSelectedEmployees(prev => prev.includes('all') ? [] : ['all']);
-      return;
-    }
-    setSelectedEmployees(prev =>
-      prev.includes(id) ? prev.filter(e => e !== id) : [...prev.filter(e => e !== 'all'), id]
-    );
-  };
-
   const typeOptions = types.map(t => ({
     id: t._id,
     name: t.name,
@@ -92,7 +83,7 @@ export function SendNotificationModal({ visible, onClose }: Props) {
 
   return (
     <Modal visible={visible} onClose={onClose} title={t('Send Notification')} size="md">
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+      <View style={s.scroll}>
         <Text style={[s.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Notification Type')} <Text style={s.required}>*</Text></Text>
         <View style={s.typeRow}>
           {typeOptions.map(type => (
@@ -109,23 +100,29 @@ export function SendNotificationModal({ visible, onClose }: Props) {
           ))}
         </View>
 
-        <Text style={[s.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employees')}</Text>
-        <View style={[s.empList, { borderColor: colors.border }]}>
-          <TouchableOpacity onPress={() => toggleEmployee('all')} style={s.empRow}>
-            <View style={[s.checkbox, selectedEmployees.includes('all') && { backgroundColor: colors.primary, borderColor: colors.primary }]} />
-            <Text style={[s.empName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('All Employees')}</Text>
-          </TouchableOpacity>
-          {employees.slice(0, 30).map(emp => {
-            const eid = emp.user_id;
-            return (
-              <TouchableOpacity key={eid} onPress={() => toggleEmployee(eid)} style={s.empRow}>
-                <View style={[s.checkbox, selectedEmployees.includes(eid) && { backgroundColor: colors.primary, borderColor: colors.primary }]} />
-                <Text style={[s.empName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{emp.user?.name || t('Unknown')}</Text>
-                <Text style={[s.empEmail, { textAlign: isRTL ? 'right' : 'left' }]}>{emp.user?.email}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <MultiSelectDropdown
+          label={t('Employees')}
+          options={[
+            { label: t('All Employees'), value: 'all' },
+            ...employees.map(emp => ({
+              label: emp.user?.name || t('Unknown'),
+              value: emp.user_id,
+            })),
+          ]}
+          value={selectedEmployees}
+          onChange={selected => {
+            const justAddedAll = selected.includes('all') && !selectedEmployees.includes('all');
+            const removedAll = !selected.includes('all') && selectedEmployees.includes('all');
+            if (justAddedAll) {
+              setSelectedEmployees(['all']);
+            } else if (removedAll || !selected.includes('all')) {
+              setSelectedEmployees(selected.filter(s => s !== 'all'));
+            } else {
+              setSelectedEmployees(selected);
+            }
+          }}
+          placeholder={t('Select employees...')}
+        />
 
         <Text style={[s.label, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Title')} <Text style={s.required}>*</Text></Text>
         <TextInput
@@ -150,7 +147,7 @@ export function SendNotificationModal({ visible, onClose }: Props) {
         <TouchableOpacity onPress={handleSend} disabled={sending} style={[s.btn, { backgroundColor: colors.primary }, sending && s.btnDisabled]}>
           <Text style={[s.btnText, { textAlign: isRTL ? 'right' : 'left' }]}>{sending ? t('Sending...') : t('Send')}</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
     </Modal>
   );
 }
@@ -166,11 +163,6 @@ const s = StyleSheet.create({
     borderWidth: 2,
   },
   typeChipText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium, color: '#374151' },
-  empList: { maxHeight: 200, borderWidth: 1, borderRadius: radii.lg, overflow: 'hidden' },
-  empRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.sm, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  checkbox: { width: 18, height: 18, borderRadius: 4, borderWidth: 2, borderColor: '#D1D5DB' },
-  empName: { fontSize: font.sizes.sm, fontWeight: font.weights.medium, flex: 1 },
-  empEmail: { fontSize: font.sizes.xs, color: '#9CA3AF' },
   input: { borderWidth: 1, borderRadius: radii.lg, paddingHorizontal: spacing.md, paddingVertical: 10, fontSize: font.sizes.sm },
   textArea: { minHeight: 100, textAlignVertical: 'top' },
   btn: { paddingVertical: 12, borderRadius: radii.lg, alignItems: 'center', marginTop: spacing.sm },

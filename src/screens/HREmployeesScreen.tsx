@@ -4,10 +4,10 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Users, Calendar, DollarSign, Clock, ClipboardList } from 'lucide-react-native';
 import { EmployeeListScreen } from './EmployeeListScreen';
-import { AttendanceScreen } from './AttendanceScreen';
-import { SalaryScreen } from './SalaryScreen';
-import { LeavesScreen } from './LeavesScreen';
-import { RequestsScreen } from './RequestsScreen';
+import HRAttendancesScreen from './HRAttendancesScreen';
+import HRSalaryScreen from './HRSalaryScreen';
+import HRLeavesScreen from './HRLeavesScreen';
+import HRRequestsScreen from './HRRequestsScreen';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -16,10 +16,10 @@ export function HREmployeesScreen() {
 
 const tabScreens = [
   { name: 'Employees', component: EmployeeListScreen, icon: Users, title: t('Employees') },
-  { name: 'Attendance', component: AttendanceScreen, icon: Calendar, title: t('Attendance') },
-  { name: 'Salary', component: SalaryScreen, icon: DollarSign, title: t('Salary') },
-  { name: 'Leaves', component: LeavesScreen, icon: Clock, title: t('Leaves') },
-  { name: 'Requests', component: RequestsScreen, icon: ClipboardList, title: t('Requests') },
+  { name: 'Attendances', component: HRAttendancesScreen, icon: Calendar, title: t('Attendances') },
+  { name: 'Short Leaves', component: HRLeavesScreen, icon: Clock, title: t('Short Leaves') },
+  { name: 'Requests', component: HRRequestsScreen, icon: ClipboardList, title: t('Requests') },
+  { name: 'Salary', component: HRSalaryScreen, icon: DollarSign, title: t('Salary') },
 ] as const;
 
   return (

@@ -1,15 +1,19 @@
-import React from 'react';
-import { Alert, Text } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { ListScreen } from '../generators/ListScreen';
 import { fetchDepartments } from '../services/hr';
+import { CreateDepartmentModal } from '../modals/CreateDepartmentModal';
 
 export default function HRDepartmentsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const columns = [
     {
@@ -58,20 +62,30 @@ export default function HRDepartmentsScreen() {
     },
   ];
 
-  const fetchData = async (_params: any) => {
+  // refreshKey is referenced so fetchData identity changes after a save → ListScreen reloads
+  const fetchData = useCallback(async (_params: any) => {
+    void refreshKey;
     const data = await fetchDepartments();
     return { data, total: data.length };
-  };
+  }, [refreshKey]);
 
   return (
-    <ListScreen
-      columns={columns}
-      fetchData={fetchData}
-      keyExtractor={(item: any) => item._id}
-      onCreate={() => Alert.alert(t('Coming soon'))}
-      createLabelKey="Add Department"
-      emptyTitleKey="No Departments"
-      emptyMessageKey="No departments found"
-    />
+    <>
+      <ListScreen
+        columns={columns}
+        fetchData={fetchData}
+        keyExtractor={(item: any) => item._id}
+        onCreate={() => { setEditing(null); setModalVisible(true); }}
+        onRowPress={(item: any) => { setEditing(item); setModalVisible(true); }}
+        emptyTitleKey="No Departments"
+        emptyMessageKey="No departments found"
+      />
+      <CreateDepartmentModal
+        visible={modalVisible}
+        department={editing}
+        onClose={() => setModalVisible(false)}
+        onSaved={() => setRefreshKey(k => k + 1)}
+      />
+    </>
   );
 }
