@@ -43,7 +43,8 @@ import { RolesScreen } from '../screens/RolesScreen';
 import { PermissionsScreen } from '../screens/PermissionsScreen';
 import { MyTasksScreen } from '../screens/MyTasksScreen';
 import { MyProjectsScreen } from '../screens/MyProjectsScreen';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
+import AdminSignInScreen from '../screens/AdminSignInScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -185,20 +186,12 @@ export function RootNavigator() {
       ) : (
         <Stack.Group>
           <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="AdminSignIn" component={AdminSignInPlaceholder} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordPlaceholder} />
+          <Stack.Screen name="AdminSignIn" component={AdminSignInScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         </Stack.Group>
       )}
     </Stack.Navigator>
   );
-}
-
-function AdminSignInPlaceholder() {
-  return <PlaceholderScreen titleKey="Admin Sign In" />;
-}
-
-function ForgotPasswordPlaceholder() {
-  return <PlaceholderScreen titleKey="Forgot Password" />;
 }
 
 const styles = StyleSheet.create({

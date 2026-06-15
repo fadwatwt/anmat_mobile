@@ -65,11 +65,11 @@ export async function createAppointment(role: UserType | undefined, body: Partia
 }
 
 export async function completeAppointment(role: UserType | undefined, id: string): Promise<void> {
-  await http.put<ApiResponse<unknown>>(`/${base(role)}/appointments/${id}/complete`, {});
+  await http.patch<ApiResponse<unknown>>(`/${base(role)}/appointments/${id}/complete`, {});
 }
 
 export async function cancelAppointment(role: UserType | undefined, id: string): Promise<void> {
-  await http.put<ApiResponse<unknown>>(`/${base(role)}/appointments/${id}/cancel`, {});
+  await http.patch<ApiResponse<unknown>>(`/${base(role)}/appointments/${id}/cancel`, {});
 }
 
 export async function deleteAppointment(role: UserType | undefined, id: string): Promise<void> {
@@ -89,7 +89,7 @@ export async function createDailyTask(role: UserType | undefined, body: Partial<
 }
 
 export async function completeDailyTask(role: UserType | undefined, id: string): Promise<void> {
-  await http.put<ApiResponse<unknown>>(`/${base(role)}/daily-tasks/${id}/complete`, {});
+  await http.patch<ApiResponse<unknown>>(`/${base(role)}/daily-tasks/${id}/complete`, {});
 }
 
 export async function deleteDailyTask(role: UserType | undefined, id: string): Promise<void> {

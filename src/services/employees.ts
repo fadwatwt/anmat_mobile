@@ -143,7 +143,7 @@ export async function sendNotification(data: {
   department_id?: string;
   employee_ids?: string[];
 }): Promise<void> {
-  await http.post('/api/subscriber/notifications/send', data);
+  await http.post('/api/subscriber-notifications/send', data);
 }
 
 export async function fetchNotificationTypes(): Promise<NotificationType[]> {

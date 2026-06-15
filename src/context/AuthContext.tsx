@@ -10,9 +10,9 @@ import {
 } from 'react';
 
 import { extractErrorMessage, http, setAuthToken } from '../lib/http';
-import { loginWithEmail } from '../services/auth';
+import { adminLoginWithEmail, loginWithEmail } from '../services/auth';
 import { initPushNotifications, logoutPushNotifications } from '../services/pushNotifications';
-import { ApiResponse, User } from '../types';
+import { ApiResponse, LoginData, User } from '../types';
 
 const TOKEN_KEY = 'anmat.accessToken';
 const USER_KEY = 'anmat.user';
@@ -22,6 +22,7 @@ type AuthContextValue = {
   token: string | null;
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
+  adminLogin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
@@ -72,21 +73,54 @@ export function AuthProvider({ children }: PropsWithChildren) {
     restoreSession();
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      const data = await loginWithEmail(email.trim(), password);
-      setToken(data.access_token);
-      setUser(data.user);
-      setAuthToken(data.access_token);
-      await Promise.all([
-        SecureStore.setItemAsync(TOKEN_KEY, data.access_token),
-        SecureStore.setItemAsync(USER_KEY, JSON.stringify(data.user)),
-      ]);
-      initPushNotifications();
-    } catch (error) {
-      throw new Error(extractErrorMessage(error));
-    }
+  const persistSession = useCallback(async (data: LoginData) => {
+    setToken(data.access_token);
+    setUser(data.user);
+    setAuthToken(data.access_token);
+    await Promise.all([
+      SecureStore.setItemAsync(TOKEN_KEY, data.access_token),
+      SecureStore.setItemAsync(USER_KEY, JSON.stringify(data.user)),
+    ]);
+    initPushNotifications();
   }, []);
+
+  // Regular (Subscriber/Employee) login. Admins must use adminLogin.
+  const login = useCallback(
+    async (email: string, password: string) => {
+      try {
+        const data = await loginWithEmail(email.trim(), password);
+        if (data.user?.type === 'Admin') {
+          throw new Error('Access Denied: Use Admin Sign In.');
+        }
+        await persistSession(data);
+      } catch (error) {
+        if (error instanceof Error && error.message.startsWith('Access Denied')) {
+          throw error;
+        }
+        throw new Error(extractErrorMessage(error));
+      }
+    },
+    [persistSession],
+  );
+
+  // Admin-only login.
+  const adminLogin = useCallback(
+    async (email: string, password: string) => {
+      try {
+        const data = await adminLoginWithEmail(email.trim(), password);
+        if (data.user?.type !== 'Admin') {
+          throw new Error('Access Denied: You do not have administrator privileges.');
+        }
+        await persistSession(data);
+      } catch (error) {
+        if (error instanceof Error && error.message.startsWith('Access Denied')) {
+          throw error;
+        }
+        throw new Error(extractErrorMessage(error));
+      }
+    },
+    [persistSession],
+  );
 
   const refreshUser = useCallback(async () => {
     try {
@@ -120,8 +154,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const value = useMemo(
-    () => ({ isLoading, token, user, login, logout, refreshUser }),
-    [isLoading, token, user, login, logout, refreshUser],
+    () => ({ isLoading, token, user, login, adminLogin, logout, refreshUser }),
+    [isLoading, token, user, login, adminLogin, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Mail, Lock, Eye, EyeOff, Check } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowLeft } from 'lucide-react-native';
 import { Button } from '../components/Button';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../context/LanguageContext';
@@ -22,15 +21,14 @@ import { useTheme } from '../context/ThemeContext';
 import type { RootStackParamList } from '../navigation/types';
 import { font, radii, spacing } from '../theme';
 
-export default function LoginScreen() {
-  const { login } = useAuth();
+export default function AdminSignInScreen() {
+  const { adminLogin } = useAuth();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [secureEntry, setSecureEntry] = useState(true);
@@ -45,7 +43,7 @@ export default function LoginScreen() {
     setLoading(true);
     setError('');
     try {
-      await login(email, password);
+      await adminLogin(email, password);
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : t('Login failed'));
     } finally {
@@ -67,18 +65,14 @@ export default function LoginScreen() {
           <View style={styles.logoSection}>
             <View style={[styles.logoOuter, { backgroundColor: colors.statusBg }]}>
               <View style={[styles.logoInner, { backgroundColor: colors.surface }]}>
-                <Image
-                  source={require('../../assets/logo.png')}
-                  style={styles.logoImg}
-                  resizeMode="contain"
-                />
+                <ShieldCheck size={28} color={colors.primary} />
               </View>
             </View>
           </View>
 
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.cellPrimary }]}>
-              {t('Sign in to your account')}
+              {t('Admin Sign In')}
             </Text>
             <Text style={[styles.subtitle, { color: colors.cellSecondary }]}>
               {t('Enter your credentials to sign in')}
@@ -122,28 +116,6 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={[styles.row, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <TouchableOpacity
-                style={[styles.rememberRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-                onPress={() => setRememberMe(!rememberMe)}
-                disabled={loading}
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    { borderColor: rememberMe ? colors.primary : colors.border, backgroundColor: rememberMe ? colors.primary : 'transparent' },
-                  ]}
-                >
-                  {rememberMe && <Check size={12} color="#FFF" />}
-                </View>
-                <Text style={[styles.rememberText, { color: colors.cellPrimary }]}>{t('Remember Me')}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} disabled={loading}>
-                <Text style={[styles.link, { color: colors.primary }]}>{t('Forgot Password?')}</Text>
-              </TouchableOpacity>
-            </View>
-
             {error ? (
               <View style={[styles.errorWrap, { backgroundColor: colors.dangerBg }]}>
                 <Text style={[styles.errorText, { color: colors.dangerText }]}>{error}</Text>
@@ -153,13 +125,12 @@ export default function LoginScreen() {
             <Button label={t('Login')} loading={loading} onPress={handleLogin} size="lg" />
 
             <TouchableOpacity
-              style={styles.adminLink}
-              onPress={() => navigation.navigate('AdminSignIn')}
+              style={[styles.backLink, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+              onPress={() => navigation.navigate('Login')}
               disabled={loading}
             >
-              <Text style={[styles.adminLinkText, { color: colors.cellSecondary }]}>
-                {t('Admin Sign In')}
-              </Text>
+              <ArrowLeft size={16} color={colors.primary} />
+              <Text style={[styles.backLinkText, { color: colors.primary }]}>{t('Return to login')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -169,21 +140,15 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  adminLink: {
+  backLink: {
     alignItems: 'center',
+    alignSelf: 'center',
+    gap: spacing.xs,
     marginTop: spacing.sm,
   },
-  adminLinkText: {
+  backLinkText: {
     fontSize: font.sizes.sm,
-    textDecorationLine: 'underline',
-  },
-  checkbox: {
-    alignItems: 'center',
-    borderRadius: 4,
-    borderWidth: 2,
-    height: 18,
-    justifyContent: 'center',
-    width: 18,
+    fontWeight: font.weights.medium,
   },
   errorText: {
     fontSize: font.sizes.sm,
@@ -224,15 +189,6 @@ const styles = StyleSheet.create({
   keyboard: {
     flex: 1,
   },
-  link: {
-    fontSize: font.sizes.sm,
-    fontWeight: font.weights.medium,
-    textDecorationLine: 'underline',
-  },
-  logoImg: {
-    height: 34,
-    width: 34,
-  },
   logoInner: {
     alignItems: 'center',
     borderRadius: radii.full,
@@ -254,17 +210,6 @@ const styles = StyleSheet.create({
   logoSection: {
     alignItems: 'center',
     marginBottom: spacing.lg,
-  },
-  rememberRow: {
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  rememberText: {
-    fontSize: font.sizes.sm,
-  },
-  row: {
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   safe: {
     flex: 1,
