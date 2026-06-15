@@ -20,6 +20,7 @@ import { font, radii, spacing } from '../theme';
 import {
   ChatItem,
   ChatMessage,
+  archiveChat,
   fetchChats,
   fetchMessages,
   markChatRead,
@@ -30,6 +31,7 @@ export default function ConversationsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const rowDir = isRTL ? ('row-reverse' as const) : ('row' as const);
   const { user, token } = useAuth();
   const flatListRef = useRef<FlatList>(null);
   const userId = user?._id;
@@ -65,9 +67,9 @@ export default function ConversationsScreen() {
 
   const loadChats = useCallback(async () => {
     setLoadingChats(true);
-    try { setChats(await fetchChats()); } catch {}
+    try { setChats(await fetchChats(userId)); } catch {}
     finally { setLoadingChats(false); }
-  }, []);
+  }, [userId]);
 
   useEffect(() => { loadChats(); }, [loadChats]);
 
@@ -88,6 +90,23 @@ export default function ConversationsScreen() {
 
   const handleSelectChat = (chat: ChatItem) => {
     setActiveChat(chat);
+  };
+
+  const handleManageChat = (chat: ChatItem) => {
+    Alert.alert(chatTitle(chat), undefined, [
+      {
+        text: t('Archive Chat'),
+        onPress: async () => {
+          try {
+            await archiveChat(chat._id, true);
+            loadChats();
+          } catch {
+            Alert.alert(t('Error'), t('Failed to archive chat'));
+          }
+        },
+      },
+      { text: t('Cancel'), style: 'cancel' },
+    ]);
   };
 
   const handleSend = async () => {
@@ -130,13 +149,18 @@ export default function ConversationsScreen() {
     return `${d.getMonth() + 1}/${d.getDate()}`;
   };
 
-  const chatTitle = (chat: ChatItem) => chat.title || chat.participants?.map(p => p.name).join(', ') || t('Chat');
+  const chatTitle = (chat: ChatItem) => {
+    // Group chats use their explicit title; 1:1 chats show the other participant's name.
+    if (chat.is_group && chat.title) return chat.title;
+    const names = chat.participants?.map(p => p.name).filter(Boolean).join('، ');
+    return names || chat.title || t('Chat');
+  };
 
   if (!activeChat) {
     return (
       <View style={[s.container, { backgroundColor: colors.background }]}>
-        <View style={[s.header, { borderBottomColor: colors.border }]}>
-          <Text style={[s.headerTitle, { color: colors.ink }]}>{t('Conversations')}</Text>
+        <View style={[s.header, { borderBottomColor: colors.border, flexDirection: rowDir }]}>
+          <Text style={[s.headerTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Conversations')}</Text>
           {socketConnected && <View style={s.onlineDot} />}
         </View>
         {loadingChats ? (
@@ -147,8 +171,9 @@ export default function ConversationsScreen() {
             keyExtractor={c => c._id}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={[s.chatItem, { borderBottomColor: colors.border }]}
+                style={[s.chatItem, { borderBottomColor: colors.border, flexDirection: rowDir }]}
                 onPress={() => handleSelectChat(item)}
+                onLongPress={() => handleManageChat(item)}
               >
                 <View style={[s.avatar, { backgroundColor: colors.primary }]}>
                   <Text style={s.avatarText}>
@@ -156,12 +181,12 @@ export default function ConversationsScreen() {
                   </Text>
                 </View>
                 <View style={s.chatInfo}>
-                  <View style={s.chatTop}>
-                    <Text style={[s.chatName, { color: colors.ink }]} numberOfLines={1}>{chatTitle(item)}</Text>
+                  <View style={[s.chatTop, { flexDirection: rowDir }]}>
+                    <Text style={[s.chatName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{chatTitle(item)}</Text>
                     <Text style={[s.chatTime, { color: colors.textMuted }]}>{formatRelative(item.last_message?.created_at)}</Text>
                   </View>
-                  <View style={s.chatBottom}>
-                    <Text style={[s.chatLastMsg, { color: colors.textMuted }]} numberOfLines={1}>
+                  <View style={[s.chatBottom, { flexDirection: rowDir }]}>
+                    <Text style={[s.chatLastMsg, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
                       {item.last_message?.content || t('No messages yet')}
                     </Text>
                     {item.unread_count ? (
@@ -184,12 +209,12 @@ export default function ConversationsScreen() {
 
   return (
     <KeyboardAvoidingView style={[s.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[s.chatHeader, { borderBottomColor: colors.border }]}>
+      <View style={[s.chatHeader, { borderBottomColor: colors.border, flexDirection: rowDir }]}>
         <TouchableOpacity onPress={() => setActiveChat(null)} style={s.backBtn}>
-          <ArrowLeft size={20} color={colors.ink} />
+          <ArrowLeft size={20} color={colors.ink} style={{ transform: [{ scaleX: isRTL ? -1 : 1 }] }} />
         </TouchableOpacity>
         <View style={s.chatHeaderInfo}>
-          <Text style={[s.chatHeaderName, { color: colors.ink }]} numberOfLines={1}>{chatTitle(activeChat)}</Text>
+          <Text style={[s.chatHeaderName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{chatTitle(activeChat)}</Text>
         </View>
         {!socketConnected && (
           <Text style={[s.offlineText, { color: colors.danger }]}>{t('Offline')}</Text>
@@ -241,7 +266,7 @@ export default function ConversationsScreen() {
         />
       )}
 
-      <View style={[s.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+      <View style={[s.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border, flexDirection: rowDir }]}>
         <TextInput
           style={[s.textInput, { backgroundColor: colors.background, color: colors.ink, borderColor: colors.border, textAlign: isRTL ? 'right' : 'left' }]}
           placeholder={t('Type a message...')}

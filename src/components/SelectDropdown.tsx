@@ -25,17 +25,20 @@ type SelectDropdownProps = {
   label?: string;
   required?: boolean;
   hasError?: boolean;
+  /** Translate option labels via i18n (use for static enum options, not real data). */
+  translateLabels?: boolean;
 };
 
-export function SelectDropdown({ options, value, onChange, placeholder, label, required, hasError }: SelectDropdownProps) {
+export function SelectDropdown({ options, value, onChange, placeholder, label, required, hasError, translateLabels }: SelectDropdownProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
+  const lbl = (s: string) => (translateLabels ? t(s) : s);
   const selected = options.find(o => o.value === value);
-  const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+  const filtered = options.filter(o => lbl(o.label).toLowerCase().includes(search.toLowerCase()));
   const align = isRTL ? 'right' as const : 'left' as const;
 
   return (
@@ -51,7 +54,7 @@ export function SelectDropdown({ options, value, onChange, placeholder, label, r
         activeOpacity={0.7}
       >
         <Text style={[s.triggerText, { color: selected ? colors.ink : colors.textMuted, textAlign: align, flex: 1 }]}>
-          {selected ? selected.label : (placeholder || t('Select...'))}
+          {selected ? lbl(selected.label) : (placeholder || t('Select...'))}
         </Text>
         <ChevronDown size={16} color={colors.textMuted} />
       </TouchableOpacity>
@@ -78,7 +81,7 @@ export function SelectDropdown({ options, value, onChange, placeholder, label, r
                     style={[s.option, { borderBottomColor: colors.border }, isSelected && { backgroundColor: colors.primary + '15' }]}
                     onPress={() => { onChange(item.value); setOpen(false); }}
                   >
-                    <Text style={[s.optionText, { color: colors.ink, textAlign: align, flex: 1 }]}>{item.label}</Text>
+                    <Text style={[s.optionText, { color: colors.ink, textAlign: align, flex: 1 }]}>{lbl(item.label)}</Text>
                     {isSelected && <Check size={16} color={colors.primary} />}
                   </TouchableOpacity>
                 );
@@ -102,17 +105,20 @@ type MultiSelectDropdownProps = {
   label?: string;
   required?: boolean;
   hasError?: boolean;
+  /** Translate option labels via i18n (use for static enum options, not real data). */
+  translateLabels?: boolean;
 };
 
-export function MultiSelectDropdown({ options, value, onChange, placeholder, label, required, hasError }: MultiSelectDropdownProps) {
+export function MultiSelectDropdown({ options, value, onChange, placeholder, label, required, hasError, translateLabels }: MultiSelectDropdownProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  const selectedLabels = options.filter(o => value.includes(o.value)).map(o => o.label).join(', ');
-  const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+  const lbl = (s: string) => (translateLabels ? t(s) : s);
+  const selectedLabels = options.filter(o => value.includes(o.value)).map(o => lbl(o.label)).join(', ');
+  const filtered = options.filter(o => lbl(o.label).toLowerCase().includes(search.toLowerCase()));
   const align = isRTL ? 'right' as const : 'left' as const;
 
   const toggle = (v: string) => {
@@ -165,7 +171,7 @@ export function MultiSelectDropdown({ options, value, onChange, placeholder, lab
                     <View style={[s.checkbox, { borderColor: isSelected ? colors.primary : colors.border, backgroundColor: isSelected ? colors.primary : 'transparent' }]}>
                       {isSelected && <Check size={12} color="#FFF" />}
                     </View>
-                    <Text style={[s.optionText, { color: colors.ink, textAlign: align, flex: 1 }]}>{item.label}</Text>
+                    <Text style={[s.optionText, { color: colors.ink, textAlign: align, flex: 1 }]}>{lbl(item.label)}</Text>
                   </TouchableOpacity>
                 );
               }}

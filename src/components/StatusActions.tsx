@@ -31,7 +31,7 @@ export function StatusActions({ actions }: Props) {
             {actions.map((action, i) => (
               <TouchableOpacity
                 key={i}
-                style={styles.menuItem}
+                style={[styles.menuItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
                 onPress={() => { setVisible(false); action.onPress(); }}
               >
                 {action.icon && <View style={styles.menuIcon}>{action.icon}</View>}

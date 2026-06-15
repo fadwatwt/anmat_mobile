@@ -93,6 +93,7 @@ export function ListScreen<T extends Record<string, any>>({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const rowDir = isRTL ? ('row-reverse' as const) : ('row' as const);
   const [data, setData] = useState<T[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -148,7 +149,7 @@ export function ListScreen<T extends Record<string, any>>({
   }, [columns]);
 
   const renderHeader = () => (
-    <View style={[s.headerRow, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+    <View style={[s.headerRow, { backgroundColor: colors.background, borderBottomColor: colors.border, flexDirection: rowDir }]}>
       {visibleColumns.map(col => (
         <TouchableOpacity
           key={col.key}
@@ -179,7 +180,7 @@ export function ListScreen<T extends Record<string, any>>({
 
   const renderRow = ({ item }: { item: T }) => (
     <TouchableOpacity
-      style={[s.row, { borderBottomColor: colors.border }]}
+      style={[s.row, { borderBottomColor: colors.border, flexDirection: rowDir }]}
       onPress={() => onRowPress?.(item)}
       activeOpacity={onRowPress ? 0.6 : 1}
     >
@@ -197,7 +198,7 @@ export function ListScreen<T extends Record<string, any>>({
   );
 
   const renderPagination = () => (
-    <View style={[s.pagination, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+    <View style={[s.pagination, { backgroundColor: colors.surface, borderTopColor: colors.border, flexDirection: rowDir }]}>
       <TouchableOpacity
         style={[s.pageBtn, { borderColor: colors.border }]}
         onPress={() => setPage(p => Math.max(1, p - 1))}
@@ -236,10 +237,10 @@ export function ListScreen<T extends Record<string, any>>({
   );
 
   const renderSearch = () => (
-    <View style={[s.searchWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <View style={[s.searchWrap, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: rowDir }]}>
       <Search size={16} color={colors.textMuted} style={s.searchIcon} />
       <TextInput
-        style={[s.searchInput, { color: colors.ink }]}
+        style={[s.searchInput, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}
         placeholder={t(searchPlaceholderKey)}
         placeholderTextColor={colors.textMuted}
         value={search}
@@ -251,11 +252,11 @@ export function ListScreen<T extends Record<string, any>>({
   const renderToolbar = () => {
     if (!actions || actions.length === 0) return null;
     return (
-      <View style={s.toolbar}>
+      <View style={[s.toolbar, { flexDirection: rowDir }]}>
         {actions.map((action, i) => (
           <TouchableOpacity
             key={i}
-            style={[s.toolbarBtn, action.variant === 'secondary' ? { borderColor: colors.border, borderWidth: 1 } : { backgroundColor: colors.primary }]}
+            style={[s.toolbarBtn, { flexDirection: rowDir }, action.variant === 'secondary' ? { borderColor: colors.border, borderWidth: 1 } : { backgroundColor: colors.primary }]}
             onPress={action.onPress}
           >
             {action.icon}
@@ -308,7 +309,7 @@ export function ListScreen<T extends Record<string, any>>({
       {renderToolbar()}
       {searchable && renderSearch()}
       {filters && filters.length > 0 && (
-        <View style={s.filterRow}>
+        <View style={[s.filterRow, { flexDirection: rowDir }]}>
           {filters.map(f => (
             <TouchableOpacity
               key={f.key}

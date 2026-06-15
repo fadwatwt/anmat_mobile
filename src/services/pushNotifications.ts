@@ -1,18 +1,38 @@
 import { Platform } from 'react-native';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
+import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import { http } from '../lib/http';
 
-const isExpoGo =
-  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+// expo-notifications crashes in Expo Go (SDK 53+). Detect Expo Go via appOwnership.
+// IMPORTANT: Do NOT require('expo-notifications') at module level — the package
+// auto-registers an addPushTokenListener at import time which triggers the crash.
+// Instead, call getNotifications() inside each function so the require only runs
+// when the function is actually called (which we guard with isExpoGo first).
 
-let Notifications: typeof import('expo-notifications') | null = null;
-if (!isExpoGo) {
-  Notifications = require('expo-notifications');
+function isRunningInExpoGo(): boolean {
+  return (
+    Constants.appOwnership === 'expo' ||
+    (Constants as any).executionEnvironment === 'storeClient'
+  );
 }
 
-if (Notifications) {
-  Notifications.setNotificationHandler({
+function getNotifications(): typeof import('expo-notifications') | null {
+  if (isRunningInExpoGo()) return null;
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  return require('expo-notifications');
+}
+
+let initialized = false;
+let foregroundListener: { remove(): void } | undefined;
+let responseListener: { remove(): void } | undefined;
+let lastNotificationResponse: unknown;
+
+function ensureHandler() {
+  if (initialized) return;
+  initialized = true;
+  const N = getNotifications();
+  if (!N) return;
+  N.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
       shouldPlaySound: true,
@@ -23,20 +43,12 @@ if (Notifications) {
   });
 }
 
-let lastNotificationResponse: any;
-let responseListener: any;
-let foregroundListener: any;
-
 export function getLastNotificationResponse() {
   return lastNotificationResponse;
 }
 
 export function clearLastNotificationResponse() {
   lastNotificationResponse = undefined;
-}
-
-function getApiBase(): string {
-  return http.defaults.baseURL || '';
 }
 
 async function registerTokenWithBackend(token: string) {
@@ -54,31 +66,29 @@ async function unregisterTokenWithBackend(token: string) {
 }
 
 export async function getExpoPushToken(): Promise<string | null> {
-  if (!Notifications || !Device.isDevice) {
-    return null;
-  }
+  const N = getNotifications();
+  if (!N || !Device.isDevice) return null;
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  const { status: existingStatus } = await N.getPermissionsAsync();
   let finalStatus = existingStatus;
 
   if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
+    const { status } = await N.requestPermissionsAsync();
     finalStatus = status;
   }
 
-  if (finalStatus !== 'granted') {
-    return null;
-  }
+  if (finalStatus !== 'granted') return null;
 
-  const tokenData = await Notifications.getExpoPushTokenAsync();
+  const tokenData = await N.getExpoPushTokenAsync();
   return tokenData.data;
 }
 
 export async function setupAndroidChannel() {
-  if (!Notifications || Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync('default', {
+  const N = getNotifications();
+  if (!N || Platform.OS !== 'android') return;
+  await N.setNotificationChannelAsync('default', {
     name: 'General',
-    importance: Notifications.AndroidImportance.HIGH as any,
+    importance: N.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#3F6FE3',
     sound: 'default',
@@ -86,8 +96,10 @@ export async function setupAndroidChannel() {
 }
 
 export async function initPushNotifications() {
-  if (!Notifications) return null;
+  const N = getNotifications();
+  if (!N) return null;
 
+  ensureHandler();
   await setupAndroidChannel();
 
   const token = await getExpoPushToken();
@@ -98,7 +110,8 @@ export async function initPushNotifications() {
 }
 
 export async function logoutPushNotifications() {
-  if (!Notifications) return;
+  const N = getNotifications();
+  if (!N) return;
   const token = await getExpoPushToken();
   if (token) {
     await unregisterTokenWithBackend(token);
@@ -106,28 +119,27 @@ export async function logoutPushNotifications() {
 }
 
 export function startForegroundListener() {
-  if (!Notifications || foregroundListener) return;
-  foregroundListener = Notifications.addNotificationReceivedListener(() => {
-  });
+  const N = getNotifications();
+  if (!N || foregroundListener) return;
+  ensureHandler();
+  foregroundListener = N.addNotificationReceivedListener(() => {});
 }
 
 export function startResponseListener(
-  onNotificationResponse?: (response: any) => void,
+  onNotificationResponse?: (response: unknown) => void,
 ) {
-  if (!Notifications || responseListener) return;
-  responseListener = Notifications.addNotificationResponseReceivedListener((response: any) => {
+  const N = getNotifications();
+  if (!N || responseListener) return;
+  ensureHandler();
+  responseListener = N.addNotificationResponseReceivedListener((response) => {
     lastNotificationResponse = response;
     onNotificationResponse?.(response);
   });
 }
 
 export function cleanupListeners() {
-  if (foregroundListener) {
-    foregroundListener.remove();
-    foregroundListener = undefined;
-  }
-  if (responseListener) {
-    responseListener.remove();
-    responseListener = undefined;
-  }
+  foregroundListener?.remove();
+  foregroundListener = undefined;
+  responseListener?.remove();
+  responseListener = undefined;
 }

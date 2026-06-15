@@ -51,13 +51,13 @@ export function Table<T>({
           <Text
             style={[
               styles.headerText,
-              { color: colors.textMuted, writingDirection: isRTL ? 'rtl' : 'ltr' },
+              { color: colors.textMuted, writingDirection: isRTL ? 'rtl' : 'ltr', textAlign: isRTL ? 'right' : 'left' },
               col.align === 'left' && styles.textLeft,
               col.align === 'center' && styles.textCenter,
               col.align === 'right' && styles.textRight,
             ]}
           >
-            {col.header}
+            {t(col.header)}
           </Text>
         </View>
       ))}
@@ -82,7 +82,7 @@ export function Table<T>({
               numberOfLines={2}
               style={[
                 styles.cellText,
-                { color: colors.textCell, writingDirection: isRTL ? 'rtl' : 'ltr' },
+                { color: colors.textCell, writingDirection: isRTL ? 'rtl' : 'ltr', textAlign: isRTL ? 'right' : 'left' },
                 col.align === 'left' && styles.textLeft,
                 col.align === 'center' && styles.textCenter,
                 col.align === 'right' && styles.textRight,

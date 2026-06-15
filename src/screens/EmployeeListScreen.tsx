@@ -8,6 +8,7 @@ import {
   Copy, Edit3, LogOut, MessageCircle, MoreHorizontal, Plus,
   Search, ToggleLeft, ToggleRight, Trash2, UserPlus, UserRound, X,
 } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { AccountDetails } from '../components/AccountDetails';
 import { Badge } from '../components/Badge';
 import { StarRating } from '../components/StarRating';
@@ -42,6 +43,8 @@ export function EmployeeListScreen() {
   const { colors, isDark } = useTheme();
   const isSubscriber = user?.type === 'Subscriber';
   const { isRTL } = useLocale();
+  const { t } = useTranslation();
+  const rowDir = isRTL ? ('row-reverse' as const) : ('row' as const);
 
   const [employees, setEmployees] = useState<EmployeeDetailItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,15 +92,15 @@ export function EmployeeListScreen() {
   const currentRows = filteredEmployees.slice(startIndex, startIndex + rowsPerPage);
 
   const handleDelete = (emp: EmployeeDetailItem) => {
-    Alert.alert('Delete Employee', `Are you sure you want to delete ${emp.user?.name || 'this employee'}?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('Delete Employee'), `${t('Are you sure you want to delete')} ${emp.user?.name || t('this employee')}?`, [
+      { text: t('Cancel'), style: 'cancel' },
       {
-        text: 'Delete', style: 'destructive',
+        text: t('Delete'), style: 'destructive',
         onPress: async () => {
           try {
             await deleteEmployeeService(emp.user_id);
             loadEmployees(1, true);
-          } catch { Alert.alert('Error', 'Failed to delete employee'); }
+          } catch { Alert.alert(t('Error'), t('Failed to delete employee')); }
         },
       },
     ]);
@@ -106,17 +109,17 @@ export function EmployeeListScreen() {
   const handleToggleActive = (emp: EmployeeDetailItem) => {
     const isActive = emp.user?.is_active;
     Alert.alert(
-      isActive ? 'Deactivate Employee' : 'Activate Employee',
-      isActive ? 'Are you sure you want to deactivate this employee?' : 'Are you sure you want to activate this employee?',
+      isActive ? t('Deactivate Employee') : t('Activate Employee'),
+      isActive ? t('Are you sure you want to deactivate this employee?') : t('Are you sure you want to activate this employee?'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel'), style: 'cancel' },
         {
-          text: isActive ? 'Deactivate' : 'Activate',
+          text: isActive ? t('Deactivate') : t('Activate'),
           onPress: async () => {
             try {
               await toggleEmployeeActivity(emp.user_id);
               loadEmployees(1, true);
-            } catch { Alert.alert('Error', 'Failed to toggle status'); }
+            } catch { Alert.alert(t('Error'), t('Failed to toggle status')); }
           },
         },
       ],
@@ -127,17 +130,17 @@ export function EmployeeListScreen() {
     const deptId = typeof emp.department_id === 'object' ? emp.department_id?._id : emp.department_id;
     if (!deptId) return;
     Alert.alert(
-      'Unassign Department',
-      'Are you sure you want to unassign this employee from their department?',
+      t('Unassign Department'),
+      t('Are you sure you want to unassign this employee from their department?'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel'), style: 'cancel' },
         {
-          text: 'Unassign',
+          text: t('Unassign'),
           onPress: async () => {
             try {
               await unassignEmployeesFromDepartment(deptId, [emp._id]);
               loadEmployees(1, true);
-            } catch { Alert.alert('Error', 'Failed to unassign'); }
+            } catch { Alert.alert(t('Error'), t('Failed to unassign')); }
           },
         },
       ],
@@ -147,31 +150,31 @@ export function EmployeeListScreen() {
   const buildActions = (emp: EmployeeDetailItem): ActionItem[] => {
     const hasDept = !!(emp.department || emp.department_id);
     const items: ActionItem[] = [
-      { label: 'Edit', icon: <Edit3 size={16} color="#375DFB" />, onPress: () => { setSelectedEmp(emp); setShowEdit(true); } },
-      { label: 'Send Notification', icon: <Bell size={16} color="#375DFB" />, onPress: () => { setSelectedEmp(emp); setShowNotify(true); } },
+      { label: t('Edit'), icon: <Edit3 size={16} color="#375DFB" />, onPress: () => { setSelectedEmp(emp); setShowEdit(true); } },
+      { label: t('Send Notification'), icon: <Bell size={16} color="#375DFB" />, onPress: () => { setSelectedEmp(emp); setShowNotify(true); } },
       {
-        label: hasDept ? 'Change Department' : 'Assign Department',
+        label: hasDept ? t('Change Department') : t('Assign Department'),
         icon: <Building2 size={16} color="#10B981" />,
         onPress: () => { setSelectedEmp(emp); setShowAssign(true); },
       },
     ];
     if (hasDept) {
       items.push({
-        label: 'Unassign Department', icon: <LogOut size={16} color="#F59E0B" />,
+        label: t('Unassign Department'), icon: <LogOut size={16} color="#F59E0B" />,
         onPress: () => handleUnassignDepartment(emp),
       });
     }
     items.push({
-      label: emp.user?.is_active ? 'Deactivate' : 'Activate',
+      label: emp.user?.is_active ? t('Deactivate') : t('Activate'),
       icon: emp.user?.is_active ? <ToggleRight size={16} color="#F59E0B" /> : <ToggleLeft size={16} color="#10B981" />,
       onPress: () => handleToggleActive(emp),
     });
     items.push({
-      label: 'Chat', icon: <MessageCircle size={16} color="#3B82F6" />,
+      label: t('Chat'), icon: <MessageCircle size={16} color="#3B82F6" />,
       onPress: () => {},
     });
     items.push({
-      label: 'Delete', icon: <Trash2 size={16} color="#DF1C41" />,
+      label: t('Delete'), icon: <Trash2 size={16} color="#DF1C41" />,
       onPress: () => handleDelete(emp), destructive: true,
     });
     return items;
@@ -183,14 +186,14 @@ export function EmployeeListScreen() {
     return (
       <TouchableOpacity
         key={emp._id}
-        style={[s.tr, { borderBottomColor: colors.border }]}
+        style={[s.tr, { borderBottomColor: colors.border, flexDirection: rowDir }]}
                 onPress={() => navigation.navigate('EmployeeDetail', { employee: emp })}
         activeOpacity={0.7}
       >
         <View style={[s.td, { width: COL_WIDTHS[0] }]}>
           <AccountDetails
             name={u.name}
-            role={typeof emp.position_id === 'object' ? emp.position_id?.title : (u.is_active ? 'Active' : 'Inactive')}
+            role={typeof emp.position_id === 'object' ? emp.position_id?.title : (u.is_active ? t('Active') : t('Inactive'))}
           />
         </View>
         <View style={[s.td, { width: COL_WIDTHS[1] }]}>
@@ -205,40 +208,40 @@ export function EmployeeListScreen() {
         </View>
         <View style={[s.td, { width: COL_WIDTHS[3] }]}>
           <Text style={[s.salaryAmount, { textAlign: isRTL ? 'right' : 'left' }]}>${emp.salary?.toLocaleString?.() || '0'}</Text>
-          <Text style={[s.salaryHours, { textAlign: isRTL ? 'right' : 'left' }]}>{emp.work_hours || 0} hrs/day</Text>
+          <Text style={[s.salaryHours, { textAlign: isRTL ? 'right' : 'left' }]}>{emp.work_hours || 0} {t('hrs/day')}</Text>
         </View>
         <View style={[s.td, { width: COL_WIDTHS[4] }]}>
           {emp.overall_rating > 0 ? (
             <StarRating rating={emp.overall_rating} />
           ) : (
-            <Text style={[s.noRating, { textAlign: isRTL ? 'right' : 'left' }]}>No rating yet</Text>
+            <Text style={[s.noRating, { textAlign: isRTL ? 'right' : 'left' }]}>{t('No rating yet')}</Text>
           )}
         </View>
         <View style={[s.td, { width: COL_WIDTHS[5] }]}>
           {emp.registration_status === 'complete' ? (
-            <View style={s.regRow}>
+            <View style={[s.regRow, { flexDirection: rowDir }]}>
               <CheckCircle size={16} color="#059669" />
-              <Text style={[s.regComplete, { textAlign: isRTL ? 'right' : 'left' }]}>Complete</Text>
+              <Text style={[s.regComplete, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Complete')}</Text>
             </View>
           ) : emp.registration_status === 'registered' ? (
-            <View style={s.regRow}>
+            <View style={[s.regRow, { flexDirection: rowDir }]}>
               <UserRound size={16} color="#3B82F6" />
-              <Text style={[s.regRegistered, { textAlign: isRTL ? 'right' : 'left' }]}>Registered</Text>
+              <Text style={[s.regRegistered, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Registered')}</Text>
             </View>
           ) : (
             <View style={s.regCol}>
-              <View style={s.regRow}>
+              <View style={[s.regRow, { flexDirection: rowDir }]}>
                 <UserPlus size={16} color="#F59E0B" />
-                <Text style={[s.regPending, { textAlign: isRTL ? 'right' : 'left' }]}>Pending</Text>
+                <Text style={[s.regPending, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Pending')}</Text>
               </View>
               {emp.invitation_token && (
-                <TouchableOpacity style={s.copyLink} onPress={() => {
+                <TouchableOpacity style={[s.copyLink, { flexDirection: rowDir }]} onPress={() => {
                   const link = `${Platform.select({ web: window.location.origin, default: '' })}/register/employee#reg_emp_t=${emp.invitation_token}#org=${emp.organization_id}`;
                   navigator.clipboard?.writeText(link);
-                  Alert.alert('Copied', 'Invitation link copied to clipboard');
+                  Alert.alert(t('Copied'), t('Invitation link copied to clipboard'));
                 }}>
                   <Copy size={10} color="#375DFB" />
-                  <Text style={[s.copyLinkText, { textAlign: isRTL ? 'right' : 'left' }]}>Copy Link</Text>
+                  <Text style={[s.copyLinkText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Copy Link')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -247,7 +250,7 @@ export function EmployeeListScreen() {
         <View style={[s.td, { width: COL_WIDTHS[6] }]}>
           <View style={[s.statusBadge, { backgroundColor: u.is_active ? '#DCFCE7' : '#FEE2E2' }]}>
             <Text style={[s.statusText, { color: u.is_active ? '#166534' : '#991B1B', textAlign: isRTL ? 'right' : 'left' }]}>
-              {u.is_active ? 'Active' : 'Inactive'}
+              {u.is_active ? t('Active') : t('Inactive')}
             </Text>
           </View>
         </View>
@@ -265,20 +268,20 @@ export function EmployeeListScreen() {
   return (
     <View style={s.container}>
       {/* Toolbar */}
-      <View style={[s.toolbar, { borderBottomColor: colors.border }]}>
+      <View style={[s.toolbar, { borderBottomColor: colors.border, flexDirection: rowDir }]}>
         <View style={s.toolbarLeft}>
-          <Text style={[s.toolbarTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>Employees</Text>
+          <Text style={[s.toolbarTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employees')}</Text>
         </View>
-        <View style={s.toolbarRight}>
+        <View style={[s.toolbarRight, { flexDirection: rowDir }]}>
           {isSubscriber && (
             <>
-              <TouchableOpacity style={[s.toolBtn, s.notifyBtn]} onPress={() => setShowNotify(true)}>
+              <TouchableOpacity style={[s.toolBtn, s.notifyBtn, { flexDirection: rowDir }]} onPress={() => setShowNotify(true)}>
                 <Bell size={16} color="#375DFB" />
-                <Text style={[s.notifyBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>Send Notification</Text>
+                <Text style={[s.notifyBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Send Notification')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[s.toolBtn, s.inviteBtn]} onPress={() => setShowInvite(true)}>
+              <TouchableOpacity style={[s.toolBtn, s.inviteBtn, { flexDirection: rowDir }]} onPress={() => setShowInvite(true)}>
                 <UserPlus size={16} color="#374151" />
-                <Text style={[s.inviteBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>Invite Employee</Text>
+                <Text style={[s.inviteBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Invite Employee')}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -286,14 +289,14 @@ export function EmployeeListScreen() {
       </View>
 
       {/* Search */}
-      <View style={[s.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={[s.searchBar, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: rowDir }]}>
         <Search size={18} color="#9CA3AF" />
         <TextInput
-          placeholder="Search employees..."
+          placeholder={t('Search employees...')}
           placeholderTextColor="#9CA3AF"
           value={search}
           onChangeText={setSearch}
-          style={[s.searchInput, { color: colors.ink }]}
+          style={[s.searchInput, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}
         />
         {search ? (
           <TouchableOpacity onPress={() => setSearch('')}>
@@ -306,10 +309,10 @@ export function EmployeeListScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator bounces={false} style={s.tableOuter}>
         <View>
           {/* Header */}
-          <View style={[s.thead, { backgroundColor: colors.background }]}>
+          <View style={[s.thead, { backgroundColor: colors.background, flexDirection: rowDir }]}>
             {HEADERS.map((h, i) => (
               <View key={i} style={[s.th, { width: COL_WIDTHS[i] }]}>
-                <Text style={[s.thText, { textAlign: isRTL ? 'right' : 'left' }]}>{h}</Text>
+                <Text style={[s.thText, { textAlign: isRTL ? 'right' : 'left' }]}>{h ? t(h) : ''}</Text>
               </View>
             ))}
           </View>
@@ -324,9 +327,9 @@ export function EmployeeListScreen() {
             }
             ListEmptyComponent={
               <View style={s.emptyState}>
-                <Text style={[s.emptyTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>No employees found</Text>
+                <Text style={[s.emptyTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('No employees found')}</Text>
                 <Text style={[s.emptySub, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
-                  {search ? 'Try changing your search' : 'Start by adding a new employee'}
+                  {search ? t('Try changing your search') : t('Start by adding a new employee')}
                 </Text>
               </View>
             }
@@ -336,13 +339,13 @@ export function EmployeeListScreen() {
       </ScrollView>
 
       {/* Pagination */}
-      <View style={[s.pagination, { borderTopColor: colors.border }]}>
+      <View style={[s.pagination, { borderTopColor: colors.border, flexDirection: rowDir }]}>
         <View style={s.pagLeft}>
           <Text style={[s.pagInfo, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
-            Page {page} of {totalPages}
+            {t('Page')} {page} {t('of')} {totalPages}
           </Text>
         </View>
-        <View style={s.pagCenter}>
+        <View style={[s.pagCenter, { flexDirection: rowDir }]}>
           <TouchableOpacity onPress={() => setPage(1)} disabled={page <= 1} style={s.pagBtn}>
             <ChevronLeft size={16} color={page <= 1 ? '#D1D5DB' : '#374151'} />
           </TouchableOpacity>
@@ -367,7 +370,7 @@ export function EmployeeListScreen() {
         </View>
         <View style={s.pagRight}>
           <View style={[s.rowsPerPage, { borderColor: colors.border }]}>
-            <Text style={[s.rowsPerPageText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{rowsPerPage}/page</Text>
+            <Text style={[s.rowsPerPageText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{rowsPerPage}/{t('page')}</Text>
           </View>
         </View>
       </View>

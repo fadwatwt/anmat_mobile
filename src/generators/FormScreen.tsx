@@ -277,6 +277,7 @@ export function FormScreen({
           value={values[field.name] || ''}
           onChange={v => setValue(field.name, v)}
           hasError={hasError}
+          translateLabels
         />
       );
     }
