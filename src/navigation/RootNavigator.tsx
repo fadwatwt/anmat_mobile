@@ -12,6 +12,9 @@ import { CreateEmployeeScreen } from '../screens/CreateEmployeeScreen';
 import { EditEmployeeScreen } from '../screens/EditEmployeeScreen';
 import HRDepartmentsScreen from '../screens/HRDepartmentsScreen';
 import HRPositionsScreen from '../screens/HRPositionsScreen';
+import HRMeetingsScreen from '../screens/HRMeetingsScreen';
+import HRHolidaysScreen from '../screens/HRHolidaysScreen';
+import HRTeamsScreen from '../screens/HRTeamsScreen';
 import ProjectsMain from '../screens/ProjectsScreen';
 import ProjectDetailScreen from '../screens/ProjectDetailScreen';
 import ProjectCreateScreen from '../screens/ProjectCreateScreen';
@@ -88,6 +91,15 @@ export function RootNavigator() {
           </Stack.Screen>
           <Stack.Screen name="HRPositions">
             {() => <Layout><HRPositionsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="HRMeetings">
+            {() => <Layout><HRMeetingsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="HRHolidays">
+            {() => <Layout><HRHolidaysScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="HRTeams">
+            {() => <Layout><HRTeamsScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="ProjectsMain">
             {() => <Layout><ProjectsMain /></Layout>}

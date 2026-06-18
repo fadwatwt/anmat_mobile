@@ -8,7 +8,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anmaat.app"
+      "bundleIdentifier": "com.anmaat.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.anmaat.app",
@@ -18,11 +21,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "notification": {
-        "icon": "./assets/android-icon-foreground.png",
-        "color": "#3F6FE3"
-      }
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -42,6 +41,12 @@
       "eas": {
         "projectId": "67361c45-d9fa-4670-b6e2-c96d10944a9a"
       }
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/67361c45-d9fa-4670-b6e2-c96d10944a9a"
     }
   }
 }

@@ -11,6 +11,9 @@ export type RootStackParamList = {
   EditEmployee: { employee: any };
   HRDepartments: undefined;
   HRPositions: undefined;
+  HRMeetings: undefined;
+  HRHolidays: undefined;
+  HRTeams: undefined;
   HRAttendances: undefined;
   HRLeaves: undefined;
   HRSalary: undefined;

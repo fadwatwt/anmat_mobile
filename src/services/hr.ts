@@ -353,3 +353,183 @@ export async function fetchSentNotifications(params: { page?: number; limit?: nu
   );
   return response.data.data;
 }
+// ===== Holidays =====
+
+export type Holiday = {
+  _id: string;
+  name: string;
+  date: string;
+  description?: string;
+};
+
+export async function fetchHolidays(): Promise<Holiday[]> {
+  const response = await http.get<ApiResponse<Holiday[]>>(
+    '/api/subscriber/organization/holidays'
+  );
+  return response.data.data;
+}
+
+export async function createHoliday(data: Partial<Holiday>): Promise<Holiday> {
+  const response = await http.post<ApiResponse<Holiday>>(
+    '/api/subscriber/organization/holidays',
+    data
+  );
+  return response.data.data;
+}
+
+export async function updateHoliday(id: string, data: Partial<Holiday>): Promise<Holiday> {
+  const response = await http.patch<ApiResponse<Holiday>>(
+    `/api/subscriber/organization/holidays/${id}`,
+    data
+  );
+  return response.data.data;
+}
+
+export async function deleteHoliday(id: string): Promise<void> {
+  await http.delete(`/api/subscriber/organization/holidays/${id}`);
+}
+
+// ===== Meetings =====
+
+export type MeetingStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+
+export type MeetingUser = { _id?: string; name?: string; image?: string };
+
+export type Meeting = {
+  _id: string;
+  title: string;
+  type?: string;
+  topics?: string;
+  description?: string;
+  meeting_link?: string;
+  scheduled_at?: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+  status: MeetingStatus;
+  departments_ids?: { _id?: string; name?: string }[];
+  created_by?: MeetingUser;
+  organizers_ids?: MeetingUser[];
+  participants_ids?: MeetingUser[];
+  reminder_appointment_id?: string | null;
+};
+
+export type CreateMeetingPayload = {
+  title: string;
+  type?: string;
+  topics?: string;
+  description?: string;
+  meeting_link?: string;
+  scheduled_at?: string;
+  departments_ids?: string[];
+  organizers_ids?: string[];
+  participants_ids?: string[];
+};
+
+export async function fetchMeetings(): Promise<Meeting[]> {
+  const response = await http.get<ApiResponse<Meeting[]>>(
+    '/api/subscriber/organization/meetings'
+  );
+  return response.data.data;
+}
+
+export async function createMeeting(data: CreateMeetingPayload): Promise<Meeting> {
+  const response = await http.post<ApiResponse<Meeting>>(
+    '/api/subscriber/organization/meetings',
+    data
+  );
+  return response.data.data;
+}
+
+export async function updateMeeting(id: string, data: Partial<CreateMeetingPayload>): Promise<Meeting> {
+  const response = await http.patch<ApiResponse<Meeting>>(
+    `/api/subscriber/organization/meetings/${id}`,
+    data
+  );
+  return response.data.data;
+}
+
+export async function updateMeetingStatus(id: string, status: MeetingStatus): Promise<Meeting> {
+  const response = await http.patch<ApiResponse<Meeting>>(
+    `/api/subscriber/organization/meetings/${id}/status`,
+    { status }
+  );
+  return response.data.data;
+}
+
+export async function deleteMeeting(id: string): Promise<void> {
+  await http.delete(`/api/subscriber/organization/meetings/${id}`);
+}
+
+export async function setMeetingReminder(id: string): Promise<Meeting> {
+  const response = await http.post<ApiResponse<Meeting>>(
+    `/api/subscriber/organization/meetings/${id}/reminder`,
+    {}
+  );
+  return response.data.data;
+}
+
+export async function removeMeetingReminder(id: string): Promise<Meeting> {
+  const response = await http.delete<ApiResponse<Meeting>>(
+    `/api/subscriber/organization/meetings/${id}/reminder`
+  );
+  return response.data.data;
+}
+
+// ===== Teams =====
+
+export type Team = {
+  _id: string;
+  name: string;
+  icon?: string;
+  related_model_type?: 'Department' | 'Project' | null;
+  related_model_id?: string | null;
+  related_model?: { _id?: string; name?: string } | null;
+  leader_id?: { _id?: string; name?: string; image?: string } | null;
+  members_ids?: { _id?: string; name?: string; image?: string }[];
+  score?: number;
+  employees_count?: number;
+  active_tasks_count?: number;
+};
+
+export type CreateTeamPayload = {
+  name: string;
+  related_model_type?: 'Department' | 'Project';
+  related_model_id?: string;
+  leader_id?: string;
+  members_ids?: string[];
+};
+
+export async function fetchTeams(): Promise<Team[]> {
+  const response = await http.get<ApiResponse<Team[]>>(
+    '/api/subscriber/organization/teams'
+  );
+  return response.data.data;
+}
+
+export async function createTeam(data: CreateTeamPayload): Promise<Team> {
+  const response = await http.post<ApiResponse<Team>>(
+    '/api/subscriber/organization/teams',
+    data
+  );
+  return response.data.data;
+}
+
+export async function updateTeam(id: string, data: Partial<CreateTeamPayload>): Promise<Team> {
+  const response = await http.patch<ApiResponse<Team>>(
+    `/api/subscriber/organization/teams/${id}`,
+    data
+  );
+  return response.data.data;
+}
+
+export async function rateTeam(id: string, score: number): Promise<Team> {
+  const response = await http.patch<ApiResponse<Team>>(
+    `/api/subscriber/organization/teams/${id}/rate`,
+    { score }
+  );
+  return response.data.data;
+}
+
+export async function deleteTeam(id: string): Promise<void> {
+  await http.delete(`/api/subscriber/organization/teams/${id}`);
+}

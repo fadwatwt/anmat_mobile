@@ -55,7 +55,10 @@ export const menuItems: MenuItemType[] = [
     children: [
       { titleKey: 'Employees', route: 'HR_Employees' },
       { titleKey: 'Departments', route: 'HR_Departments' },
+      { titleKey: 'Teams', route: 'HR_Teams' },
       { titleKey: 'Positions', route: 'HR_Positions' },
+      { titleKey: 'Meetings', route: 'HR_Meetings' },
+      { titleKey: 'Holidays', route: 'HR_Holidays' },
     ],
   },
   {
