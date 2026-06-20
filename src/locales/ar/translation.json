@@ -1,4 +1,7 @@
 {
+  "Subscription Inactive": "الاشتراك غير مُفعّل",
+  "Your organization's subscription has expired. Please contact your organization administrator to renew the subscription and restore access.": "انتهى اشتراك مؤسستك. يرجى التواصل مع مدير المؤسسة لتجديد الاشتراك واستعادة الوصول.",
+  "Sign Out": "تسجيل الخروج",
   "0": "0",
   "8": "8",
   "14": "14",
@@ -2651,5 +2654,10 @@
   "A reminder has been added to your agenda.": "تمت إضافة تذكير إلى أجندتك.",
   "The reminder has been removed.": "تمت إزالة التذكير.",
   "No meeting link": "لا يوجد رابط للاجتماع",
-  "Could not open the link": "تعذّر فتح الرابط"
+  "Could not open the link": "تعذّر فتح الرابط",
+  "Time Delivery": "التسليم في الوقت",
+  "Quality": "الجودة",
+  "Average Score": "متوسط التقييم",
+  "Write your comments here": "اكتب تعليقاتك هنا",
+  "Please add at least one rating": "يرجى إضافة تقييم واحد على الأقل"
 }

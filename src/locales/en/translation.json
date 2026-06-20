@@ -1,4 +1,7 @@
 {
+  "Subscription Inactive": "Subscription Inactive",
+  "Your organization's subscription has expired. Please contact your organization administrator to renew the subscription and restore access.": "Your organization's subscription has expired. Please contact your organization administrator to renew the subscription and restore access.",
+  "Sign Out": "Sign Out",
   "0": "0",
   "8": "8",
   "14": "14",
@@ -2646,5 +2649,10 @@
   "A reminder has been added to your agenda.": "A reminder has been added to your agenda.",
   "The reminder has been removed.": "The reminder has been removed.",
   "No meeting link": "No meeting link",
-  "Could not open the link": "Could not open the link"
+  "Could not open the link": "Could not open the link",
+  "Time Delivery": "Time Delivery",
+  "Quality": "Quality",
+  "Average Score": "Average Score",
+  "Write your comments here": "Write your comments here",
+  "Please add at least one rating": "Please add at least one rating"
 }

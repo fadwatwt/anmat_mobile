@@ -74,12 +74,26 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const persistSession = useCallback(async (data: LoginData) => {
-    setToken(data.access_token);
-    setUser(data.user);
     setAuthToken(data.access_token);
+
+    // The login response does not include subscription gating fields
+    // (has_subscription_access / subscription_status). Fetch the full profile
+    // from /api/user/auth so the navigator can gate correctly on first render.
+    let resolvedUser: User = data.user;
+    try {
+      const res = await http.get<ApiResponse<User>>('/api/user/auth');
+      if (res.data?.data) {
+        resolvedUser = res.data.data;
+      }
+    } catch {
+      // Fall back to the login user; gating fields may be missing until refresh.
+    }
+
+    setToken(data.access_token);
+    setUser(resolvedUser);
     await Promise.all([
       SecureStore.setItemAsync(TOKEN_KEY, data.access_token),
-      SecureStore.setItemAsync(USER_KEY, JSON.stringify(data.user)),
+      SecureStore.setItemAsync(USER_KEY, JSON.stringify(resolvedUser)),
     ]);
     initPushNotifications();
   }, []);

@@ -48,6 +48,7 @@ import { MyTasksScreen } from '../screens/MyTasksScreen';
 import { MyProjectsScreen } from '../screens/MyProjectsScreen';
 import AdminSignInScreen from '../screens/AdminSignInScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import SubscriptionInactiveScreen from '../screens/SubscriptionInactiveScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -56,7 +57,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export function RootNavigator() {
-  const { isLoading, token } = useAuth();
+  const { isLoading, token, user } = useAuth();
   const { colors } = useTheme();
 
   if (isLoading) {
@@ -67,9 +68,32 @@ export function RootNavigator() {
     );
   }
 
+  // Subscription gating (mirrors the web dashboard layout):
+  // - Subscriber with no/expired subscription → Plans screen to (re)subscribe.
+  // - Employee whose org subscription lapsed → fully blocked.
+  // has_subscription_access is provided by GET /api/user/auth.
+  const subscriberNeedsPlans =
+    user?.type === 'Subscriber' &&
+    (user?.has_subscription_access === false || !user?.active_subscription_id);
+  const employeeBlocked =
+    user?.type === 'Employee' && user?.has_subscription_access === false;
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {token ? (
+      {token && employeeBlocked ? (
+        <Stack.Group>
+          <Stack.Screen name="SubscriptionInactive" component={SubscriptionInactiveScreen} />
+        </Stack.Group>
+      ) : token && subscriberNeedsPlans ? (
+        <Stack.Group>
+          <Stack.Screen name="Plans">
+            {() => <Layout><PlansScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="Settings">
+            {() => <Layout><SettingsScreen /></Layout>}
+          </Stack.Screen>
+        </Stack.Group>
+      ) : token ? (
         <Stack.Group>
           <Stack.Screen name="DashboardMain">
             {() => <Layout><DashboardMain /></Layout>}

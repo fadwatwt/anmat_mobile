@@ -27,6 +27,8 @@ export type RootStackParamList = {
   Settings: undefined;
   Profile: undefined;
   Subscriptions: undefined;
+  Plans: undefined;
+  SubscriptionInactive: undefined;
   Agenda: undefined;
   Analytics: undefined;
   Conversations: undefined;

@@ -15,6 +15,13 @@ export type User = {
   phone?: string;
   avatar?: string;
   is_organization_registered?: boolean;
+  active_subscription_id?: string | null;
+  // Effective subscription gating from GET /api/user/auth: for subscribers it's
+  // their own subscription, for employees it's their organization owner's.
+  subscription_status?: string | null;
+  has_subscription_access?: boolean;
+  employee_detail?: unknown;
+  is_active?: boolean;
 };
 
 export type LoginData = {
