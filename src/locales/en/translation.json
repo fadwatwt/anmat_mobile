@@ -2654,5 +2654,7 @@
   "Quality": "Quality",
   "Average Score": "Average Score",
   "Write your comments here": "Write your comments here",
-  "Please add at least one rating": "Please add at least one rating"
+  "Please add at least one rating": "Please add at least one rating",
+  "Select date...": "Select date...",
+  "This field is required": "This field is required"
 }

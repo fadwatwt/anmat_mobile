@@ -2659,5 +2659,7 @@
   "Quality": "الجودة",
   "Average Score": "متوسط التقييم",
   "Write your comments here": "اكتب تعليقاتك هنا",
-  "Please add at least one rating": "يرجى إضافة تقييم واحد على الأقل"
+  "Please add at least one rating": "يرجى إضافة تقييم واحد على الأقل",
+  "Select date...": "اختر التاريخ...",
+  "This field is required": "هذا الحقل مطلوب"
 }

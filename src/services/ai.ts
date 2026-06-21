@@ -61,7 +61,8 @@ export async function getConversationMessages(id: string): Promise<AIMessage[]> 
 }
 
 export async function sendMessage(data: { message: string; conversation_id?: string; attachments?: string[]; model?: string }): Promise<{ message: AIMessage; conversation_id: string }> {
-  const response = await http.post<ApiResponse<{ assistant_message: AIMessage; conversation_id: string }>>('/api/ai/chat', data);
+  // AI screen shows its own "sending"/typing indicator, so suppress the global overlay.
+  const response = await http.post<ApiResponse<{ assistant_message: AIMessage; conversation_id: string }>>('/api/ai/chat', data, { silent: true } as any);
   const body = response.data.data || response.data;
   return {
     message: body.assistant_message,

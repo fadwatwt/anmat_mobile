@@ -35,9 +35,10 @@ export async function fetchNotifications(
 }
 
 export async function markNotificationAsRead(id: string): Promise<void> {
-  await http.patch(`/api/notifications/mark-as-read/${id}`);
+  // Background read-receipt: don't show the global processing overlay.
+  await http.patch(`/api/notifications/mark-as-read/${id}`, undefined, { silent: true } as any);
 }
 
 export async function markAllNotificationsAsRead(): Promise<void> {
-  await http.patch('/api/notifications/mark-all-as-read');
+  await http.patch('/api/notifications/mark-all-as-read', undefined, { silent: true } as any);
 }

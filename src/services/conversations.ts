@@ -93,7 +93,8 @@ export async function deleteChatMessage(messageId: string): Promise<void> {
 }
 
 export async function markChatRead(chatId: string): Promise<void> {
-  await http.patch(`/api/chats/${chatId}/read`);
+  // Background read-receipt: don't show the global processing overlay.
+  await http.patch(`/api/chats/${chatId}/read`, undefined, { silent: true } as any);
 }
 
 export async function archiveChat(chatId: string, isArchived = true): Promise<void> {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { Edit3, Trash2 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
@@ -46,16 +47,32 @@ const statusLabels: Record<string, string> = {
   delayed: 'Delayed',
 };
 
-const fetchData = async (_params: any) => {
+const fetchData = async (params: any) => {
   const data = await fetchTasks();
-  return { data, total: data.length };
+  const status = params?.filters?.status;
+  const filtered = status && status !== 'all'
+    ? data.filter((task: TaskItem) => (task.status || '').toLowerCase() === status)
+    : data;
+  return { data: filtered, total: filtered.length };
 };
+
+const statusFilterOptions = [
+  { label: 'All', value: 'all' },
+  { label: 'Open', value: 'open' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'In Progress', value: 'in-progress' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Done', value: 'done' },
+  { label: 'Rejected', value: 'rejected' },
+  { label: 'Cancelled', value: 'cancelled' },
+];
 
 export default function TasksScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
   const navigation = useNavigation<any>();
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const handleDelete = (item: TaskItem) => {
     Alert.alert(t('Delete'), t('Are you sure?'), [
@@ -160,7 +177,15 @@ export default function TasksScreen() {
       keyExtractor={(item: TaskItem) => item._id}
       searchable
       searchPlaceholderKey="Search tasks..."
-
+      filters={[
+        {
+          key: 'status',
+          labelKey: 'Status',
+          options: statusFilterOptions,
+          value: statusFilter,
+          onChange: setStatusFilter,
+        },
+      ]}
       onCreate={() => navigation.navigate('TaskCreate')}
       onRowPress={(item: TaskItem) => navigation.navigate('TaskDetail', { task: item })}
       rowActions={(item: TaskItem) => [

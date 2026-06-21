@@ -104,11 +104,22 @@ export function ListScreen<T extends Record<string, any>>({
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  // Collapse the controlled filters into a { key: value } map for fetchData
+  // and for local filtering. Recomputed when any filter value changes.
+  const activeFilters = useMemo(() => {
+    const map: Record<string, string> = {};
+    (filters || []).forEach((f) => {
+      if (f.value && f.value !== 'all') map[f.key] = f.value;
+    });
+    return map;
+  }, [filters]);
+  const activeFiltersKey = JSON.stringify(activeFilters);
+
   const loadData = useCallback(async (pageNum: number, isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     try {
-      const res = await fetchData({ page: pageNum, limit: pageSize, search, sort });
+      const res = await fetchData({ page: pageNum, limit: pageSize, search, sort, filters: activeFilters });
       setData(Array.isArray(res?.data) ? res.data : []);
       setTotal(typeof res?.total === 'number' ? res.total : 0);
     } catch {
@@ -118,7 +129,7 @@ export function ListScreen<T extends Record<string, any>>({
       setLoading(false);
       setRefreshing(false);
     }
-  }, [fetchData, pageSize, search, sort]);
+  }, [fetchData, pageSize, search, sort, activeFilters]);
 
   useEffect(() => { loadData(1); }, [loadData]);
 
@@ -128,7 +139,24 @@ export function ListScreen<T extends Record<string, any>>({
     return () => clearInterval(id);
   }, [refreshInterval, loadData, page]);
 
-  useEffect(() => { setPage(1); loadData(1); }, [search, sort]);
+  useEffect(() => { setPage(1); loadData(1); }, [search, sort, activeFiltersKey]);
+
+  // Advance a filter to its next option (tap to cycle through values).
+  const cycleFilter = (f: FilterConfig) => {
+    const opts = f.options || [];
+    if (opts.length === 0) return;
+    const currentIndex = opts.findIndex((o) => o.value === (f.value ?? opts[0].value));
+    const next = opts[(currentIndex + 1) % opts.length];
+    f.onChange(next.value);
+  };
+
+  const filterLabel = (f: FilterConfig) => {
+    const selected = (f.options || []).find((o) => o.value === f.value);
+    if (selected && f.value && f.value !== 'all') {
+      return `${t(f.labelKey)}: ${t(selected.label)}`;
+    }
+    return t(f.labelKey);
+  };
 
   const handleRefresh = () => loadData(page, true);
 
@@ -310,15 +338,26 @@ export function ListScreen<T extends Record<string, any>>({
       {searchable && renderSearch()}
       {filters && filters.length > 0 && (
         <View style={[s.filterRow, { flexDirection: rowDir }]}>
-          {filters.map(f => (
-            <TouchableOpacity
-              key={f.key}
-              style={[s.filterChip, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => {}}
-            >
-              <Text style={[s.filterChipText, { color: colors.textMuted }]}>{t(f.labelKey)}</Text>
-            </TouchableOpacity>
-          ))}
+          {filters.map(f => {
+            const isActive = !!f.value && f.value !== 'all';
+            return (
+              <TouchableOpacity
+                key={f.key}
+                style={[
+                  s.filterChip,
+                  {
+                    backgroundColor: isActive ? colors.primary : colors.surface,
+                    borderColor: isActive ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => cycleFilter(f)}
+              >
+                <Text style={[s.filterChipText, { color: isActive ? '#FFF' : colors.textMuted }]}>
+                  {filterLabel(f)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       )}
       <ScrollView horizontal showsHorizontalScrollIndicator bounces={false} style={s.tableOuter}>
