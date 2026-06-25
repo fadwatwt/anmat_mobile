@@ -1,114 +1,111 @@
-import { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../components/Button';
-import { API_URL } from '../config/api';
+import { Settings, Bell, Clock, MessageSquare, ClipboardList, User, Sparkles } from 'lucide-react-native';
+import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../context/LanguageContext';
-import { useTheme } from '../context/ThemeContext';
 import { font, radii, spacing } from '../theme';
 
-const LANGUAGES = [
-  { code: 'en' as const, label: 'English' },
-  { code: 'ar' as const, label: 'العربية' },
-];
+import GeneralSettingsTab from './settings/GeneralSettingsTab';
+import NotificationsTab from './settings/NotificationsTab';
+import AttendanceSettingsTab from './settings/AttendanceSettingsTab';
+import ConversationsSettingsTab from './settings/ConversationsSettingsTab';
+import TasksSettingsTab from './settings/TasksSettingsTab';
+import ProfileSecurityTab from './settings/ProfileSecurityTab';
+import AiSettingsTab from './settings/AiSettingsTab';
+
+const Tab = createMaterialTopTabNavigator();
 
 export default function SettingsScreen() {
-  const { logout, user } = useAuth();
-  const { colors } = useTheme();
-  const { locale, setLocale } = useLocale();
   const { t } = useTranslation();
-  const [selectedLang, setSelectedLang] = useState(locale);
+  const { colors } = useTheme();
+  const { user } = useAuth();
+  const { isRTL } = useLocale();
+
+  const tabs = [
+    { name: 'General', component: GeneralSettingsTab, icon: Settings, title: t('General') },
+    { name: 'Notifications', component: NotificationsTab, icon: Bell, title: t('Notifications') },
+    { name: 'Attendance', component: AttendanceSettingsTab, icon: Clock, title: t('Attendance') },
+    { name: 'Conversations', component: ConversationsSettingsTab, icon: MessageSquare, title: t('Conversations') },
+    { name: 'Tasks', component: TasksSettingsTab, icon: ClipboardList, title: t('Tasks') },
+    { name: 'ProfileSecurity', component: ProfileSecurityTab, icon: User, title: t('Privacy & Security') },
+  ] as const;
+
+  if (user?.type === 'Admin') {
+    (tabs as any).push({ name: 'AI', component: AiSettingsTab, icon: Sparkles, title: t('AI Assistant') });
+  }
+
+  const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-          <Text style={styles.avatarText}>{(user?.name || 'A').slice(0, 1).toUpperCase()}</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <View style={[styles.headerIcon, { backgroundColor: colors.primaryLight }]}>
+          <Settings size={20} color={colors.primary} />
         </View>
-        <Text style={[styles.name, { color: colors.ink }]}>{user?.name || 'User'}</Text>
-        <Text style={[styles.email, { color: colors.textMuted }]}>{user?.email}</Text>
-      </View>
-
-      <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <SettingsRow label={t('Account Type')} value={user?.type || '-'} icon="👤" colors={colors} />
-        <SettingsRow label={t('Email')} value={user?.email || '-'} icon="✉" colors={colors} />
-        <SettingsRow label={t('User')} value={user?._id?.slice(-8) || '-'} icon="🔢" colors={colors} />
-        <SettingsRow label={t('Server')} value={API_URL.replace('http://', '').replace('https://', '')} icon="🖥" colors={colors} last />
-      </View>
-
-      <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={styles.languageSection}>
-          <Text style={[styles.languageLabel, { color: colors.textMuted }]}>{t('Language')}</Text>
-          <View style={styles.langOptions}>
-            {LANGUAGES.map((lang) => (
-              <TouchableOpacity
-                key={lang.code}
-                onPress={() => setSelectedLang(lang.code)}
-                style={[
-                  styles.langOption,
-                  { borderColor: colors.border },
-                  selectedLang === lang.code && { backgroundColor: colors.primary, borderColor: colors.primary },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.langOptionText,
-                    { color: colors.ink },
-                    selectedLang === lang.code && { color: '#FFF' },
-                  ]}
-                >
-                  {lang.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {selectedLang !== locale && (
-            <Button
-              label={t('Apply Changes')}
-              onPress={() => setLocale(selectedLang)}
-              size="sm"
-            />
-          )}
+        <View style={{ alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
+          <Text style={[styles.headerTitle, { color: colors.ink, textAlign: align }]}>{t('Settings Page')}</Text>
+          <Text style={[styles.headerSub, { color: colors.textMuted, textAlign: align }]}>
+            {t('Manage your preferences and configure various options.')}
+          </Text>
         </View>
       </View>
 
-      <Button label={t('Logout')} onPress={logout} variant="danger" />
-    </View>
-  );
-}
-
-function SettingsRow({ label, value, icon, colors, last }: { label: string; value: string; icon?: string; colors: ReturnType<typeof useTheme>['colors']; last?: boolean }) {
-  return (
-    <View style={[styles.row, !last && { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-      <View style={styles.rowLeft}>
-        {icon ? <Text style={styles.rowIcon}>{icon}</Text> : null}
-        <Text style={[styles.rowLabel, { color: colors.textMuted }]}>{label}</Text>
-      </View>
-      <Text style={[styles.rowValue, { color: colors.ink }]} numberOfLines={1}>{value}</Text>
+      {/* Tabs */}
+      <Tab.Navigator
+        screenOptions={({ route }) => {
+          const cfg = tabs.find((tb) => tb.name === route.name);
+          return {
+            tabBarLabel: cfg?.title,
+            tabBarIcon: ({ color }: { color: string }) => {
+              const Icon = cfg?.icon;
+              return Icon ? <Icon size={16} color={color} strokeWidth={2} /> : <></>;
+            },
+            tabBarActiveTintColor: colors.primary,
+            tabBarInactiveTintColor: colors.textMuted,
+            tabBarStyle: {
+              backgroundColor: colors.surface,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border,
+              elevation: 0,
+            },
+            tabBarIndicatorStyle: { backgroundColor: colors.primary, height: 3 },
+            tabBarLabelStyle: { fontSize: 10, fontWeight: '600' as const, textTransform: 'none' as const },
+            tabBarScrollEnabled: true,
+            tabBarItemStyle: { width: 'auto', minWidth: 80, paddingHorizontal: spacing.xs },
+            headerShown: false,
+            lazy: true,
+          };
+        }}
+      >
+        {tabs.map(({ name, component }) => (
+          <Tab.Screen key={name} name={name} component={component} />
+        ))}
+      </Tab.Navigator>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  avatar: { alignItems: 'center', borderRadius: radii.full, height: 72, justifyContent: 'center', width: 72 },
-  avatarText: { color: '#FFF', fontSize: 32, fontWeight: font.weights.extrabold },
-  container: { flex: 1, gap: spacing.lg, padding: spacing.md },
-  email: { fontSize: font.sizes.sm },
-  header: { alignItems: 'center', gap: spacing.sm },
-  languageLabel: { fontSize: font.sizes.sm, marginBottom: spacing.sm },
-  languageSection: { padding: spacing.md },
-  langOption: {
-    borderWidth: 1, borderRadius: radii.lg, paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm, flex: 1, alignItems: 'center',
+  container: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderBottomWidth: 1,
   },
-  langOptionText: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
-  langOptions: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
-  name: { fontSize: font.sizes.xl, fontWeight: font.weights.bold },
-  panel: { borderWidth: 1, borderRadius: radii.xxl, overflow: 'hidden' },
-  row: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.md },
-  rowIcon: { fontSize: 16, marginRight: spacing.sm },
-  rowLabel: { fontSize: font.sizes.sm },
-  rowLeft: { alignItems: 'center', flexDirection: 'row' },
-  rowValue: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold, maxWidth: '60%' },
+  headerIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: font.sizes.base, fontWeight: font.weights.bold },
+  headerSub: { fontSize: font.sizes.xs },
 });
