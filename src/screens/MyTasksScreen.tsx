@@ -4,10 +4,11 @@ import { RefreshCw, Eye } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { Badge } from '../components/Badge';
+import { EvaluationModal } from '../components/EvaluationModal';
 import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { ListScreen } from '../generators/ListScreen';
-import { fetchMyTasks, updateMyTaskStatus } from '../services/tasks';
+import { fetchMyTasks, updateMyTaskStatus, evaluateTask } from '../services/tasks';
 import { TaskItem } from '../types';
 import { extractErrorMessage } from '../lib/http';
 import { font } from '../theme';
@@ -27,8 +28,6 @@ const statusLabels: Record<string, string> = {
   done: 'Done', rejected: 'Rejected', cancelled: 'Cancelled', delayed: 'Delayed',
 };
 
-// Statuses the employee can move a task to (matches web allowedStatuses, minus 'done'
-// which on web opens an evaluation modal — kept out of the mobile quick-change flow).
 const CHANGEABLE_STATUSES = ['open', 'pending', 'in-progress', 'completed', 'rejected', 'cancelled'];
 
 export function MyTasksScreen() {
@@ -37,6 +36,7 @@ export function MyTasksScreen() {
   const { isRTL } = useLocale();
   const navigation = useNavigation<any>();
   const [reloadKey, setReloadKey] = useState(0);
+  const [evalTask, setEvalTask] = useState<TaskItem | null>(null);
 
   const fetchData = useCallback(async () => {
     const data = await fetchMyTasks();
@@ -55,10 +55,24 @@ export function MyTasksScreen() {
         }
       },
     }));
+    buttons.push({
+      text: t('Done'),
+      onPress: async () => { setEvalTask(task); },
+    });
     Alert.alert(t('Update Task Status'), task.title || task.name || '', [
       ...buttons,
       { text: t('Cancel'), style: 'cancel' as const },
     ]);
+  };
+
+  const handleEvaluate = (data: any) => {
+    if (!evalTask) return;
+    evaluateTask(evalTask._id, data).then(() => {
+      setEvalTask(null);
+      setReloadKey((k) => k + 1);
+    }).catch((e) => {
+      Alert.alert(t('Error'), extractErrorMessage(e) || t('Failed to submit evaluation'));
+    });
   };
 
   const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
@@ -122,20 +136,28 @@ export function MyTasksScreen() {
   ];
 
   return (
-    <ListScreen
-      key={reloadKey}
-      columns={columns}
-      fetchData={fetchData}
-      keyExtractor={(item: TaskItem) => item._id}
-      searchable
-      searchPlaceholderKey="Search tasks..."
-      onRowPress={(item: TaskItem) => navigation.navigate('TaskDetail', { task: item })}
-      rowActions={(item: TaskItem) => [
-        { label: t('View'), icon: <Eye size={16} color="#375DFB" />, onPress: () => navigation.navigate('TaskDetail', { task: item }) },
-        { label: t('Change Status'), icon: <RefreshCw size={16} color={colors.primary} />, onPress: () => handleChangeStatus(item) },
-      ]}
-      emptyTitleKey="No tasks found"
-      emptyMessageKey="No tasks to display"
-    />
+    <>
+      <ListScreen
+        key={reloadKey}
+        columns={columns}
+        fetchData={fetchData}
+        keyExtractor={(item: TaskItem) => item._id}
+        searchable
+        searchPlaceholderKey="Search tasks..."
+        onRowPress={(item: TaskItem) => navigation.navigate('TaskDetail', { task: item })}
+        rowActions={(item: TaskItem) => [
+          { label: t('View'), icon: <Eye size={16} color="#375DFB" />, onPress: () => navigation.navigate('TaskDetail', { task: item }) },
+          { label: t('Change Status'), icon: <RefreshCw size={16} color={colors.primary} />, onPress: () => handleChangeStatus(item) },
+        ]}
+        emptyTitleKey="No tasks found"
+        emptyMessageKey="No tasks to display"
+      />
+      <EvaluationModal
+        visible={!!evalTask}
+        onClose={() => setEvalTask(null)}
+        onSubmit={handleEvaluate}
+        type="task"
+      />
+    </>
   );
 }

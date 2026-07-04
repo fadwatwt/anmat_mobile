@@ -39,3 +39,14 @@ export async function fetchMyTasks(): Promise<TaskItem[]> {
 export async function updateMyTaskStatus(id: string, status: string): Promise<void> {
   await http.put(`/api/employee/tasks/${id}/status-update`, { status });
 }
+
+export type EvaluationData = {
+  evaluation_method: string;
+  evaluation_rating?: number;
+  evaluation_criteria?: Record<string, number>;
+  comment?: string;
+};
+
+export async function evaluateTask(id: string, data: EvaluationData): Promise<void> {
+  await http.put(`/api/employee/tasks/${id}/status-update`, { status: 'done', ...data });
+}

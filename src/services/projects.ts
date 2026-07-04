@@ -91,3 +91,38 @@ export async function fetchMyProjects(): Promise<Project[]> {
   const data = (response.data as ApiResponse<Project[]>).data ?? response.data;
   return Array.isArray(data) ? data : [];
 }
+
+// ===== Project Templates =====
+export type ProjectTemplate = {
+  _id: string;
+  name?: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  tasks?: any[];
+  stages?: any[];
+  manager_id?: string;
+  department_id?: string;
+  assignees_ids?: string[];
+  created_at?: string;
+  updated_at?: string;
+};
+
+export async function fetchProjectTemplates(): Promise<ProjectTemplate[]> {
+  const response = await http.get<ApiResponse<ProjectTemplate[]>>('/api/subscriber/organization/project-templates');
+  return response.data.data || response.data || [];
+}
+
+export async function fetchProjectTemplateById(id: string): Promise<ProjectTemplate> {
+  const response = await http.get<ApiResponse<ProjectTemplate>>(`/api/subscriber/organization/project-templates/${id}`);
+  return response.data.data || (response.data as any);
+}
+
+export async function deleteProjectTemplate(id: string): Promise<void> {
+  await http.delete(`/api/subscriber/organization/project-templates/${id}`);
+}
+
+export async function createProjectFromTemplate(templateId: string, data: any): Promise<Project> {
+  const response = await http.post<ApiResponse<Project>>(`/api/subscriber/projects/from-template/${templateId}`, data);
+  return response.data.data || (response.data as any);
+}

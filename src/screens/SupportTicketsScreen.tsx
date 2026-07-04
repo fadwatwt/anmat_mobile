@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
 import { Badge } from '../components/Badge';
 import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -29,6 +30,7 @@ export default function SupportTicketsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const navigation = useNavigation<any>();
   const [reloadKey, setReloadKey] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -95,7 +97,7 @@ export default function SupportTicketsScreen() {
         keyExtractor={(item: SupportTicket) => item._id}
         searchable
         searchPlaceholderKey="Search tickets..."
-
+        onRowPress={(item: SupportTicket) => navigation.navigate('SupportTicketDetail', { id: item._id })}
         onCreate={() => setModalOpen(true)}
         emptyTitleKey="No tickets found"
         emptyMessageKey="No support tickets to display"

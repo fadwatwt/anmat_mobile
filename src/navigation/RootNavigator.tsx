@@ -15,10 +15,17 @@ import HRPositionsScreen from '../screens/HRPositionsScreen';
 import HRMeetingsScreen from '../screens/HRMeetingsScreen';
 import HRHolidaysScreen from '../screens/HRHolidaysScreen';
 import HRTeamsScreen from '../screens/HRTeamsScreen';
+import HRAttendancesScreen from '../screens/HRAttendancesScreen';
+import HRLeavesScreen from '../screens/HRLeavesScreen';
+import HRRequestsScreen from '../screens/HRRequestsScreen';
+import HRSalaryScreen from '../screens/HRSalaryScreen';
 import ProjectsMain from '../screens/ProjectsScreen';
 import ProjectDetailScreen from '../screens/ProjectDetailScreen';
 import ProjectCreateScreen from '../screens/ProjectCreateScreen';
+import TemplatesScreen from '../screens/TemplatesScreen';
+import TemplateDetailScreen from '../screens/TemplateDetailScreen';
 import TasksMain from '../screens/TasksScreen';
+import TodoListScreen from '../screens/TodoListScreen';
 import TaskDetailScreen from '../screens/TaskDetailScreen';
 import TaskCreateScreen from '../screens/TaskCreateScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -28,6 +35,8 @@ import { SubscriberDetailScreen } from '../screens/SubscriberDetailScreen';
 import IndustriesScreen from '../screens/IndustriesScreen';
 import SystemAdminsScreen from '../screens/SystemAdminsScreen';
 import SupportTicketsScreen from '../screens/SupportTicketsScreen';
+import SupportTicketDetailScreen from '../screens/SupportTicketDetailScreen';
+import AppointmentsScreen from '../screens/AppointmentsScreen';
 import MoneyMethodsScreen from '../screens/MoneyMethodsScreen';
 import AIScreen from '../screens/AIScreen';
 import ConversationsScreen from '../screens/ConversationsScreen';
@@ -42,6 +51,7 @@ import { RequestsScreen } from '../screens/RequestsScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import PlansScreen from '../screens/PlansScreen';
 import TokenPricingScreen from '../screens/TokenPricingScreen';
+import AIAnalyticsScreen from '../screens/AIAnalyticsScreen';
 import { RolesScreen } from '../screens/RolesScreen';
 import { PermissionsScreen } from '../screens/PermissionsScreen';
 import { MyTasksScreen } from '../screens/MyTasksScreen';
@@ -125,6 +135,18 @@ export function RootNavigator() {
           <Stack.Screen name="HRTeams">
             {() => <Layout><HRTeamsScreen /></Layout>}
           </Stack.Screen>
+          <Stack.Screen name="HRAttendances">
+            {() => <Layout><HRAttendancesScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="HRLeaves">
+            {() => <Layout><HRLeavesScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="HRRequests">
+            {() => <Layout><HRRequestsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="HRSalary">
+            {() => <Layout><HRSalaryScreen /></Layout>}
+          </Stack.Screen>
           <Stack.Screen name="ProjectsMain">
             {() => <Layout><ProjectsMain /></Layout>}
           </Stack.Screen>
@@ -133,6 +155,12 @@ export function RootNavigator() {
           </Stack.Screen>
           <Stack.Screen name="ProjectCreate">
             {() => <Layout><ProjectCreateScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="Templates">
+            {() => <Layout><TemplatesScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="TemplateDetail">
+            {() => <Layout><TemplateDetailScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="TasksMain">
             {() => <Layout><TasksMain /></Layout>}
@@ -151,6 +179,9 @@ export function RootNavigator() {
           </Stack.Screen>
           <Stack.Screen name="Settings">
             {() => <Layout><SettingsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="TodoList">
+            {() => <Layout><TodoListScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="Profile">
             {() => <Layout><ProfileScreen /></Layout>}
@@ -182,6 +213,9 @@ export function RootNavigator() {
           <Stack.Screen name="SupportTickets">
             {() => <Layout><SupportTicketsScreen /></Layout>}
           </Stack.Screen>
+          <Stack.Screen name="SupportTicketDetail">
+            {() => <Layout><SupportTicketDetailScreen /></Layout>}
+          </Stack.Screen>
           <Stack.Screen name="MoneyMethods">
             {() => <Layout><MoneyMethodsScreen /></Layout>}
           </Stack.Screen>
@@ -200,6 +234,9 @@ export function RootNavigator() {
           <Stack.Screen name="Agenda">
             {() => <Layout><AgendaScreen /></Layout>}
           </Stack.Screen>
+          <Stack.Screen name="Appointments">
+            {() => <Layout><AppointmentsScreen /></Layout>}
+          </Stack.Screen>
           <Stack.Screen name="Analytics">
             {() => <Layout><AnalyticsScreen /></Layout>}
           </Stack.Screen>
@@ -217,6 +254,9 @@ export function RootNavigator() {
           </Stack.Screen>
           <Stack.Screen name="TokenPricing">
             {() => <Layout><TokenPricingScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="AIAnalytics">
+            {() => <Layout><AIAnalyticsScreen /></Layout>}
           </Stack.Screen>
         </Stack.Group>
       ) : (
