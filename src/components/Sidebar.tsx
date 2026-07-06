@@ -60,6 +60,15 @@ const routeToScreen: Record<string, string> = {
   MoneyMethods: 'MoneyMethods',
   Settings: 'Settings',
   TodoList: 'TodoList',
+  ActivityLogs: 'ActivityLogs',
+  Organizations: 'Organizations',
+  Rotation: 'Rotation',
+  MoneyReceiving: 'MoneyReceiving',
+  PaymentMethods: 'PaymentMethods',
+  AdminRoles: 'AdminRoles',
+  AdminPermissions: 'AdminPermissions',
+  Financial: 'Financial',
+  Timeline: 'Timeline',
 };
 
 type Props = {

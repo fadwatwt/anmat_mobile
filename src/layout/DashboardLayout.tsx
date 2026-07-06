@@ -57,6 +57,15 @@ const routeTitleMap: Record<string, string> = {
   HRLeaves: 'Leaves',
   HRRequests: 'Requests',
   HRSalary: 'Salary',
+  ActivityLogs: 'Activity Logs',
+  Organizations: 'Organizations',
+  Rotation: 'Rotations',
+  MoneyReceiving: 'Money Receiving',
+  PaymentMethods: 'Payment Methods',
+  AdminRoles: 'Admin Roles',
+  AdminPermissions: 'Admin Permissions',
+  Financial: 'Financial',
+  Timeline: 'Timeline',
 };
 
 type Props = {

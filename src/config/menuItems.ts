@@ -25,6 +25,12 @@ import {
   PercentCircle,
   ShieldCheck,
   KeyRound,
+  Activity,
+  RotateCw,
+  Landmark,
+  Banknote,
+  UserCog,
+  Eye,
 } from 'lucide-react-native';
 
 export type MenuItemType = {
@@ -58,6 +64,9 @@ export const menuItems: MenuItemType[] = [
       { titleKey: 'Leaves', route: 'HR_Leaves' },
       { titleKey: 'Requests', route: 'HR_Requests' },
       { titleKey: 'Salary', route: 'HR_Salary' },
+      { titleKey: 'Financial', route: 'Financial' },
+      { titleKey: 'Rotations', route: 'Rotation' },
+      { titleKey: 'Activity Logs', route: 'ActivityLogs' },
     ],
   },
   {
@@ -163,13 +172,43 @@ export const menuItems: MenuItemType[] = [
     allowedTo: ['Admin', 'Subscriber'],
   },
   {
+    titleKey: 'Activity Logs',
+    route: 'ActivityLogs',
+    icon: Activity,
+    allowedTo: ['Admin', 'Subscriber'],
+  },
+  {
     titleKey: 'System Admins',
     route: 'SystemAdmins',
     icon: UserCheck,
     allowedTo: ['Admin'],
   },
   {
-    titleKey: 'To Do List',
+    titleKey: 'Admin Roles',
+    route: 'AdminRoles',
+    icon: UserCog,
+    allowedTo: ['Admin'],
+  },
+  {
+    titleKey: 'Admin Permissions',
+    route: 'AdminPermissions',
+    icon: Eye,
+    allowedTo: ['Admin'],
+  },
+  {
+    titleKey: 'Organizations',
+    route: 'Organizations',
+    icon: Building2,
+    allowedTo: ['Admin'],
+  },
+  {
+    titleKey: 'Timeline',
+    route: 'Timeline',
+    icon: Clock,
+    allowedTo: ['Admin', 'Subscriber', 'Employee'],
+  },
+  {
+    titleKey: 'Todo List',
     route: 'TodoList',
     icon: CheckSquare,
     allowedTo: ['Admin', 'Subscriber', 'Employee'],
@@ -209,6 +248,18 @@ export const menuItems: MenuItemType[] = [
     route: 'MoneyMethods',
     icon: Wallet,
     allowedTo: ['Admin'],
+  },
+  {
+    titleKey: 'Money Receiving',
+    route: 'MoneyReceiving',
+    icon: Landmark,
+    allowedTo: ['Admin'],
+  },
+  {
+    titleKey: 'Payment Methods',
+    route: 'PaymentMethods',
+    icon: Banknote,
+    allowedTo: ['Subscriber'],
   },
   {
     titleKey: 'Support Tickets',

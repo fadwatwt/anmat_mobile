@@ -59,6 +59,17 @@ import { MyProjectsScreen } from '../screens/MyProjectsScreen';
 import AdminSignInScreen from '../screens/AdminSignInScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import SubscriptionInactiveScreen from '../screens/SubscriptionInactiveScreen';
+import ActivityLogsScreen from '../screens/ActivityLogsScreen';
+import OrganizationsScreen from '../screens/OrganizationsScreen';
+import RotationScreen from '../screens/RotationScreen';
+import MoneyReceivingScreen from '../screens/MoneyReceivingScreen';
+import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
+import AdminRolesScreen from '../screens/AdminRolesScreen';
+import AdminPermissionsScreen from '../screens/AdminPermissionsScreen';
+import FinancialScreen from '../screens/FinancialScreen';
+import RegistrationScreen from '../screens/RegistrationScreen';
+import VerificationScreen from '../screens/VerificationScreen';
+import TimelineScreen from '../screens/TimelineScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -258,12 +269,40 @@ export function RootNavigator() {
           <Stack.Screen name="AIAnalytics">
             {() => <Layout><AIAnalyticsScreen /></Layout>}
           </Stack.Screen>
+          <Stack.Screen name="ActivityLogs">
+            {() => <Layout><ActivityLogsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="Organizations">
+            {() => <Layout><OrganizationsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="Rotation">
+            {() => <Layout><RotationScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="MoneyReceiving">
+            {() => <Layout><MoneyReceivingScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="PaymentMethods">
+            {() => <Layout><PaymentMethodsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="AdminRoles">
+            {() => <Layout><AdminRolesScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="AdminPermissions">
+            {() => <Layout><AdminPermissionsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="Financial">
+            {() => <Layout><FinancialScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="Timeline">
+            {() => <Layout><TimelineScreen /></Layout>}
+          </Stack.Screen>
         </Stack.Group>
       ) : (
         <Stack.Group>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="AdminSignIn" component={AdminSignInScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="Registration" component={RegistrationScreen} />
         </Stack.Group>
       )}
     </Stack.Navigator>
