@@ -13,9 +13,10 @@ import { font, spacing } from '../theme';
 const variantMap: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'default'> = {
   active: 'success', completed: 'info', on_hold: 'warning', cancelled: 'danger', pending: 'default',
 };
-const getStatus = (s?: string) => {
-  if (!s) return { label: 'Active', variant: 'success' as const };
-  return { label: s.charAt(0).toUpperCase() + s.slice(1), variant: variantMap[s.toLowerCase()] || 'default' };
+const getStatus = (s?: string, t?: (key: string) => string) => {
+  if (!s) return { label: t ? t('Active') : 'Active', variant: 'success' as const };
+  const normalized = s.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return { label: t ? t(normalized) : normalized, variant: variantMap[s.toLowerCase()] || 'default' };
 };
 
 export default function ProjectDetailScreen() {
@@ -65,7 +66,7 @@ export default function ProjectDetailScreen() {
     },
   ], [project]);
 
-  const status = getStatus(project?.status);
+  const status = getStatus(project?.status, t);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

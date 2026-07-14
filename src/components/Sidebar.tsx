@@ -117,6 +117,17 @@ export function Sidebar({ onClose }: Props) {
     return screen === currentScreenName;
   };
 
+  const renderSectionHeader = (title: string) => {
+    const isFirst = title === filteredItems[0]?.section;
+    return (
+      <View style={[styles.sectionHeader, isFirst && styles.sectionHeaderFirst]}>
+        <Text style={[styles.sectionHeaderText, { color: colors.textMuted }]}>
+          {t(title)}
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.surface }]} edges={['top']}>
       <View style={[styles.logoSection, { borderBottomColor: colors.border }]}>
@@ -140,99 +151,106 @@ export function Sidebar({ onClose }: Props) {
 
       <ScrollView style={styles.menuScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.menuList}>
-          {filteredItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = isRouteActive(item.route);
-            const isExpanded = expandedItems[item.route] || false;
-            const hasChildren = item.children && item.children.length > 0;
-            const isChildActive = item.children?.some(
-              (child) => isRouteActive(child.route),
-            );
+          {(() => {
+            let lastSection: string | undefined;
+            return filteredItems.map((item) => {
+              const showHeader = item.section && item.section !== lastSection;
+              lastSection = item.section;
 
-            return (
-              <View key={item.route}>
-                <TouchableOpacity
-                  style={[styles.menuItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-                  onPress={() => {
-                    if (hasChildren) {
-                      toggleExpand(item.route);
-                    } else {
-                      handleNavigate(item.route);
-                    }
-                  }}
-                >
-                  <View
-                    style={[
-                      styles.activeIndicator,
-                      { backgroundColor: 'transparent' },
-                      (isActive || isChildActive) && { backgroundColor: colors.primary },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.menuItemContent,
-                      { backgroundColor: 'transparent', flexDirection: isRTL ? 'row-reverse' : 'row' },
-                      (isActive || isChildActive) && { backgroundColor: colors.primaryLight },
-                    ]}
+              const Icon = item.icon;
+              const isActive = isRouteActive(item.route);
+              const isExpanded = expandedItems[item.route] || false;
+              const hasChildren = item.children && item.children.length > 0;
+              const isChildActive = item.children?.some(
+                (child) => isRouteActive(child.route),
+              );
+
+              return (
+                <View key={item.route}>
+                  {showHeader && renderSectionHeader(item.section!)}
+                  <TouchableOpacity
+                    style={[styles.menuItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+                    onPress={() => {
+                      if (hasChildren) {
+                        toggleExpand(item.route);
+                      } else {
+                        handleNavigate(item.route);
+                      }
+                    }}
                   >
-                    <Icon
-                      size={22}
-                      color={isActive ? colors.primary : colors.textMuted}
-                      strokeWidth={isActive ? 2.5 : 2}
-                    />
-                    <Text
+                    <View
                       style={[
-                        styles.menuItemText,
-                        { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' },
-                        isActive && { color: colors.primary, fontWeight: font.weights.semibold },
+                        styles.activeIndicator,
+                        { backgroundColor: 'transparent' },
+                        (isActive || isChildActive) && { backgroundColor: colors.primary },
                       ]}
-                      numberOfLines={1}
+                    />
+                    <View
+                      style={[
+                        styles.menuItemContent,
+                        { backgroundColor: 'transparent', flexDirection: isRTL ? 'row-reverse' : 'row' },
+                        (isActive || isChildActive) && { backgroundColor: colors.primaryLight },
+                      ]}
                     >
-                      {t(item.titleKey)}
-                    </Text>
-                    {hasChildren && (
-                      <ChevronDown
-                        size={16}
-                        color={colors.textMuted}
-                        style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }}
+                      <Icon
+                        size={22}
+                        color={isActive ? colors.primary : colors.textMuted}
+                        strokeWidth={isActive ? 2.5 : 2}
                       />
-                    )}
-                  </View>
-                </TouchableOpacity>
-
-                {hasChildren && isExpanded && (
-                  <View style={[styles.childrenContainer, { backgroundColor: colors.primaryLight }, isRTL ? { marginRight: spacing.lg + spacing.md, marginLeft: spacing.md } : { marginLeft: spacing.lg + spacing.md, marginRight: spacing.md }]}>
-                    <View style={styles.childrenInner}>
-                      {item.children!.map((child) => {
-                        const isChildItemActive = isRouteActive(child.route);
-                        return (
-                          <TouchableOpacity
-                            key={child.route}
-                            style={[
-                              styles.childItem,
-                              isChildItemActive && { backgroundColor: colors.surface },
-                            ]}
-                            onPress={() => handleNavigate(child.route)}
-                          >
-                            <Text
-                              style={[
-                                styles.childText,
-                                { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' },
-                                isChildItemActive && { color: colors.primary, fontWeight: font.weights.semibold },
-                              ]}
-                              numberOfLines={1}
-                            >
-                              {t(child.titleKey)}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
+                      <Text
+                        style={[
+                          styles.menuItemText,
+                          { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' },
+                          isActive && { color: colors.primary, fontWeight: font.weights.semibold },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {t(item.titleKey)}
+                      </Text>
+                      {hasChildren && (
+                        <ChevronDown
+                          size={16}
+                          color={colors.textMuted}
+                          style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }}
+                        />
+                      )}
                     </View>
-                  </View>
-                )}
-              </View>
-            );
-          })}
+                  </TouchableOpacity>
+
+                  {hasChildren && isExpanded && (
+                    <View style={[styles.childrenContainer, { backgroundColor: colors.primaryLight }, isRTL ? { marginRight: spacing.lg + spacing.md, marginLeft: spacing.md } : { marginLeft: spacing.lg + spacing.md, marginRight: spacing.md }]}>
+                      <View style={styles.childrenInner}>
+                        {item.children!.map((child) => {
+                          const isChildItemActive = isRouteActive(child.route);
+                          return (
+                            <TouchableOpacity
+                              key={child.route}
+                              style={[
+                                styles.childItem,
+                                isChildItemActive && { backgroundColor: colors.surface },
+                              ]}
+                              onPress={() => handleNavigate(child.route)}
+                            >
+                              <Text
+                                style={[
+                                  styles.childText,
+                                  { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' },
+                                  isChildItemActive && { color: colors.primary, fontWeight: font.weights.semibold },
+                                ]}
+                                numberOfLines={1}
+                              >
+                                {t(child.titleKey)}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  )}
+                </View>
+              );
+            });
+          })()}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -240,6 +258,20 @@ export function Sidebar({ onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
+  sectionHeader: {
+    paddingTop: spacing.md + 2,
+    paddingBottom: spacing.xs,
+    paddingHorizontal: spacing.md,
+  },
+  sectionHeaderFirst: {
+    paddingTop: 0,
+  },
+  sectionHeaderText: {
+    fontSize: 11,
+    fontWeight: font.weights.extrabold,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
   activeIndicator: {
     borderRadius: radii.md,
     height: 24,

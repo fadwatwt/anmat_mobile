@@ -123,7 +123,7 @@ export function SubscriberDetailScreen() {
       '',
       [
         ...SUB_STATUSES.map((s) => ({
-          text: t(s.charAt(0).toUpperCase() + s.slice(1)),
+          text: t(s.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())),
           onPress: async () => {
             try { await updateSubscriptionStatus(current._id, s); load(); }
             catch (e) { Alert.alert(t('Error'), extractErrorMessage(e)); }
@@ -220,7 +220,7 @@ export function SubscriberDetailScreen() {
             <>
               <View style={[styles.subHead, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Text style={[styles.planName, { color: colors.ink, textAlign: align }]}>{current.plan_id?.name || '—'}</Text>
-                <Badge label={t((current.status || '').charAt(0).toUpperCase() + (current.status || '').slice(1)) || '—'} variant={statusVariant(current.status)} />
+                <Badge label={t((current.status || '').replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())) || '—'} variant={statusVariant(current.status)} />
               </View>
               <Row label={t('Price')} value={planPricing?.price != null ? `$${planPricing.price}` : '—'} />
               {!!planPricing?.discount && <Row label={t('Discount')} value={`${planPricing.discount}%`} />}

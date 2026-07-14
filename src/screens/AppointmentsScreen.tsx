@@ -68,7 +68,7 @@ export default function AppointmentsScreen() {
         return (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }} />
-            <Text style={{ color: colors.ink, fontSize: font.sizes.xs }}>{t(s.charAt(0).toUpperCase() + s.slice(1))}</Text>
+            <Text style={{ color: colors.ink, fontSize: font.sizes.xs }}>{t(s.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))}</Text>
           </View>
         );
       },

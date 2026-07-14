@@ -51,6 +51,7 @@ const statusLabelMap: Record<string, string> = {
   completed: 'Completed', completed_before_due_date: 'Completed',
   late_completed: 'Late Completed', cancelled: 'Cancelled',
   overdue: 'Overdue', on_hold: 'On Hold', pending: 'Pending',
+  done: 'Done', rejected: 'Rejected',
 };
 
 const donutColors = ['#375DFB', '#38C793', '#F17B2C', '#DF1C41', '#7E3AF2', '#FBBC05', '#0F9D58', '#4285F4', '#DB4437', '#673AB7'];
@@ -64,8 +65,9 @@ function statusVariant(s?: string): 'success' | 'warning' | 'danger' | 'info' | 
   return 'default';
 }
 
-function statusLabel(s?: string): string {
-  return statusLabelMap[(s || '').toLowerCase()] || s || 'Pending';
+function statusLabel(s?: string, t?: (key: string) => string): string {
+  const key = statusLabelMap[(s || '').toLowerCase()] || s || 'Pending';
+  return t ? t(key) : key;
 }
 
 function fmtDate(d?: string, locale: string = 'en') {
@@ -185,7 +187,7 @@ function AdminDashboardContent() {
               <View key={sub._id} style={[s.tableRow2, { borderBottomColor: colors.border }]}>
                 <Text style={[s.td2, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{sub.subscriber?.name}</Text>
                 <Text style={[s.td2, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{sub.organization?.name}</Text>
-                <View><Badge label={statusLabel(sub.status)} variant={statusVariant(sub.status)} size="sm" /></View>
+                <View><Badge label={statusLabel(sub.status, t)} variant={statusVariant(sub.status)} size="sm" /></View>
                 <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(sub.starts_at, locale)}</Text>
                 <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(sub.expires_at, locale)}</Text>
               </View>
@@ -244,12 +246,13 @@ function SubscriberDashboardContent() {
   ];
 
   const statusLabels: Record<string, string> = {
-    open: 'Open', in_progress: 'In Progress', completed: 'Completed',
-    late_completed: 'Late Completed', cancelled: 'Cancelled',
-    on_hold: 'On Hold', pending: 'Pending', overdue: 'Overdue',
+    open: t('Open'), in_progress: t('In Progress'), completed: t('Completed'),
+    late_completed: t('Late Completed'), cancelled: t('Cancelled'),
+    on_hold: t('On Hold'), pending: t('Pending'), overdue: t('Overdue'),
+    done: t('Done'), rejected: t('Rejected'),
   };
   const taskDonutData = taskStats ? Object.entries(taskStats.status_counts || {}).map(([key, value], i) => ({
-    key, value, color: statusColorMap[key] || donutColors[i % donutColors.length], label: statusLabels[key] || key,
+    key, value, color: statusColorMap[key] || donutColors[i % donutColors.length], label: statusLabels[key] || t(key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')),
   })) : [];
 
   const deptBarData = departments.map(d => ({
@@ -267,7 +270,7 @@ function SubscriberDashboardContent() {
         {taskDonutData.length > 0 && (
           <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[s.chartCardTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Tasks Summary')}</Text>
-            <DonutChart data={taskDonutData} total={taskStats?.total} subtitle="TASKS" size={140} strokeWidth={24} />
+            <DonutChart data={taskDonutData} total={taskStats?.total} subtitle={t('TASKS')} size={140} strokeWidth={24} />
           </View>
         )}
         {deptBarData.length > 0 && (
@@ -293,7 +296,7 @@ function SubscriberDashboardContent() {
             <View key={p._id} style={[s.tableRow2, { borderBottomColor: colors.border }]}>
               <Text style={[s.td2, s.tdName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{p.name || p.title}</Text>
               <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{p.department?.name || '-'}</Text>
-              <View><Badge label={statusLabel(p.status)} variant={statusVariant(p.status)} size="sm" /></View>
+              <View><Badge label={statusLabel(p.status, t)} variant={statusVariant(p.status)} size="sm" /></View>
               <View style={s.progressWrap}>
                 <View style={[s.progressTrack, { backgroundColor: colors.background }]}>
                   <View style={[s.progressFill, { backgroundColor: statusColorMap[p.status || ''] || colors.primary, width: `${p.progress || 0}%` as any }]} />
@@ -368,12 +371,13 @@ function EmployeeDashboardContent() {
   ];
 
   const statusLabels: Record<string, string> = {
-    open: 'Open', in_progress: 'In Progress', completed: 'Completed',
-    late_completed: 'Late Completed', cancelled: 'Cancelled',
-    on_hold: 'On Hold', pending: 'Pending', overdue: 'Overdue',
+    open: t('Open'), in_progress: t('In Progress'), completed: t('Completed'),
+    late_completed: t('Late Completed'), cancelled: t('Cancelled'),
+    on_hold: t('On Hold'), pending: t('Pending'), overdue: t('Overdue'),
+    done: t('Done'), rejected: t('Rejected'),
   };
   const taskDonutData = taskStats ? Object.entries(taskStats.status_counts || {}).map(([key, value], i) => ({
-    key, value, color: statusColorMap[key] || donutColors[i % donutColors.length], label: statusLabels[key] || key,
+    key, value, color: statusColorMap[key] || donutColors[i % donutColors.length], label: statusLabels[key] || t(key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')),
   })) : [];
 
   const green = '#38C793', orange = '#F17B2C';
@@ -392,7 +396,7 @@ function EmployeeDashboardContent() {
         {taskDonutData.length > 0 && (
           <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[s.chartCardTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Tasks Summary')}</Text>
-            <DonutChart data={taskDonutData} total={taskStats?.total} subtitle="TASKS" size={140} strokeWidth={24} />
+            <DonutChart data={taskDonutData} total={taskStats?.total} subtitle={t('TASKS')} size={140} strokeWidth={24} />
           </View>
         )}
         {tasks.length > 0 && (
@@ -418,12 +422,12 @@ function EmployeeDashboardContent() {
               <Text key={h} style={[s.th, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{h}</Text>
             ))}
           </View>
-          {tasks.map(t => (
-            <View key={t._id} style={[s.tableRow2, { borderBottomColor: colors.border }]}>
-              <Text style={[s.td2, s.tdName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{t.title || t.name}</Text>
-              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{t.department?.name || '-'}</Text>
-              <View><Badge label={statusLabel(t.status)} variant={statusVariant(t.status)} size="sm" /></View>
-              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(t.due_date, locale)}</Text>
+          {tasks.map(task => (
+            <View key={task._id} style={[s.tableRow2, { borderBottomColor: colors.border }]}>
+              <Text style={[s.td2, s.tdName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{task.title || task.name}</Text>
+              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{task.department?.name || '-'}</Text>
+              <View><Badge label={statusLabel(task.status, t)} variant={statusVariant(task.status)} size="sm" /></View>
+              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(task.due_date, locale)}</Text>
             </View>
           ))}
         </View>

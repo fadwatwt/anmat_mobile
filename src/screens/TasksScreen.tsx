@@ -56,15 +56,15 @@ const fetchData = async (params: any) => {
   return { data: filtered, total: filtered.length };
 };
 
-const statusFilterOptions = [
-  { label: 'All', value: 'all' },
-  { label: 'Open', value: 'open' },
-  { label: 'Pending', value: 'pending' },
-  { label: 'In Progress', value: 'in-progress' },
-  { label: 'Completed', value: 'completed' },
-  { label: 'Done', value: 'done' },
-  { label: 'Rejected', value: 'rejected' },
-  { label: 'Cancelled', value: 'cancelled' },
+const statusFilterOptionsBuilder = (t: (key: string) => string) => [
+  { label: t('All'), value: 'all' },
+  { label: t('Open'), value: 'open' },
+  { label: t('Pending'), value: 'pending' },
+  { label: t('In Progress'), value: 'in-progress' },
+  { label: t('Completed'), value: 'completed' },
+  { label: t('Done'), value: 'done' },
+  { label: t('Rejected'), value: 'rejected' },
+  { label: t('Cancelled'), value: 'cancelled' },
 ];
 
 export default function TasksScreen() {
@@ -181,7 +181,7 @@ export default function TasksScreen() {
         {
           key: 'status',
           labelKey: 'Status',
-          options: statusFilterOptions,
+          options: statusFilterOptionsBuilder(t),
           value: statusFilter,
           onChange: setStatusFilter,
         },

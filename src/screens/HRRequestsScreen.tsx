@@ -24,7 +24,8 @@ export default function HRRequestsScreen() {
       titleKey: 'Status',
       render: (item: EmployeeRequest) => {
         const variant = item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'danger' : item.status === 'pending' ? 'warning' : 'default';
-        return <Badge label={item.status} variant={variant} />;
+        const label = item.status ? t(item.status.charAt(0).toUpperCase() + item.status.slice(1)) : item.status;
+        return <Badge label={label} variant={variant} />;
       },
     },
     {
