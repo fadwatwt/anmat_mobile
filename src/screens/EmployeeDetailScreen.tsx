@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { useTranslation } from 'react-i18next';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { ArrowLeft, Trash2, ToggleLeft, ToggleRight, Plus } from 'lucide-react-native';
-import { fetchEmployeeProfile, deleteEmployee, toggleEmployeeActivity, fetchEmployeeRequests } from '../services/employees';
+import { fetchEmployeeProfile, deleteEmployee, toggleEmployeeActivity, fetchEmployeeRequests, updateRequestStatus, deleteRequest } from '../services/employees';
 import { fetchOrgLeaves, fetchOrgAttendances, fetchOrgSalaryTransactions, deleteOrgLeave, deleteOrgAttendance, deleteOrgSalaryTransaction, OrgAttendance, OrgLeave, OrgSalaryTransaction } from '../services/hr';
 import { EmployeeDetailItem, EmployeeRequest } from '../types';
 import { Badge } from '../components/Badge';
@@ -60,7 +60,7 @@ function ProfileTab({ employee }: { employee: EmployeeDetailItem }) {
 }
 
 // ─── Attendance tab ───────────────────────────────────────────────────────────
-function AttendanceTab({ employee }: { employee: EmployeeDetailItem }) {
+function AttendanceTab({ employee, canCreate, canDelete }: { employee: EmployeeDetailItem; canCreate: boolean; canDelete: boolean }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
@@ -108,9 +108,11 @@ function AttendanceTab({ employee }: { employee: EmployeeDetailItem }) {
                     ? <Badge label={`${r.late_in_minutes} ${t('min')}`} variant="warning" />
                     : <Badge label={t('On Time')} variant="success" />
                   }
-                  <TouchableOpacity onPress={() => handleDelete(r)}>
-                    <Text style={{ color: '#EF4444', fontSize: font.sizes.xs }}>{t('Delete')}</Text>
-                  </TouchableOpacity>
+                  {canDelete && (
+                    <TouchableOpacity onPress={() => handleDelete(r)}>
+                      <Text style={{ color: '#EF4444', fontSize: font.sizes.xs }}>{t('Delete')}</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
               <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
@@ -128,9 +130,11 @@ function AttendanceTab({ employee }: { employee: EmployeeDetailItem }) {
         )}
       </ScrollView>
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModalOpen(true)}>
-        <Plus size={22} color="#FFF" />
-      </TouchableOpacity>
+      {canCreate && (
+        <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModalOpen(true)}>
+          <Plus size={22} color="#FFF" />
+        </TouchableOpacity>
+      )}
 
       <AddAttendanceModal
         visible={modalOpen}
@@ -142,7 +146,7 @@ function AttendanceTab({ employee }: { employee: EmployeeDetailItem }) {
 }
 
 // ─── Short Leaves tab ─────────────────────────────────────────────────────────
-function LeavesTab({ employee }: { employee: EmployeeDetailItem }) {
+function LeavesTab({ employee, canCreate, canDelete }: { employee: EmployeeDetailItem; canCreate: boolean; canDelete: boolean }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
@@ -185,9 +189,11 @@ function LeavesTab({ employee }: { employee: EmployeeDetailItem }) {
             <View key={l._id} style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Text style={[styles.cardTitle, { color: colors.ink, textAlign: align }]}>{l.date || '--'}</Text>
-                <TouchableOpacity onPress={() => handleDelete(l)}>
-                  <Text style={{ color: '#EF4444', fontSize: font.sizes.xs }}>{t('Delete')}</Text>
-                </TouchableOpacity>
+                {canDelete && (
+                  <TouchableOpacity onPress={() => handleDelete(l)}>
+                    <Text style={{ color: '#EF4444', fontSize: font.sizes.xs }}>{t('Delete')}</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
                 <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{t('Start Time')}</Text>
@@ -202,9 +208,11 @@ function LeavesTab({ employee }: { employee: EmployeeDetailItem }) {
         )}
       </ScrollView>
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModalOpen(true)}>
-        <Plus size={22} color="#FFF" />
-      </TouchableOpacity>
+      {canCreate && (
+        <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModalOpen(true)}>
+          <Plus size={22} color="#FFF" />
+        </TouchableOpacity>
+      )}
 
       <AddShortLeaveModal
         visible={modalOpen}
@@ -217,7 +225,7 @@ function LeavesTab({ employee }: { employee: EmployeeDetailItem }) {
 }
 
 // ─── Salary tab ───────────────────────────────────────────────────────────────
-function SalaryTab({ employee }: { employee: EmployeeDetailItem }) {
+function SalaryTab({ employee, canCreate, canDelete }: { employee: EmployeeDetailItem; canCreate: boolean; canDelete: boolean }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
@@ -262,9 +270,11 @@ function SalaryTab({ employee }: { employee: EmployeeDetailItem }) {
                 <Text style={[styles.cardTitle, { color: colors.ink, textAlign: align }]}>
                   {tx.amount != null ? `$${tx.amount.toLocaleString()}` : '--'}
                 </Text>
-                <TouchableOpacity onPress={() => handleDelete(tx)}>
-                  <Text style={{ color: '#EF4444', fontSize: font.sizes.xs }}>{t('Delete')}</Text>
-                </TouchableOpacity>
+                {canDelete && (
+                  <TouchableOpacity onPress={() => handleDelete(tx)}>
+                    <Text style={{ color: '#EF4444', fontSize: font.sizes.xs }}>{t('Delete')}</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               {tx.bonus != null && tx.bonus > 0 && (
                 <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
@@ -289,9 +299,11 @@ function SalaryTab({ employee }: { employee: EmployeeDetailItem }) {
         )}
       </ScrollView>
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModalOpen(true)}>
-        <Plus size={22} color="#FFF" />
-      </TouchableOpacity>
+      {canCreate && (
+        <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModalOpen(true)}>
+          <Plus size={22} color="#FFF" />
+        </TouchableOpacity>
+      )}
 
       <AddSalaryModal
         visible={modalOpen}
@@ -304,7 +316,7 @@ function SalaryTab({ employee }: { employee: EmployeeDetailItem }) {
 }
 
 // ─── Requests tab ─────────────────────────────────────────────────────────────
-function RequestsTab({ employee }: { employee: EmployeeDetailItem }) {
+function RequestsTab({ employee, canUpdate, canDelete }: { employee: EmployeeDetailItem; canUpdate: boolean; canDelete: boolean }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
@@ -312,26 +324,92 @@ function RequestsTab({ employee }: { employee: EmployeeDetailItem }) {
   const [requests, setRequests] = useState<EmployeeRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetchEmployeeRequests({ employee_id: employee.user_id });
-        setRequests(Array.isArray(res?.data) ? res.data : []);
-      } catch { } finally { setLoading(false); }
-    })();
-  }, []);
+  const load = useCallback(async () => {
+    try {
+      const res = await fetchEmployeeRequests({ employee_id: employee.user_id });
+      setRequests(Array.isArray(res?.data) ? res.data : []);
+    } catch { setRequests([]); } finally { setLoading(false); }
+  }, [employee.user_id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleStatusChange = (item: EmployeeRequest, status: 'accepted' | 'rejected') => {
+    const confirmKey = status === 'accepted' ? 'Approve Request' : 'Reject Request';
+    Alert.alert(t(confirmKey), t(status === 'accepted' ? 'Are you sure you want to approve this request?' : 'Are you sure you want to reject this request?'), [
+      { text: t('Cancel'), style: 'cancel' },
+      {
+        text: t('Confirm'),
+        onPress: async () => {
+          try {
+            await updateRequestStatus(item._id, status);
+            load();
+          } catch (e) { Alert.alert(t('Error'), extractErrorMessage(e) || t('Failed to update request')); }
+        },
+      },
+    ]);
+  };
+
+  const handleDelete = (item: EmployeeRequest) => {
+    Alert.alert(t('Delete Request'), t('Are you sure? This action cannot be undone.'), [
+      { text: t('Cancel'), style: 'cancel' },
+      {
+        text: t('Delete'), style: 'destructive',
+        onPress: async () => {
+          try { await deleteRequest(item._id); load(); }
+          catch (e) { Alert.alert(t('Error'), extractErrorMessage(e) || t('Failed to delete request')); }
+        },
+      },
+    ]);
+  };
+
+  const statusVariant = (status?: string): 'success' | 'danger' | 'warning' | 'default' => {
+    switch (status) {
+      case 'accepted': return 'success';
+      case 'rejected':
+      case 'cancelled': return 'danger';
+      case 'open':
+      case 'in-progress': return 'warning';
+      default: return 'default';
+    }
+  };
 
   if (loading) return <ActivityIndicator style={styles.loading} color={colors.primary} />;
   if (!requests.length) return <Text style={[styles.emptyText, { color: colors.textMuted, textAlign: align }]}>{t('No requests')}</Text>;
 
   return (
     <ScrollView style={styles.tabContent}>
-      {requests.map(r => (
-        <View key={r._id} style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{r.type}</Text>
-          <Text style={[styles.rowValue, { color: colors.ink, textAlign: align }]}>{r.status}</Text>
-        </View>
-      ))}
+      {requests.map(r => {
+        const showActions = canUpdate && ['open', 'in-progress'].includes(r.status);
+        return (
+          <View key={r._id} style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <Text style={[styles.cardTitle, { color: colors.ink, textAlign: align }]}>{r.type}</Text>
+              <Badge label={r.status ? t(r.status.charAt(0).toUpperCase() + r.status.slice(1)) : '—'} variant={statusVariant(r.status)} />
+            </View>
+            {r.reason ? (
+              <View style={[styles.row, { borderBottomColor: colors.borderLight }]}>
+                <Text style={[styles.rowLabel, { color: colors.textMuted, textAlign: align }]}>{t('Reason')}</Text>
+                <Text style={[styles.rowValue, { color: colors.ink, textAlign: align }]}>{r.reason}</Text>
+              </View>
+            ) : null}
+            {showActions && (
+              <View style={[styles.actionsRow, { justifyContent: 'flex-end' }]}>
+                <TouchableOpacity style={[styles.actionBtn, { borderColor: '#FECDD3' }]} onPress={() => handleStatusChange(r, 'rejected')}>
+                  <Text style={[styles.actionText, { color: '#DF1C41' }]}>{t('Reject')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.actionBtn, { borderColor: '#A7F3D0' }]} onPress={() => handleStatusChange(r, 'accepted')}>
+                  <Text style={[styles.actionText, { color: '#047857' }]}>{t('Approve')}</Text>
+                </TouchableOpacity>
+                {canDelete && (
+                  <TouchableOpacity style={[styles.actionBtn, { borderColor: '#E5E7EB' }]} onPress={() => handleDelete(r)}>
+                    <Text style={[styles.actionText, { color: '#DF1C41' }]}>{t('Delete')}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+          </View>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -344,10 +422,26 @@ export function EmployeeDetailScreen() {
   const employeeParam = route.params?.employee as EmployeeDetailItem | undefined;
   const employeeId = route.params?.employee_id as string | undefined;
   const { colors } = useTheme();
-  const { user: authUser } = useAuth();
+  const { permissions } = useAuth();
   const { isRTL } = useLocale();
   const [employee, setEmployee] = useState<EmployeeDetailItem | null>(employeeParam || null);
   const [loading, setLoading] = useState(!employee && !!employeeId);
+
+  const has = useCallback(
+    (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm)),
+    [permissions],
+  );
+
+  const canUpdateEmployee = has('employee_details.update');
+  const canDeleteEmployee = has('employee_details.delete');
+  const canCreateAttendance = has('attendances.create');
+  const canDeleteAttendance = has('attendances.delete');
+  const canCreateLeave = has('leaves.create');
+  const canDeleteLeave = has('leaves.delete');
+  const canCreateSalary = has('salary_transactions.create');
+  const canDeleteSalary = has('salary_transactions.delete');
+  const canUpdateRequest = has('employee_requests.update');
+  const canDeleteRequest = has('employee_requests.delete');
 
   useEffect(() => {
     if (!employee && employeeId) {
@@ -408,16 +502,20 @@ export function EmployeeDetailScreen() {
         </View>
       </View>
 
-      {authUser?.type === 'Subscriber' && (
+      {(canUpdateEmployee || canDeleteEmployee) && (
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.actionBtn} onPress={handleToggleActivity}>
-            {isActive ? <ToggleLeft size={20} color="#F59E0B" /> : <ToggleRight size={20} color="#10B981" />}
-            <Text style={[styles.actionText, { color: '#374151' }]}>{isActive ? t('Deactivate') : t('Activate')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={handleDelete}>
-            <Trash2 size={20} color="#DF1C41" />
-            <Text style={[styles.actionText, { color: '#DF1C41' }]}>{t('Delete')}</Text>
-          </TouchableOpacity>
+          {canUpdateEmployee && (
+            <TouchableOpacity style={styles.actionBtn} onPress={handleToggleActivity}>
+              {isActive ? <ToggleLeft size={20} color="#F59E0B" /> : <ToggleRight size={20} color="#10B981" />}
+              <Text style={[styles.actionText, { color: '#374151' }]}>{isActive ? t('Deactivate') : t('Activate')}</Text>
+            </TouchableOpacity>
+          )}
+          {canDeleteEmployee && (
+            <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={handleDelete}>
+              <Trash2 size={20} color="#DF1C41" />
+              <Text style={[styles.actionText, { color: '#DF1C41' }]}>{t('Delete')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -432,10 +530,10 @@ export function EmployeeDetailScreen() {
         }}
       >
         <Tab.Screen name="profile" options={{ title: t('Profile') }} children={() => <ProfileTab employee={employee} />} />
-        <Tab.Screen name="attendance" options={{ title: t('Attendances') }} children={() => <AttendanceTab employee={employee} />} />
-        <Tab.Screen name="leaves" options={{ title: t('Short Leaves') }} children={() => <LeavesTab employee={employee} />} />
-        <Tab.Screen name="salary" options={{ title: t('Salary') }} children={() => <SalaryTab employee={employee} />} />
-        <Tab.Screen name="requests" options={{ title: t('Requests') }} children={() => <RequestsTab employee={employee} />} />
+        <Tab.Screen name="attendance" options={{ title: t('Attendances') }} children={() => <AttendanceTab employee={employee} canCreate={canCreateAttendance} canDelete={canDeleteAttendance} />} />
+        <Tab.Screen name="leaves" options={{ title: t('Short Leaves') }} children={() => <LeavesTab employee={employee} canCreate={canCreateLeave} canDelete={canDeleteLeave} />} />
+        <Tab.Screen name="salary" options={{ title: t('Salary') }} children={() => <SalaryTab employee={employee} canCreate={canCreateSalary} canDelete={canDeleteSalary} />} />
+        <Tab.Screen name="requests" options={{ title: t('Requests') }} children={() => <RequestsTab employee={employee} canUpdate={canUpdateRequest} canDelete={canDeleteRequest} />} />
       </Tab.Navigator>
     </View>
   );

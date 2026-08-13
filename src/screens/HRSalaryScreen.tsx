@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ListScreen } from '../generators/ListScreen';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { fetchOrgSalaryTransactions, deleteOrgSalaryTransaction, OrgSalaryTransaction } from '../services/hr';
 import { extractErrorMessage } from '../lib/http';
 import { AddSalaryModal } from '../modals/AddSalaryModal';
@@ -14,8 +15,17 @@ export default function HRSalaryScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const { permissions } = useAuth();
   const [reloadKey, setReloadKey] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
+
+  const has = useCallback(
+    (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm)),
+    [permissions],
+  );
+
+  const canCreate = has('salary_transactions.create');
+  const canDelete = has('salary_transactions.delete');
 
   const fetchData = useCallback(
     async ({ page, limit, search }: { page?: number; limit?: number; search?: string }) => {
@@ -109,20 +119,20 @@ export default function HRSalaryScreen() {
         emptyTitleKey="No salary transactions"
         emptyMessageKey="No items to display"
         rowActions={(item) => [
-          {
-            label: t('Delete'),
-            onPress: () => handleDelete(item),
-            destructive: true,
-          },
+          ...(canDelete
+            ? [{ label: t('Delete'), onPress: () => handleDelete(item), destructive: true }]
+            : []),
         ]}
       />
 
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => setModalOpen(true)}
-      >
-        <Plus size={24} color="#FFF" />
-      </TouchableOpacity>
+      {canCreate && (
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: colors.primary }]}
+          onPress={() => setModalOpen(true)}
+        >
+          <Plus size={24} color="#FFF" />
+        </TouchableOpacity>
+      )}
 
       <AddSalaryModal
         visible={modalOpen}

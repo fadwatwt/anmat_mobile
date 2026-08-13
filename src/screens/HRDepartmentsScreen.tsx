@@ -3,6 +3,7 @@ import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { ListScreen } from '../generators/ListScreen';
 import { fetchDepartments } from '../services/hr';
 import { CreateDepartmentModal } from '../modals/CreateDepartmentModal';
@@ -11,9 +12,18 @@ export default function HRDepartmentsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const { permissions } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const has = useCallback(
+    (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm)),
+    [permissions],
+  );
+
+  const canCreate = has('departments.create');
+  const canUpdate = has('departments.update');
 
   const columns = [
     {
@@ -75,8 +85,8 @@ export default function HRDepartmentsScreen() {
         columns={columns}
         fetchData={fetchData}
         keyExtractor={(item: any) => item._id}
-        onCreate={() => { setEditing(null); setModalVisible(true); }}
-        onRowPress={(item: any) => { setEditing(item); setModalVisible(true); }}
+        onCreate={canCreate ? () => { setEditing(null); setModalVisible(true); } : undefined}
+        onRowPress={canUpdate ? (item: any) => { setEditing(item); setModalVisible(true); } : undefined}
         emptyTitleKey="No Departments"
         emptyMessageKey="No departments found"
       />

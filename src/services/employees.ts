@@ -186,7 +186,7 @@ export async function fetchEmployeeRequests(params: {
   return response.data.data;
 }
 
-export async function updateRequestStatus(id: string, status: 'approved' | 'rejected'): Promise<EmployeeRequest> {
+export async function updateRequestStatus(id: string, status: 'accepted' | 'rejected'): Promise<EmployeeRequest> {
   const response = await http.put<ApiResponse<EmployeeRequest>>(
     `/api/subscriber/organization/employees-requests/${id}/status`,
     { status }

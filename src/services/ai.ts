@@ -1,13 +1,21 @@
 import { http } from '../lib/http';
 import { ApiResponse } from '../types';
 
+export type PendingAction = {
+  _id: string;
+  tool_name: string;
+  args: Record<string, any>;
+  summary: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'failed';
+};
+
 export type AIMessage = {
   _id?: string;
   role: 'user' | 'assistant' | 'system';
   content?: string;
   thought?: string;
   attachments?: string[];
-  pending_action?: any;
+  pending_action?: PendingAction;
   created_at?: string;
 };
 
@@ -22,7 +30,25 @@ export type TokenBalance = {
   balance?: number;       // paid tokens (ai_tokens_balance)
   free_limit?: number;
   free_consumed?: number;
+  last_renewal?: string | null;
+  daily_usage?: { _id: string; total: number }[];
   is_unlimited?: boolean;
+};
+
+export type TokenTransaction = {
+  _id: string;
+  type: 'topup' | 'consume' | 'monthly_replenish';
+  amount: number;
+  balance_after?: number;
+  description?: string;
+  created_at?: string;
+};
+
+export type TokenHistory = {
+  transactions: TokenTransaction[];
+  total: number;
+  page: number;
+  limit: number;
 };
 
 export type TokenPackage = {
@@ -46,6 +72,12 @@ export async function fetchTokenBalance(): Promise<TokenBalance> {
 export async function fetchTokenPackages(): Promise<TokenPackage[]> {
   const response = await http.get<ApiResponse<TokenPackage[]>>('/api/ai/tokens/packages');
   return response.data.data || response.data;
+}
+
+export async function fetchTokenHistory(page = 1, limit = 10): Promise<TokenHistory> {
+  const response = await http.get<ApiResponse<TokenHistory>>(`/api/ai/tokens/history?page=${page}&limit=${limit}`);
+  const body = response.data.data ?? response.data;
+  return body ?? { transactions: [], total: 0, page, limit };
 }
 
 export async function listConversations(): Promise<AIConversation[]> {
@@ -76,4 +108,25 @@ export async function renameConversation(id: string, title: string): Promise<voi
 
 export async function deleteConversation(id: string): Promise<void> {
   await http.delete(`/api/ai/conversations/${id}`);
+}
+
+export async function confirmPendingAction(pending_action_id: string): Promise<{ message: AIMessage; conversation_id: string }> {
+  const response = await http.post<ApiResponse<{ assistant_message: AIMessage; conversation_id: string }>>(
+    '/api/ai/pending-actions/confirm',
+    { pending_action_id },
+    { silent: true } as any,
+  );
+  const body = response.data.data || response.data;
+  return {
+    message: body.assistant_message,
+    conversation_id: body.conversation_id,
+  };
+}
+
+export async function cancelPendingAction(pending_action_id: string): Promise<void> {
+  await http.post(
+    '/api/ai/pending-actions/cancel',
+    { pending_action_id },
+    { silent: true } as any,
+  );
 }

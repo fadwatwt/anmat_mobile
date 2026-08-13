@@ -16,11 +16,15 @@ import { ApiResponse, LoginData, User } from '../types';
 
 const TOKEN_KEY = 'anmat.accessToken';
 const USER_KEY = 'anmat.user';
+const LAST_USER_TYPE_KEY = 'anmat.lastUserType';
 
 type AuthContextValue = {
   isLoading: boolean;
   token: string | null;
   user: User | null;
+  permissions: string[];
+  permissionsLoaded: boolean;
+  lastUserType: string | null;
   login: (email: string, password: string) => Promise<void>;
   adminLogin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -33,14 +37,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
+  const [lastUserType, setLastUserType] = useState<string | null>(null);
 
   useEffect(() => {
     async function restoreSession() {
       try {
-        const [storedToken, storedUser] = await Promise.all([
+        const [storedToken, storedUser, storedLastType] = await Promise.all([
           SecureStore.getItemAsync(TOKEN_KEY),
           SecureStore.getItemAsync(USER_KEY),
+          SecureStore.getItemAsync(LAST_USER_TYPE_KEY),
         ]);
+
+        if (storedLastType) setLastUserType(storedLastType);
 
         if (storedToken && storedUser) {
           const parsedUser = JSON.parse(storedUser) as User;
@@ -73,6 +83,34 @@ export function AuthProvider({ children }: PropsWithChildren) {
     restoreSession();
   }, []);
 
+  // Fetch the authenticated user's permission names (mirrors the web layout:
+  // GET /api/user/auth/permissions returns ['*'] for full-access accounts).
+  useEffect(() => {
+    if (!token) {
+      setPermissions([]);
+      setPermissionsLoaded(false);
+      return;
+    }
+
+    let active = true;
+    setPermissionsLoaded(false);
+    http
+      .get<ApiResponse<{ permissions?: string[] }>>('/api/user/auth/permissions')
+      .then((res) => {
+        if (active) setPermissions(res.data?.data?.permissions ?? []);
+      })
+      .catch(() => {
+        if (active) setPermissions([]);
+      })
+      .finally(() => {
+        if (active) setPermissionsLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
   const persistSession = useCallback(async (data: LoginData) => {
     setAuthToken(data.access_token);
 
@@ -91,9 +129,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     setToken(data.access_token);
     setUser(resolvedUser);
+    setLastUserType(resolvedUser.type ?? null);
     await Promise.all([
       SecureStore.setItemAsync(TOKEN_KEY, data.access_token),
       SecureStore.setItemAsync(USER_KEY, JSON.stringify(resolvedUser)),
+      SecureStore.setItemAsync(LAST_USER_TYPE_KEY, resolvedUser.type ?? ''),
     ]);
     initPushNotifications();
   }, []);
@@ -168,8 +208,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const value = useMemo(
-    () => ({ isLoading, token, user, login, adminLogin, logout, refreshUser }),
-    [isLoading, token, user, login, adminLogin, logout, refreshUser],
+    () => ({
+      isLoading,
+      token,
+      user,
+      permissions,
+      permissionsLoaded,
+      lastUserType,
+      login,
+      adminLogin,
+      logout,
+      refreshUser,
+    }),
+    [isLoading, token, user, permissions, permissionsLoaded, lastUserType, login, adminLogin, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

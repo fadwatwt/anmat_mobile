@@ -6,7 +6,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { FormScreen } from '../generators/FormScreen';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
-import { createProject, updateProject, fetchDepartments, Project } from '../services/projects';
+import { createProject, updateProject, fetchDepartments, fetchProjectTemplateById, createProjectFromTemplate, Project } from '../services/projects';
 import { fetchEmployees } from '../services/employees';
 import { font, spacing } from '../theme';
 
@@ -33,6 +33,8 @@ export default function ProjectCreateScreen() {
 
   const existing = route.params?.project as Project | undefined;
   const isEdit = !!existing;
+  const templateId = route.params?.templateId as string | undefined;
+  const isFromTemplate = !!templateId && !isEdit;
 
   const [departmentOptions, setDepartmentOptions] = useState<{ label: string; value: string }[]>([]);
   const [employeeOptions, setEmployeeOptions] = useState<{ label: string; value: string }[]>([]);
@@ -84,6 +86,16 @@ export default function ProjectCreateScreen() {
     assignees_ids: existing!.assignees_ids || existing!.assignees?.map(a => a._id) || [],
     start_date: existing!.start_date || existing!.startDate || '',
     due_date: existing!.due_date || existing!.endDate || '',
+  } : isFromTemplate ? {
+    name: '',
+    description: '',
+    status: 'open',
+    progress: '0',
+    manager_id: '',
+    department_id: '',
+    assignees_ids: [],
+    start_date: '',
+    due_date: '',
   } : {
     name: '',
     description: '',
@@ -110,6 +122,8 @@ export default function ProjectCreateScreen() {
     };
     if (isEdit) {
       await updateProject(existing!._id, payload);
+    } else if (isFromTemplate) {
+      await createProjectFromTemplate(templateId!, payload);
     } else {
       await createProject(payload);
     }
@@ -123,7 +137,7 @@ export default function ProjectCreateScreen() {
           <ArrowLeft size={24} color={colors.ink} />
         </TouchableOpacity>
         <Text style={{ fontSize: font.sizes.lg, fontWeight: font.weights.semibold, color: colors.ink, marginLeft: spacing.md, textAlign: isRTL ? 'right' : 'left' }}>
-          {isEdit ? t('Edit Project') : t('New Project')}
+          {isEdit ? t('Edit Project') : isFromTemplate ? t('Publish Project') : t('New Project')}
         </Text>
       </View>
       <FormScreen

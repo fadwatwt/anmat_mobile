@@ -5,15 +5,14 @@ export type AdminRole = {
   _id: string;
   name: string;
   description?: string;
-  permissions?: string[];
+  admin_permissions_ids?: { _id: string; name: string }[];
   created_by?: string;
   createdAt?: string;
 };
 
 export type CreateAdminRolePayload = {
   name: string;
-  description?: string;
-  permissions?: string[];
+  admin_permissions_ids?: string[];
 };
 
 export async function fetchAdminRoles(): Promise<AdminRole[]> {
@@ -30,7 +29,7 @@ export async function deleteAdminRole(roleId: string): Promise<void> {
   await http.delete(`/api/admin/roles/${roleId}`);
 }
 
-export async function syncAdminRolePermissions(roleId: string, permissions: string[]): Promise<AdminRole> {
-  const res = await http.patch<ApiResponse<AdminRole>>(`/api/admin/roles/${roleId}/permissions/sync`, { permissions });
+export async function syncAdminRolePermissions(roleId: string, admin_permissions_ids: string[]): Promise<AdminRole> {
+  const res = await http.patch<ApiResponse<AdminRole>>(`/api/admin/roles/${roleId}/permissions/sync`, { admin_permissions_ids });
   return res.data.data;
 }

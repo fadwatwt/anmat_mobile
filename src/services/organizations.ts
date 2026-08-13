@@ -7,9 +7,15 @@ export type Organization = {
   email?: string;
   website?: string;
   logo?: string;
+  phone?: string;
+  country?: string;
+  city?: string;
   industry?: { _id: string; name: string };
+  industry_id?: string;
   subscribers_count?: number;
   employees_count?: number;
+  departments_count?: number;
+  positions_count?: number;
   status?: string;
   createdAt?: string;
 };
@@ -20,6 +26,9 @@ export type CreateOrganizationPayload = {
   website?: string;
   logo?: string;
   industry_id?: string;
+  phone?: string;
+  country?: string;
+  city?: string;
 };
 
 export type OrganizationListParams = {

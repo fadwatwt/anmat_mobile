@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronDown, X } from 'lucide-react-native';
+import { ChevronDown, Search, X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
@@ -38,6 +40,7 @@ const routeToScreen: Record<string, string> = {
   Tasks: 'TasksMain',
   MyTasks: 'MyTasks',
   MyProjects: 'MyProjects',
+  MyAgenda: 'Agenda',
   Attendance: 'Attendance',
   Salary: 'Salary',
   Leaves: 'Leaves',
@@ -69,6 +72,9 @@ const routeToScreen: Record<string, string> = {
   AdminPermissions: 'AdminPermissions',
   Financial: 'Financial',
   Timeline: 'Timeline',
+  Escalation: 'Escalation',
+  Translations: 'Translations',
+  Profile: 'Profile',
 };
 
 type Props = {
@@ -76,13 +82,15 @@ type Props = {
 };
 
 export function Sidebar({ onClose }: Props) {
-  const { user } = useAuth();
+  const { user, permissions, permissionsLoaded } = useAuth();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const userType = user?.type as 'Admin' | 'Subscriber' | 'Employee';
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [searchQuery, setSearchQuery] = useState('');
 
   const currentScreenName = useNavigationState(state => {
     const findRoute = (s: any): string => {
@@ -98,16 +106,69 @@ export function Sidebar({ onClose }: Props) {
     setExpandedItems((prev) => ({ ...prev, [route]: !prev[route] }));
   };
 
-  const isItemVisible = (item: MenuItemType) => {
-    return item.allowedTo.includes(userType);
+  const toggleSectionCollapse = (section: string) => {
+    setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const filteredItems = menuItems.filter(isItemVisible);
+  // Menu visibility mirrors the web sidebar exactly:
+  //   1. user type ∈ allowedTo
+  //   2. AND one of: no permission constraint, wildcard '*', `permission`, or any of `permissionAnyOf`.
+  const hasWildcard = Array.isArray(permissions) && permissions.includes('*');
+  const userHasPermission = (perm: string) => Array.isArray(permissions) && permissions.includes(perm);
 
-  const handleNavigate = (route: string) => {
+  const isItemAllowed = (item: Pick<MenuItemType, 'allowedTo' | 'permission' | 'permissionAnyOf'>) => {
+    if (!item.allowedTo || !item.allowedTo.includes(userType)) return false;
+    if (hasWildcard) return true;
+
+    const hasSingle = item.permission ? userHasPermission(item.permission) : null;
+    const hasAny = Array.isArray(item.permissionAnyOf) && item.permissionAnyOf.length > 0
+      ? item.permissionAnyOf.some(userHasPermission)
+      : null;
+
+    if (hasSingle === null && hasAny === null) return true;
+    return Boolean(hasSingle) || Boolean(hasAny);
+  };
+
+  const filterItem = (item: MenuItemType): MenuItemType | null => {
+    if (!isItemAllowed(item)) return null;
+    if (!Array.isArray(item.children) || item.children.length === 0) return item;
+
+    const visibleChildren = item.children.filter((child) => {
+      const merged = { allowedTo: item.allowedTo, permission: child.permission, permissionAnyOf: child.permissionAnyOf };
+      return isItemAllowed(merged);
+    });
+
+    if (item.children.length > 0 && visibleChildren.length === 0) return null;
+    return { ...item, children: visibleChildren };
+  };
+
+  const filteredItems = permissionsLoaded ? menuItems.map(filterItem).filter(Boolean) as MenuItemType[] : [];
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const searchableItems = useMemo(() => {
+    if (!normalizedQuery) return filteredItems;
+    return filteredItems.map((item) => {
+      const itemTitle = `${t(item.titleKey)} ${item.titleKey}`.toLowerCase();
+      const childMatches = (item.children ?? []).filter(
+        (child) =>
+          `${t(child.titleKey)} ${child.titleKey}`.toLowerCase().includes(normalizedQuery),
+      );
+      if (itemTitle.includes(normalizedQuery)) {
+        return childMatches.length > 0 ? { ...item, children: childMatches } : item;
+      }
+      if (childMatches.length > 0) {
+        return { ...item, children: childMatches };
+      }
+      return null;
+    }).filter(Boolean) as MenuItemType[];
+  }, [filteredItems, normalizedQuery, t]);
+
+  const isSearching = normalizedQuery.length > 0;
+
+  const handleNavigate = (route: string, params?: Record<string, unknown>) => {
     const screen = routeToScreen[route];
     if (screen) {
-      navigation.navigate(screen);
+      navigation.navigate(screen, params);
     }
     onClose();
   };
@@ -118,13 +179,23 @@ export function Sidebar({ onClose }: Props) {
   };
 
   const renderSectionHeader = (title: string) => {
-    const isFirst = title === filteredItems[0]?.section;
+    const isFirst = title === searchableItems[0]?.section;
+    const isCollapsed = collapsedSections[title] && !isSearching;
     return (
-      <View style={[styles.sectionHeader, isFirst && styles.sectionHeaderFirst]}>
+      <TouchableOpacity
+        style={[styles.sectionHeader, isFirst && styles.sectionHeaderFirst]}
+        onPress={() => toggleSectionCollapse(title)}
+        activeOpacity={0.7}
+      >
         <Text style={[styles.sectionHeaderText, { color: colors.textMuted }]}>
           {t(title)}
         </Text>
-      </View>
+        <ChevronDown
+          size={14}
+          color={colors.textMuted}
+          style={{ transform: [{ rotate: isCollapsed ? '180deg' : '0deg' }] }}
+        />
+      </TouchableOpacity>
     );
   };
 
@@ -149,17 +220,56 @@ export function Sidebar({ onClose }: Props) {
         </View>
       </View>
 
+      <View style={[styles.searchSection, { borderBottomColor: colors.border }]}>
+        <View
+          style={[
+            styles.searchBox,
+            { backgroundColor: colors.background, borderColor: colors.border },
+          ]}
+        >
+          <Search size={16} color={colors.textMuted} />
+          <TextInput
+            style={[
+              styles.searchInput,
+              { color: colors.ink, textAlign: isRTL ? 'right' : 'left' },
+            ]}
+            placeholder={t('Search...')}
+            placeholderTextColor={colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCorrect={false}
+          />
+          {isSearching && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <X size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       <ScrollView style={styles.menuScroll} showsVerticalScrollIndicator={false}>
+        {!permissionsLoaded ? (
+          <ActivityIndicator color={colors.primary} size="small" style={styles.menuLoading} />
+        ) : null}
         <View style={styles.menuList}>
           {(() => {
             let lastSection: string | undefined;
-            return filteredItems.map((item) => {
+            return searchableItems.map((item) => {
               const showHeader = item.section && item.section !== lastSection;
               lastSection = item.section;
 
+              const sectionCollapsed = item.section ? (collapsedSections[item.section] && !isSearching) : false;
+              if (showHeader && sectionCollapsed) {
+                return (
+                  <View key={`${item.section}-header`}>
+                    {renderSectionHeader(item.section!)}
+                  </View>
+                );
+              }
+
               const Icon = item.icon;
               const isActive = isRouteActive(item.route);
-              const isExpanded = expandedItems[item.route] || false;
+              const isExpanded = expandedItems[item.route] || isSearching;
               const hasChildren = item.children && item.children.length > 0;
               const isChildActive = item.children?.some(
                 (child) => isRouteActive(child.route),
@@ -220,16 +330,16 @@ export function Sidebar({ onClose }: Props) {
                   {hasChildren && isExpanded && (
                     <View style={[styles.childrenContainer, { backgroundColor: colors.primaryLight }, isRTL ? { marginRight: spacing.lg + spacing.md, marginLeft: spacing.md } : { marginLeft: spacing.lg + spacing.md, marginRight: spacing.md }]}>
                       <View style={styles.childrenInner}>
-                        {item.children!.map((child) => {
+                        {item.children!.map((child, childIndex) => {
                           const isChildItemActive = isRouteActive(child.route);
                           return (
                             <TouchableOpacity
-                              key={child.route}
+                              key={`${child.route}-${childIndex}`}
                               style={[
                                 styles.childItem,
                                 isChildItemActive && { backgroundColor: colors.surface },
                               ]}
-                              onPress={() => handleNavigate(child.route)}
+                              onPress={() => handleNavigate(child.route, child.params)}
                             >
                               <Text
                                 style={[
@@ -259,6 +369,9 @@ export function Sidebar({ onClose }: Props) {
 
 const styles = StyleSheet.create({
   sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingTop: spacing.md + 2,
     paddingBottom: spacing.xs,
     paddingHorizontal: spacing.md,
@@ -333,6 +446,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
+  menuLoading: {
+    marginTop: spacing.xl,
+  },
   menuScroll: {
     flex: 1,
   },
@@ -350,6 +466,24 @@ const styles = StyleSheet.create({
   menuItemText: {
     flex: 1,
     fontSize: font.sizes.sm,
+  },
+  searchBox: {
+    alignItems: 'center',
+    borderRadius: radii.full,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: font.sizes.sm,
+    paddingVertical: spacing.sm,
+  },
+  searchSection: {
+    borderBottomWidth: 1,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   safe: {
     flex: 1,

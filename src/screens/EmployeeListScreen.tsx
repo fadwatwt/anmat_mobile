@@ -39,12 +39,22 @@ const HEADERS = ['Employees', 'Contact', 'Department', 'Salary', 'Rating', 'Regi
 
 export function EmployeeListScreen() {
   const navigation = useNavigation<any>();
-  const { user } = useAuth();
+  const { permissions } = useAuth();
   const { colors, isDark } = useTheme();
-  const isSubscriber = user?.type === 'Subscriber';
   const { isRTL } = useLocale();
   const { t } = useTranslation();
   const rowDir = isRTL ? ('row-reverse' as const) : ('row' as const);
+
+  const has = useCallback(
+    (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm)),
+    [permissions],
+  );
+
+  const canCreate = has('employee_details.create');
+  const canUpdate = has('employee_details.update');
+  const canDelete = has('employee_details.delete');
+  const canNotify = has('notifications.create');
+  const canChat = has('chats.initiate');
 
   const [employees, setEmployees] = useState<EmployeeDetailItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,34 +159,43 @@ export function EmployeeListScreen() {
 
   const buildActions = (emp: EmployeeDetailItem): ActionItem[] => {
     const hasDept = !!(emp.department || emp.department_id);
-    const items: ActionItem[] = [
-      { label: t('Edit'), icon: <Edit3 size={16} color="#375DFB" />, onPress: () => { setSelectedEmp(emp); setShowEdit(true); } },
-      { label: t('Send Notification'), icon: <Bell size={16} color="#375DFB" />, onPress: () => { setSelectedEmp(emp); setShowNotify(true); } },
-      {
+    const items: ActionItem[] = [];
+    if (canUpdate) {
+      items.push({ label: t('Edit'), icon: <Edit3 size={16} color="#375DFB" />, onPress: () => { setSelectedEmp(emp); setShowEdit(true); } });
+    }
+    if (canNotify) {
+      items.push({ label: t('Send Notification'), icon: <Bell size={16} color="#375DFB" />, onPress: () => { setSelectedEmp(emp); setShowNotify(true); } });
+    }
+    if (canUpdate) {
+      items.push({
         label: hasDept ? t('Change Department') : t('Assign Department'),
         icon: <Building2 size={16} color="#10B981" />,
         onPress: () => { setSelectedEmp(emp); setShowAssign(true); },
-      },
-    ];
-    if (hasDept) {
+      });
+      if (hasDept) {
+        items.push({
+          label: t('Unassign Department'), icon: <LogOut size={16} color="#F59E0B" />,
+          onPress: () => handleUnassignDepartment(emp),
+        });
+      }
       items.push({
-        label: t('Unassign Department'), icon: <LogOut size={16} color="#F59E0B" />,
-        onPress: () => handleUnassignDepartment(emp),
+        label: emp.user?.is_active ? t('Deactivate') : t('Activate'),
+        icon: emp.user?.is_active ? <ToggleRight size={16} color="#F59E0B" /> : <ToggleLeft size={16} color="#10B981" />,
+        onPress: () => handleToggleActive(emp),
       });
     }
-    items.push({
-      label: emp.user?.is_active ? t('Deactivate') : t('Activate'),
-      icon: emp.user?.is_active ? <ToggleRight size={16} color="#F59E0B" /> : <ToggleLeft size={16} color="#10B981" />,
-      onPress: () => handleToggleActive(emp),
-    });
-    items.push({
-      label: t('Chat'), icon: <MessageCircle size={16} color="#3B82F6" />,
-      onPress: () => {},
-    });
-    items.push({
-      label: t('Delete'), icon: <Trash2 size={16} color="#DF1C41" />,
-      onPress: () => handleDelete(emp), destructive: true,
-    });
+    if (canChat) {
+      items.push({
+        label: t('Chat'), icon: <MessageCircle size={16} color="#3B82F6" />,
+        onPress: () => {},
+      });
+    }
+    if (canDelete) {
+      items.push({
+        label: t('Delete'), icon: <Trash2 size={16} color="#DF1C41" />,
+        onPress: () => handleDelete(emp), destructive: true,
+      });
+    }
     return items;
   };
 
@@ -273,16 +292,20 @@ export function EmployeeListScreen() {
           <Text style={[s.toolbarTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Employees')}</Text>
         </View>
         <View style={[s.toolbarRight, { flexDirection: rowDir }]}>
-          {isSubscriber && (
+          {(canNotify || canCreate) && (
             <>
-              <TouchableOpacity style={[s.toolBtn, s.notifyBtn, { flexDirection: rowDir }]} onPress={() => setShowNotify(true)}>
-                <Bell size={16} color="#375DFB" />
-                <Text style={[s.notifyBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Send Notification')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.toolBtn, s.inviteBtn, { flexDirection: rowDir }]} onPress={() => setShowInvite(true)}>
-                <UserPlus size={16} color="#374151" />
-                <Text style={[s.inviteBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Invite Employee')}</Text>
-              </TouchableOpacity>
+              {canNotify && (
+                <TouchableOpacity style={[s.toolBtn, s.notifyBtn, { flexDirection: rowDir }]} onPress={() => setShowNotify(true)}>
+                  <Bell size={16} color="#375DFB" />
+                  <Text style={[s.notifyBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Send Notification')}</Text>
+                </TouchableOpacity>
+              )}
+              {canCreate && (
+                <TouchableOpacity style={[s.toolBtn, s.inviteBtn, { flexDirection: rowDir }]} onPress={() => setShowInvite(true)}>
+                  <UserPlus size={16} color="#374151" />
+                  <Text style={[s.inviteBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Invite Employee')}</Text>
+                </TouchableOpacity>
+              )}
             </>
           )}
         </View>
@@ -376,7 +399,7 @@ export function EmployeeListScreen() {
       </View>
 
       {/* FAB - Add Employee */}
-      {isSubscriber && (
+      {canCreate && (
         <TouchableOpacity
           style={[s.fab, { backgroundColor: colors.primary }]}
           onPress={() => setShowCreate(true)}

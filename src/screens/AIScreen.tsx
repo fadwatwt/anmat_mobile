@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Send, Plus, MessageSquare, Trash2, Edit3, ChevronLeft, ShoppingCart } from 'lucide-react-native';
+import { Send, Plus, MessageSquare, Trash2, Edit3, ChevronLeft, ShoppingCart, Check, X, AlertTriangle } from 'lucide-react-native';
 import { MarkdownText } from '../components/MarkdownText';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -24,12 +24,15 @@ import { font, radii, spacing } from '../theme';
 import {
   AIMessage,
   AIConversation,
+  PendingAction,
   fetchTokenBalance,
   listConversations,
   getConversationMessages,
   sendMessage,
   renameConversation,
   deleteConversation,
+  confirmPendingAction,
+  cancelPendingAction,
   TokenBalance,
 } from '../services/ai';
 
@@ -130,11 +133,42 @@ export default function AIScreen() {
   const paidBalance = tokenBalance?.balance || 0;
   const isGated = !tokenBalance?.is_unlimited && freeRemaining <= 0 && paidBalance <= 0;
 
-  const renderMessage = ({ item }: { item: AIMessage }) => {
+  const handleConfirmPending = async (msgIdx: number, pendingActionId: string) => {
+    setMessages(prev => prev.map((m, i) => i === msgIdx && m.pending_action
+      ? { ...m, pending_action: { ...m.pending_action, status: 'confirmed' } }
+      : m));
+    try {
+      const res = await confirmPendingAction(pendingActionId);
+      if (res.message) setMessages(prev => [...prev, res.message]);
+      if (res.conversation_id && res.conversation_id !== currentId) {
+        skipNextFetch.current = true;
+        setCurrentId(res.conversation_id);
+        loadConversations();
+      }
+    } catch {
+      Alert.alert(t('Error'), t('Failed to confirm action'));
+    }
+  };
+
+  const handleCancelPending = async (msgIdx: number, pendingActionId: string) => {
+    setMessages(prev => prev.map((m, i) => i === msgIdx && m.pending_action
+      ? { ...m, pending_action: { ...m.pending_action, status: 'cancelled' } }
+      : m));
+    try {
+      await cancelPendingAction(pendingActionId);
+    } catch {
+      Alert.alert(t('Error'), t('Failed to cancel action'));
+    }
+  };
+
+  const renderMessage = ({ item, index }: { item: AIMessage; index: number }) => {
     if (!item) return null;
     const isUser = item.role === 'user';
     const textColor = isUser ? '#FFF' : colors.ink;
     const codeBg = isUser ? 'rgba(255,255,255,0.15)' : colors.background;
+    const pending = item.pending_action;
+    const isPending = pending?.status === 'pending';
+
     return (
       <View style={[s.msgRow, isUser ? s.msgRowUser : s.msgRowAssistant]}>
         <View style={[s.msgBubble, { backgroundColor: isUser ? colors.primary : colors.surface, borderColor: colors.border }]}>
@@ -147,6 +181,50 @@ export default function AIScreen() {
             {item.content || ''}
           </MarkdownText>
         </View>
+
+        {pending && (
+          <View style={[s.pendingCard, { backgroundColor: isPending ? '#FFFBEB' : colors.surface, borderColor: isPending ? '#FCD34D' : colors.border }]}>
+            <View style={s.pendingHeader}>
+              <AlertTriangle size={16} color={isPending ? '#D97706' : colors.textMuted} />
+              <Text style={[s.pendingTitle, { color: isPending ? '#92400E' : colors.ink }]}>
+                {pending.status === 'confirmed' ? t('Action confirmed')
+                  : pending.status === 'cancelled' ? t('Action cancelled')
+                  : pending.status === 'failed' ? t('Action failed')
+                  : t('Confirm action')}
+              </Text>
+            </View>
+            <Text style={[s.pendingSummary, { color: isPending ? '#78350F' : colors.textMuted }]}>
+              {pending.summary}
+            </Text>
+            {isPending && (
+              <View style={s.pendingActions}>
+                <TouchableOpacity
+                  style={[s.pendingBtn, s.pendingBtnConfirm]}
+                  onPress={() => handleConfirmPending(index, pending._id)}
+                >
+                  <Check size={16} color="#FFF" />
+                  <Text style={s.pendingBtnText}>{t('Confirm')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.pendingBtn, s.pendingBtnCancel]}
+                  onPress={() => handleCancelPending(index, pending._id)}
+                >
+                  <X size={16} color="#FFF" />
+                  <Text style={s.pendingBtnText}>{t('Cancel')}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {pending.status === 'confirmed' && (
+              <Text style={[s.pendingStatusText, { color: '#16A34A' }]}>{t('Action confirmed and executed.')}</Text>
+            )}
+            {pending.status === 'cancelled' && (
+              <Text style={[s.pendingStatusText, { color: colors.textMuted }]}>{t('Action cancelled.')}</Text>
+            )}
+            {pending.status === 'failed' && (
+              <Text style={[s.pendingStatusText, { color: '#DC2626' }]}>{t('Action failed during execution.')}</Text>
+            )}
+          </View>
+        )}
       </View>
     );
   };
@@ -318,6 +396,16 @@ const s = StyleSheet.create({
   msgRow: { flexDirection: 'row', marginBottom: spacing.xs },
   msgRowAssistant: { justifyContent: 'flex-start' },
   msgRowUser: { justifyContent: 'flex-end' },
+  pendingActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  pendingBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: radii.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  pendingBtnCancel: { backgroundColor: '#DC2626' },
+  pendingBtnConfirm: { backgroundColor: '#16A34A' },
+  pendingBtnText: { color: '#FFF', fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
+  pendingCard: { borderWidth: 1, borderRadius: radii.lg, padding: spacing.md, marginTop: spacing.xs, maxWidth: '85%' },
+  pendingHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs },
+  pendingStatusText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium, marginTop: spacing.sm },
+  pendingSummary: { fontSize: font.sizes.sm },
+  pendingTitle: { fontSize: font.sizes.sm, fontWeight: font.weights.bold },
   sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   sidebar: { flex: 1, paddingTop: Platform.OS === 'ios' ? 50 : 0 },
   sidebarBtn: { padding: spacing.sm },

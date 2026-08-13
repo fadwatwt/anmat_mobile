@@ -6,6 +6,7 @@ import { ListScreen } from '../generators/ListScreen';
 import { Badge } from '../components/Badge';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { fetchOrgAttendances, deleteOrgAttendance, OrgAttendance } from '../services/hr';
 import { extractErrorMessage } from '../lib/http';
 import { AddAttendanceModal } from '../modals/AddAttendanceModal';
@@ -15,8 +16,17 @@ export default function HRAttendancesScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const { permissions } = useAuth();
   const [reloadKey, setReloadKey] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
+
+  const has = useCallback(
+    (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm)),
+    [permissions],
+  );
+
+  const canCreate = has('attendances.create');
+  const canDelete = has('attendances.delete');
 
   const fetchData = useCallback(
     async ({ page, limit, search }: { page?: number; limit?: number; search?: string }) => {
@@ -110,21 +120,21 @@ export default function HRAttendancesScreen() {
         emptyTitleKey="No attendance records"
         emptyMessageKey="No items to display"
         rowActions={(item) => [
-          {
-            label: t('Delete'),
-            onPress: () => handleDelete(item),
-            destructive: true,
-          },
+          ...(canDelete
+            ? [{ label: t('Delete'), onPress: () => handleDelete(item), destructive: true }]
+            : []),
         ]}
       />
 
       {/* FAB */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => setModalOpen(true)}
-      >
-        <Plus size={24} color="#FFF" />
-      </TouchableOpacity>
+      {canCreate && (
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: colors.primary }]}
+          onPress={() => setModalOpen(true)}
+        >
+          <Plus size={24} color="#FFF" />
+        </TouchableOpacity>
+      )}
 
       <AddAttendanceModal
         visible={modalOpen}

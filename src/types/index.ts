@@ -69,18 +69,27 @@ export type Position = {
   createdAt?: string;
 };
 
+export type EmployeeRequestType = 'DAY_OFF' | 'SALARY_ADVANCE' | 'WORK_DELAY' | 'SHORT_LEAVE';
+
+export type EmployeeRequestStatus = 'open' | 'in-progress' | 'accepted' | 'rejected' | 'cancelled';
+
 export type EmployeeRequest = {
   _id: string;
   employee?: EmployeeItem;
-  type: 'day_off' | 'salary_advance' | 'work_delay' | 'other';
-  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
-  start_date?: string;
-  end_date?: string;
+  type: EmployeeRequestType;
+  status: EmployeeRequestStatus;
   reason?: string;
-  amount?: number;
-  notes?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  comment?: string;
+  advance_salary_by?: number;
+  old_salary_amount?: number;
+  work_due_at?: string;
+  vacation_date?: string;
+  vacation_end_date?: string;
+  leave_date?: string;
+  leave_start_time?: string;
+  leave_end_time?: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type AttendanceRecord = {
@@ -139,7 +148,7 @@ export type TaskItem = {
   assignee_id?: string;
   assignee?: { _id: string; name: string; email?: string; avatar?: string };
   creator?: { _id: string; name: string; email?: string };
-  ratings?: Array<{ rate_time?: number; rate_content?: number; rate_video?: number; comment?: string }>;
+  ratings?: Array<{ rate_time?: number; rate_content?: number; rate_video?: number; score?: number; comment?: string }>;
   rate?: number;
   stages?: any[];
   comments?: any[];
@@ -239,7 +248,11 @@ export type EmployeeDashboardTask = {
 export type IndustryCount = {
   _id: string;
   name: string;
+  icon_name?: string;
+  is_by_subscriber?: boolean;
+  is_allowed?: boolean;
   organizations_count: number;
+  subscribers_count?: number;
 };
 
 // ===== Web-matching Employee Detail Types =====

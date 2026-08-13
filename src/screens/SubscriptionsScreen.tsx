@@ -6,12 +6,13 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   Diamond,
   Zap,
@@ -24,6 +25,9 @@ import {
   Power,
   Ban,
   RefreshCw,
+  Plus,
+  Pencil,
+  Star,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
@@ -35,6 +39,14 @@ import { EmptyState } from '../components/EmptyState';
 import { http } from '../lib/http';
 import { ApiResponse, SubscriptionBasic } from '../types';
 import { fetchAdminSubscriptions } from '../services/dashboard';
+import {
+  PaymentMethod,
+  paymentMethodAttr,
+  fetchPaymentMethods,
+  setDefaultPaymentMethod,
+  deletePaymentMethod,
+} from '../services/paymentMethods';
+import { PaymentMethodModal } from '../modals/PaymentMethodModal';
 import { font, radii, spacing } from '../theme';
 
 const Tab = createMaterialTopTabNavigator();
@@ -151,6 +163,7 @@ async function fetchSubscriberPlans(): Promise<SubscriberPlan[]> {
 async function subscribeToPlan(payload: {
   plan_id: string;
   price_id?: string;
+  payment_method_id?: string;
   auto_renew: boolean;
 }): Promise<string | 'success' | null> {
   const res = await http.post<ApiResponse<{ checkout_url?: string; url?: string; status?: string }>>(
@@ -179,6 +192,7 @@ function SubscriptionInfoTab() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const navigation = useNavigation<any>();
   const [sub, setSub] = useState<MySubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -399,6 +413,13 @@ function SubscriptionInfoTab() {
               </Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.upgradeBtn]}
+            onPress={() => navigation.navigate('Pricing')}
+          >
+            <Zap size={15} color="#375DFB" />
+            <Text style={styles.upgradeBtnText}>{t('Upgrade')}</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -484,6 +505,196 @@ function BillingHistoryTab() {
   );
 }
 
+// ===== Subscriber: Payment Methods Tab =====
+function PaymentMethodsTab() {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  const [methods, setMethods] = useState<PaymentMethod[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editMethod, setEditMethod] = useState<PaymentMethod | null>(null);
+
+  const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
+
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    setMethods(await fetchPaymentMethods());
+    setLoading(false);
+    setRefreshing(false);
+  }, []);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const handleSetDefault = (pm: PaymentMethod) => {
+    Alert.alert(
+      t('Set as default'),
+      `${t('Make this the default payment method?')}`,
+      [
+        { text: t('Cancel'), style: 'cancel' },
+        {
+          text: t('Confirm'),
+          onPress: async () => {
+            try {
+              await setDefaultPaymentMethod(pm._id);
+              await load();
+            } catch (e: any) {
+              Alert.alert(t('Error'), e?.message || t('Failed to update default payment method'));
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDelete = (pm: PaymentMethod) => {
+    Alert.alert(
+      t('Delete Payment Method'),
+      t('Are you sure you want to delete this payment method?'),
+      [
+        { text: t('Cancel'), style: 'cancel' },
+        {
+          text: t('Delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePaymentMethod(pm._id);
+              await load();
+            } catch (e: any) {
+              Alert.alert(t('Error'), e?.message || t('Failed to delete payment method'));
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  if (loading) {
+    return <View style={styles.center}><ActivityIndicator color={colors.primary} size="large" /></View>;
+  }
+
+  return (
+    <ScrollView
+      style={{ backgroundColor: colors.background }}
+      contentContainerStyle={styles.scrollContent}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[colors.primary]} />}
+      showsVerticalScrollIndicator={false}
+    >
+      <TouchableOpacity
+        style={[styles.addPmBtn, { backgroundColor: colors.primary }]}
+        onPress={() => setAddOpen(true)}
+        activeOpacity={0.85}
+      >
+        <Plus size={16} color="#FFF" />
+        <Text style={styles.addPmBtnText}>{t('Add new method')}</Text>
+      </TouchableOpacity>
+
+      {methods.length === 0 ? (
+        <EmptyState title={t('No payment methods found')} message={t('Add a payment method to manage your subscriptions')} />
+      ) : (
+        methods.map((pm) => {
+          const brand = paymentMethodAttr(pm, 'brand') || t('Card');
+          const last4 = paymentMethodAttr(pm, 'last4');
+          const expMonth = paymentMethodAttr(pm, 'exp_month');
+          const expYear = paymentMethodAttr(pm, 'exp_year');
+          const country = paymentMethodAttr(pm, 'country');
+          const isVisa = brand.toLowerCase().includes('visa');
+          const isMaster = brand.toLowerCase().includes('master');
+          const brandColor = isMaster ? '#F97316' : isVisa ? '#2563EB' : colors.textMuted;
+
+          return (
+            <View key={pm._id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={[styles.pmHead, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <View style={[styles.iconWrap, { backgroundColor: colors.statusBg }]}>
+                  <View style={[styles.iconInner, { backgroundColor: brandColor + '20' }]}>
+                    <CreditCard size={18} color={brandColor} />
+                  </View>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.paymentProduct, { color: colors.ink, textAlign: align }]} numberOfLines={1}>
+                    {brand}
+                  </Text>
+                  {pm.is_default && (
+                    <View style={[styles.defaultChip, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                      <Star size={12} color="#10B981" fill="#10B981" />
+                      <Text style={[styles.defaultChipText, { color: colors.textMuted }]}>{t('Default Card')}</Text>
+                    </View>
+                  )}
+                </View>
+                {!pm.is_default && (
+                  <StatusActions
+                    actions={[
+                      {
+                        label: t('Set as default'),
+                        icon: <Star size={15} color="#10B981" />,
+                        onPress: () => handleSetDefault(pm),
+                      },
+                    ]}
+                  />
+                )}
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={[styles.pmInfo, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <View style={styles.pmInfoItem}>
+                  <Text style={[styles.metaLabel, { color: colors.textMuted, textAlign: align }]}>{t('Country')}</Text>
+                  <Text style={[styles.metaValue, { color: colors.ink, textAlign: align }]} numberOfLines={1}>
+                    {country || t('N/A')}
+                  </Text>
+                </View>
+                <View style={styles.pmInfoItem}>
+                  <Text style={[styles.metaLabel, { color: colors.textMuted, textAlign: align }]}>{t('Card Number')}</Text>
+                  <Text style={[styles.metaValue, { color: colors.ink, textAlign: align }]} numberOfLines={1}>
+                    {last4 ? `**** **** **** ${last4}` : t('N/A')}
+                  </Text>
+                </View>
+                <View style={styles.pmInfoItem}>
+                  <Text style={[styles.metaLabel, { color: colors.textMuted, textAlign: align }]}>{t('Card Expiry')}</Text>
+                  <Text style={[styles.metaValue, { color: colors.ink, textAlign: align }]} numberOfLines={1}>
+                    {expMonth && expYear ? `${expMonth}/${expYear}` : t('N/A')}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={[styles.pmActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <TouchableOpacity
+                  style={[styles.pmActionBtn, { borderColor: '#FCA5A5' }]}
+                  onPress={() => handleDelete(pm)}
+                >
+                  <Ban size={14} color="#EF4444" />
+                  <Text style={[styles.pmActionDanger, { color: '#EF4444' }]}>{t('Delete Card')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.pmActionBtn, { backgroundColor: colors.primary + '18', borderColor: colors.primary }]}
+                  onPress={() => setEditMethod(pm)}
+                >
+                  <Pencil size={14} color={colors.primary} />
+                  <Text style={[styles.pmActionPrimary, { color: colors.primary }]}>{t('Edit Payment Method')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })
+      )}
+
+      <PaymentMethodModal
+        visible={addOpen}
+        onClose={() => setAddOpen(false)}
+        onSaved={load}
+      />
+      <PaymentMethodModal
+        visible={!!editMethod}
+        onClose={() => setEditMethod(null)}
+        onSaved={load}
+        paymentMethod={editMethod}
+      />
+    </ScrollView>
+  );
+}
+
 // ===== Subscriber: Pricing Tab =====
 function PricingTab() {
   const { t } = useTranslation();
@@ -491,9 +702,11 @@ function PricingTab() {
   const { isRTL } = useLocale();
   const [plans, setPlans] = useState<SubscriberPlan[]>([]);
   const [currentSub, setCurrentSub] = useState<MySubscription | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'month' | 'year'>('month');
+  const [autoRenew, setAutoRenew] = useState(true);
   const [subscribingId, setSubscribingId] = useState<string | null>(null);
 
   const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
@@ -501,14 +714,17 @@ function PricingTab() {
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
-    const [p, s] = await Promise.all([fetchSubscriberPlans(), fetchMySubscription()]);
+    const [p, s, pm] = await Promise.all([fetchSubscriberPlans(), fetchMySubscription(), fetchPaymentMethods()]);
     setPlans(p.filter(pl => pl.is_active));
     setCurrentSub(s);
+    setPaymentMethods(Array.isArray(pm) ? pm : []);
     setLoading(false);
     setRefreshing(false);
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const defaultPaymentMethod = paymentMethods.find(m => m.is_default && m.is_active);
 
   const handleSubscribe = async (plan: SubscriberPlan) => {
     const pricingIdx = plan.pricing?.findIndex(p => p.interval === billingCycle && p.is_active) ?? -1;
@@ -516,7 +732,12 @@ function PricingTab() {
     const priceId = plan.stripe_price_ids?.[idx];
     setSubscribingId(plan._id);
     try {
-      const result = await subscribeToPlan({ plan_id: plan._id, price_id: priceId, auto_renew: true });
+      const result = await subscribeToPlan({
+        plan_id: plan._id,
+        price_id: priceId,
+        payment_method_id: defaultPaymentMethod?._id,
+        auto_renew: autoRenew,
+      });
       if (result === 'success') {
         Alert.alert(t('Success'), t('Subscription updated successfully.'));
         load();
@@ -541,24 +762,40 @@ function PricingTab() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[colors.primary]} />}
       showsVerticalScrollIndicator={false}
     >
-      {/* Billing cycle toggle */}
-      <View style={[styles.cycleRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <TouchableOpacity
-          style={[styles.cycleBtn, billingCycle === 'month' && { backgroundColor: colors.primary }]}
-          onPress={() => setBillingCycle('month')}
-        >
-          <Text style={[styles.cycleBtnText, { color: billingCycle === 'month' ? '#FFF' : colors.textMuted }]}>
-            {t('Monthly')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.cycleBtn, billingCycle === 'year' && { backgroundColor: colors.primary }]}
-          onPress={() => setBillingCycle('year')}
-        >
-          <Text style={[styles.cycleBtnText, { color: billingCycle === 'year' ? '#FFF' : colors.textMuted }]}>
-            {t('Yearly')} · {t('Save 25%')}
-          </Text>
-        </TouchableOpacity>
+      {/* Auto renewal + billing cycle toggle */}
+      <View style={[styles.cycleCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.cycleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <Switch
+            value={autoRenew}
+            onValueChange={setAutoRenew}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={autoRenew ? '#FFF' : colors.textMuted}
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.cycleCardTitle, { color: colors.ink, textAlign: align }]}>{t('Auto renewal')}</Text>
+            <Text style={[styles.cycleCardHint, { color: colors.textMuted, textAlign: align }]}>
+              {t('Enabled by default and charged from your default card')}
+            </Text>
+          </View>
+        </View>
+        <View style={[styles.cycleToggle, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <TouchableOpacity
+            style={[styles.cycleBtn, billingCycle === 'month' && { backgroundColor: colors.primary }]}
+            onPress={() => setBillingCycle('month')}
+          >
+            <Text style={[styles.cycleBtnText, { color: billingCycle === 'month' ? '#FFF' : colors.textMuted }]}>
+              {t('Monthly')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.cycleBtn, billingCycle === 'year' && { backgroundColor: colors.primary }]}
+            onPress={() => setBillingCycle('year')}
+          >
+            <Text style={[styles.cycleBtnText, { color: billingCycle === 'year' ? '#FFF' : colors.textMuted }]}>
+              {t('Yearly')} · {t('Save 25%')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {plans.length === 0 ? (
@@ -674,6 +911,7 @@ function SubscriberSubscriptionsScreen() {
   const tabs = [
     { name: 'SubInfo', component: SubscriptionInfoTab, title: t('Subscription') },
     { name: 'Billing', component: BillingHistoryTab, title: t('Billing History') },
+    { name: 'PaymentMethods', component: PaymentMethodsTab, title: t('Payment Methods') },
     { name: 'Pricing', component: PricingTab, title: t('Pricing') },
   ] as const;
 
@@ -867,6 +1105,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cycleBtnText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  cycleCard: {
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    gap: spacing.md,
+    padding: spacing.md,
+  },
+  cycleCardHint: { fontSize: font.sizes.xs, marginTop: 2 },
+  cycleCardTitle: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
   cycleRow: {
     borderRadius: radii.lg,
     borderWidth: 1,
@@ -874,9 +1120,47 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     padding: spacing.xs,
   },
+  cycleToggle: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: radii.lg, padding: spacing.xs, gap: spacing.xs },
   dangerBtn: { borderColor: '#FCA5A5' },
   dangerBtnText: { color: '#EF4444', fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  defaultChip: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#2D9F7517',
+    borderRadius: radii.md,
+    gap: 4,
+    marginTop: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  defaultChipText: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
+  addPmBtn: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: radii.lg,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  addPmBtnText: { color: '#FFF', fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
   divider: { backgroundColor: '#E5E7EB', height: 1, marginVertical: spacing.xs },
+  pmActions: { gap: spacing.sm },
+  pmActionBtn: {
+    alignItems: 'center',
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+  },
+  pmActionDanger: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  pmActionPrimary: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  pmHead: { alignItems: 'center', gap: spacing.sm },
+  pmInfo: { gap: spacing.md },
+  pmInfoItem: { flex: 1 },
   featureIconDot: {
     alignItems: 'center',
     borderRadius: radii.full,
@@ -952,4 +1236,6 @@ const styles = StyleSheet.create({
   subscribeBtnText: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
   successBtn: { borderColor: '#6EE7B7' },
   successBtnText: { color: '#10B981', fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  upgradeBtn: { borderColor: '#C7D2FE' },
+  upgradeBtnText: { color: '#375DFB', fontSize: font.sizes.sm, fontWeight: font.weights.medium },
 });

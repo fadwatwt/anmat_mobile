@@ -53,6 +53,9 @@ const routeTitleMap: Record<string, string> = {
   Requests: 'Requests',
   HRDepartments: 'Departments',
   HRPositions: 'Positions',
+  HRMeetings: 'Meetings',
+  HRHolidays: 'Holidays',
+  HRTeams: 'Teams',
   HRAttendances: 'Attendances',
   HRLeaves: 'Leaves',
   HRRequests: 'Requests',
@@ -66,6 +69,8 @@ const routeTitleMap: Record<string, string> = {
   AdminPermissions: 'Admin Permissions',
   Financial: 'Financial',
   Timeline: 'Timeline',
+  Escalation: 'Escalation Requests',
+  Translations: 'Translations',
 };
 
 type Props = {

@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Circle, CheckCircle2, Clock, AlertCircle } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
-import { fetchTasks, TaskItem } from '../services/tasks';
+import { fetchTasks } from '../services/tasks';
+import { TaskItem } from '../types';
 import { EmptyState } from '../components/EmptyState';
 import { useNavigation } from '@react-navigation/native';
 import { font, spacing, radii } from '../theme';
@@ -38,8 +39,8 @@ export default function TimelineScreen() {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     try {
-      const result = await fetchTasks({ limit: 50 });
-      const items = Array.isArray(result?.data) ? result.data : [];
+      const result = await fetchTasks();
+      const items = Array.isArray(result) ? result : [];
       items.sort((a, b) => {
         const dateA = a.due_date || a.createdAt || '';
         const dateB = b.due_date || b.createdAt || '';

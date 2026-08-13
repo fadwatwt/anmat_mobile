@@ -60,6 +60,16 @@ export function PermissionsScreen() {
         </Text>
       ),
     },
+    {
+      key: 'updatedAt',
+      titleKey: 'Updated At',
+      width: 130,
+      render: (item: Permission) => (
+        <Text style={{ color: colors.textMuted, fontSize: font.sizes.xs, textAlign: align }} numberOfLines={1}>
+          {item.updatedAt ? item.updatedAt.slice(0, 10) : '--'}
+        </Text>
+      ),
+    },
   ];
 
   return (

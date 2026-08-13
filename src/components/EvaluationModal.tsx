@@ -46,7 +46,10 @@ export function EvaluationModal({ visible, onClose, onSubmit, type = 'task', has
     if (visible) {
       fetchOrganizationSettings().then((org: OrganizationSettings) => {
         if (org.rating_types && org.rating_types.length > 0) {
-          setCategories(org.rating_types.map((title: string) => ({ key: title.toLowerCase().replace(/\s+/g, '_'), titleKey: title })));
+          setCategories(org.rating_types.map((item: any) => {
+            if (typeof item === 'string') return { key: item.toLowerCase().replace(/\s+/g, '_'), titleKey: item };
+            return { key: item._id || item.title.toLowerCase().replace(/\s+/g, '_'), titleKey: item.title };
+          }));
         }
       }).catch(() => {});
     }
@@ -92,8 +95,10 @@ export function EvaluationModal({ visible, onClose, onSubmit, type = 'task', has
 
   const allZero = Object.values(ratings).every(v => v === 0);
 
+  const titleKey = type === 'employee' ? 'Evaluate Employee' : type === 'project' ? 'Evaluate Project' : 'Evaluate Task';
+
   return (
-    <Modal visible={visible} onClose={onClose} title={t('Evaluate Task')} size="md">
+    <Modal visible={visible} onClose={onClose} title={t(titleKey)} size="md">
       {(type === 'project' || (type === 'task' && hasStages) || type === 'employee') && (
         <View style={s.methodRow}>
           <Text style={[s.label, { color: colors.ink }]}>{t('Evaluation Method')}</Text>

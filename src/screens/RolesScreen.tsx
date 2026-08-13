@@ -31,7 +31,7 @@ export function RolesScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
-  const { user } = useAuth();
+  const { user, permissions } = useAuth();
   const isAdmin = user?.type === 'Admin';
 
   const [roles, setRoles] = useState<AppRole[]>([]);
@@ -39,6 +39,14 @@ export function RolesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [syncRole, setSyncRole] = useState<AppRole | null>(null);
+
+  const has = useCallback(
+    (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm)),
+    [permissions],
+  );
+  const canCreate = has(isAdmin ? 'admin.admin_roles.create' : 'roles.create');
+  const canUpdate = has(isAdmin ? 'admin.admin_roles.update' : 'roles.update');
+  const canDelete = has(isAdmin ? 'admin.admin_roles.delete' : 'roles.delete');
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -103,8 +111,8 @@ export function RolesScreen() {
                   <Text style={[styles.cardTitle, { color: colors.ink, textAlign: align }]} numberOfLines={1}>{role.name}</Text>
                 </View>
                 <StatusActions actions={[
-                  { label: t('Sync Permissions'), icon: <KeyRound size={16} color={colors.primary} />, onPress: () => openSync(role) },
-                  { label: t('Delete'), icon: <Trash2 size={16} color="#EF4444" />, onPress: () => handleDelete(role), destructive: true },
+                  ...(canUpdate ? [{ label: t('Sync Permissions'), icon: <KeyRound size={16} color={colors.primary} />, onPress: () => openSync(role) }] : []),
+                  ...(canDelete ? [{ label: t('Delete'), icon: <Trash2 size={16} color="#EF4444" />, onPress: () => handleDelete(role), destructive: true }] : []),
                 ]} />
               </View>
 
@@ -132,13 +140,15 @@ export function RolesScreen() {
       </ScrollView>
 
       {/* FAB */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={openCreate}
-        activeOpacity={0.85}
-      >
-        <Plus size={22} color="#FFF" />
-      </TouchableOpacity>
+      {canCreate && (
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: colors.primary }]}
+          onPress={openCreate}
+          activeOpacity={0.85}
+        >
+          <Plus size={22} color="#FFF" />
+        </TouchableOpacity>
+      )}
 
       <RoleModal
         visible={modalOpen}

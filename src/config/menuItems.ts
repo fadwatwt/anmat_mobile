@@ -1,37 +1,38 @@
 import {
   LayoutDashboard,
-  Users,
-  User,
   FolderKanban,
   CheckSquare,
   Calendar,
-  BarChart3,
-  MessageSquare,
-  Share2,
-  Bot,
-  Settings,
-  Ticket,
-  CreditCard,
-  Briefcase,
-  Building2,
-  UserCheck,
-  ClipboardList,
-  FileText,
+  CalendarCheck,
   DollarSign,
   Clock,
-  BookOpen,
-  Tag,
-  Wallet,
-  PercentCircle,
+  ClipboardList,
+  Users,
+  MessageSquare,
+  Share2,
+  BarChart3,
+  Bot,
+  UserCheck,
   ShieldCheck,
   KeyRound,
-  Activity,
-  RotateCw,
+  Building2,
+  Tag,
+  PercentCircle,
   Landmark,
-  Banknote,
-  UserCog,
-  Eye,
+  Languages,
+  Bell,
+  Ticket,
+  CreditCard,
+  Settings,
 } from 'lucide-react-native';
+
+export type MenuChildItem = {
+  titleKey: string;
+  route: string;
+  permission?: string;
+  permissionAnyOf?: string[];
+  params?: Record<string, unknown>;
+};
 
 export type MenuItemType = {
   titleKey: string;
@@ -39,9 +40,14 @@ export type MenuItemType = {
   icon: typeof LayoutDashboard;
   allowedTo: ('Admin' | 'Subscriber' | 'Employee')[];
   section?: string;
-  children?: { titleKey: string; route: string }[];
+  permission?: string;
+  permissionAnyOf?: string[];
+  children?: MenuChildItem[];
 };
 
+// Source of truth: the web app sidebar menu (anmat_front-main/src/config/menuItems.js
+// → dashboardSideMenuItems). Sections, order, roles and permission constraints must
+// stay identical so the mobile menu matches the web exactly.
 export const menuItems: MenuItemType[] = [
   // ═══════════════════════════════════════════
   // Section: Overview (نظرة عامة)
@@ -55,6 +61,161 @@ export const menuItems: MenuItemType[] = [
   },
 
   // ═══════════════════════════════════════════
+  // Section: My Work (Employee only — يظهر أولاً للموظف)
+  // ═══════════════════════════════════════════
+  {
+    titleKey: 'My Projects',
+    route: 'MyProjects',
+    icon: FolderKanban,
+    allowedTo: ['Employee'],
+    section: 'My Work',
+  },
+  {
+    titleKey: 'My Tasks',
+    route: 'MyTasks',
+    icon: CheckSquare,
+    allowedTo: ['Employee'],
+    section: 'My Work',
+  },
+  {
+    titleKey: 'My Agenda',
+    route: 'MyAgenda',
+    icon: Calendar,
+    allowedTo: ['Employee'],
+    section: 'My Work',
+  },
+  {
+    titleKey: 'My Attendance',
+    route: 'Attendance',
+    icon: CalendarCheck,
+    allowedTo: ['Employee'],
+    section: 'My Work',
+  },
+  {
+    titleKey: 'My Salary',
+    route: 'Salary',
+    icon: DollarSign,
+    allowedTo: ['Employee'],
+    section: 'My Work',
+  },
+  {
+    titleKey: 'My Short Leaves',
+    route: 'Leaves',
+    icon: Clock,
+    allowedTo: ['Employee'],
+    section: 'My Work',
+  },
+  {
+    titleKey: 'My Requests',
+    route: 'Requests',
+    icon: ClipboardList,
+    allowedTo: ['Employee'],
+    section: 'My Work',
+  },
+
+  // ═══════════════════════════════════════════
+  // Section: Work Management (إدارة العمل)
+  // ═══════════════════════════════════════════
+  {
+    titleKey: 'Projects',
+    route: 'Projects',
+    icon: FolderKanban,
+    allowedTo: ['Subscriber', 'Employee'],
+    section: 'Work Management',
+    permissionAnyOf: ['projects.track_all', 'projects.track_department'],
+  },
+  {
+    titleKey: 'Tasks',
+    route: 'Tasks',
+    icon: CheckSquare,
+    allowedTo: ['Subscriber', 'Employee'],
+    section: 'Work Management',
+    permissionAnyOf: ['tasks.track_all', 'tasks.track_department'],
+  },
+  {
+    titleKey: 'Agenda',
+    route: 'Agenda',
+    icon: Calendar,
+    allowedTo: ['Subscriber'],
+    section: 'Work Management',
+    permissionAnyOf: ['appointments.track_all', 'appointments.track_department'],
+  },
+
+  // ═══════════════════════════════════════════
+  // Section: Team Management (إدارة الفريق)
+  // ═══════════════════════════════════════════
+  {
+    titleKey: 'Human Resources',
+    route: 'HR',
+    icon: Users,
+    allowedTo: ['Subscriber', 'Employee'],
+    section: 'Team Management',
+    permissionAnyOf: [
+      'employee_details.list',
+      'departments.list',
+      'teams.list',
+      'positions.list',
+      'meetings.list',
+      'holidays.list',
+    ],
+    children: [
+      {
+        titleKey: 'Employees',
+        route: 'HR_Employees',
+        permissionAnyOf: ['employee_details.list'],
+      },
+      {
+        titleKey: 'Departments',
+        route: 'HR_Departments',
+        permissionAnyOf: ['departments.list'],
+      },
+      {
+        titleKey: 'Teams',
+        route: 'HR_Teams',
+        permissionAnyOf: ['teams.list'],
+      },
+      {
+        titleKey: 'Positions',
+        route: 'HR_Positions',
+        permissionAnyOf: ['positions.list'],
+      },
+      {
+        titleKey: 'Meetings',
+        route: 'HR_Meetings',
+        permissionAnyOf: ['meetings.list'],
+      },
+      {
+        titleKey: 'Holidays',
+        route: 'HR_Holidays',
+        permissionAnyOf: ['holidays.list'],
+      },
+    ],
+  },
+
+  // ═══════════════════════════════════════════
+  // Section: Internal Communication (التواصل الداخلي)
+  // ═══════════════════════════════════════════
+  {
+    titleKey: 'Conversations',
+    route: 'Conversations',
+    icon: MessageSquare,
+    allowedTo: ['Admin', 'Subscriber', 'Employee'],
+    section: 'Internal Communication',
+  },
+
+  // ═══════════════════════════════════════════
+  // Section: Content Management (إدارة المحتوى)
+  // ═══════════════════════════════════════════
+  {
+    titleKey: 'Social Media Management',
+    route: 'SocialMedia',
+    icon: Share2,
+    allowedTo: ['Subscriber', 'Employee'],
+    section: 'Content Management',
+    permissionAnyOf: ['social_media_accounts.list'],
+  },
+
+  // ═══════════════════════════════════════════
   // Section: Reports & Analytics (التقارير والتحليلات)
   // ═══════════════════════════════════════════
   {
@@ -63,13 +224,7 @@ export const menuItems: MenuItemType[] = [
     icon: BarChart3,
     allowedTo: ['Admin', 'Subscriber', 'Employee'],
     section: 'Reports & Analytics',
-  },
-  {
-    titleKey: 'AI Analytics',
-    route: 'AIAnalytics',
-    icon: BarChart3,
-    allowedTo: ['Admin', 'Subscriber'],
-    section: 'Reports & Analytics',
+    permissionAnyOf: ['admin.analytics.view', 'analytics.view'],
   },
 
   // ═══════════════════════════════════════════
@@ -84,243 +239,91 @@ export const menuItems: MenuItemType[] = [
   },
 
   // ═══════════════════════════════════════════
-  // Section: System (Admin only)
+  // Section: System Administration (Admin only)
   // ═══════════════════════════════════════════
   {
     titleKey: 'System Admins',
     route: 'SystemAdmins',
     icon: UserCheck,
     allowedTo: ['Admin'],
-    section: 'System',
+    section: 'System Administration',
+    permission: 'admin.system_admins.list',
   },
   {
-    titleKey: 'Admin Roles',
+    titleKey: 'Roles',
     route: 'AdminRoles',
-    icon: UserCog,
+    icon: ShieldCheck,
     allowedTo: ['Admin'],
-    section: 'System',
+    section: 'System Administration',
+    permission: 'admin.admin_roles.list',
   },
   {
-    titleKey: 'Admin Permissions',
+    titleKey: 'Permissions',
     route: 'AdminPermissions',
-    icon: Eye,
+    icon: KeyRound,
     allowedTo: ['Admin'],
-    section: 'System',
+    section: 'System Administration',
+    permission: 'admin.admin_permissions.list',
   },
   {
     titleKey: 'Industries',
     route: 'Industries',
     icon: Building2,
     allowedTo: ['Admin'],
-    section: 'System',
-  },
-  {
-    titleKey: 'Organizations',
-    route: 'Organizations',
-    icon: Building2,
-    allowedTo: ['Admin'],
-    section: 'System',
+    section: 'System Administration',
+    permission: 'admin.industries.list',
   },
 
   // ═══════════════════════════════════════════
-  // Section: Subscribers & Plans (Admin only)
+  // Section: Subscriptions & Payments (Admin only)
   // ═══════════════════════════════════════════
   {
     titleKey: 'Subscribers',
     route: 'Subscribers',
     icon: Tag,
     allowedTo: ['Admin'],
-    section: 'Subscribers & Plans',
+    section: 'Subscriptions & Payments',
+    permission: 'admin.subscribers.list',
   },
   {
     titleKey: 'Plans',
     route: 'Plans',
     icon: PercentCircle,
     allowedTo: ['Admin'],
-    section: 'Subscribers & Plans',
+    section: 'Subscriptions & Payments',
+    permission: 'admin.subscription_plans.list',
+    children: [
+      {
+        titleKey: 'Subscription Plans',
+        route: 'Plans',
+        permission: 'admin.subscription_plans.list',
+        params: { tab: 'SubscriptionPlans' },
+      },
+      {
+        titleKey: 'AI Token Plans',
+        route: 'Plans',
+        permission: 'admin.subscription_plans.list',
+        params: { tab: 'AITokenPlans' },
+      },
+    ],
   },
-
-  // ═══════════════════════════════════════════
-  // Section: Finance (Admin only)
-  // ═══════════════════════════════════════════
   {
-    titleKey: 'Money Methods',
-    route: 'MoneyMethods',
-    icon: Wallet,
-    allowedTo: ['Admin'],
-    section: 'Finance',
-  },
-  {
-    titleKey: 'Money Receiving',
+    titleKey: 'Money Receiving Methods',
     route: 'MoneyReceiving',
     icon: Landmark,
     allowedTo: ['Admin'],
-    section: 'Finance',
+    section: 'Subscriptions & Payments',
+  },
+  {
+    titleKey: 'Translations',
+    route: 'Translations',
+    icon: Languages,
+    allowedTo: ['Admin'],
+    section: 'Subscriptions & Payments',
   },
 
   // ═══════════════════════════════════════════
-  // Section: Team Management (إدارة الفريق)
-  // ═══════════════════════════════════════════
-  {
-    titleKey: 'Human Resources',
-    route: 'HR',
-    icon: Users,
-    allowedTo: ['Subscriber', 'Employee'],
-    section: 'Team Management',
-    children: [
-      { titleKey: 'Employees', route: 'HR_Employees' },
-      { titleKey: 'Departments', route: 'HR_Departments' },
-      { titleKey: 'Teams', route: 'HR_Teams' },
-      { titleKey: 'Positions', route: 'HR_Positions' },
-      { titleKey: 'Meetings', route: 'HR_Meetings' },
-      { titleKey: 'Holidays', route: 'HR_Holidays' },
-      { titleKey: 'Attendance', route: 'HR_Attendances' },
-      { titleKey: 'Leaves', route: 'HR_Leaves' },
-      { titleKey: 'Employee Requests', route: 'HR_Requests' },
-      { titleKey: 'Payroll', route: 'HR_Salary' },
-      { titleKey: 'Shifts', route: 'Rotation' },
-      { titleKey: 'Activity Logs', route: 'ActivityLogs' },
-    ],
-  },
-
-  // ═══════════════════════════════════════════
-  // Section: Work Management (إدارة العمل)
-  // ═══════════════════════════════════════════
-  {
-    titleKey: 'Tasks',
-    route: 'Tasks',
-    icon: CheckSquare,
-    allowedTo: ['Subscriber', 'Employee'],
-    section: 'Work Management',
-  },
-  {
-    titleKey: 'Projects',
-    route: 'Projects',
-    icon: FolderKanban,
-    allowedTo: ['Subscriber', 'Employee'],
-    section: 'Work Management',
-  },
-  {
-    titleKey: 'Agenda',
-    route: 'Agenda',
-    icon: BookOpen,
-    allowedTo: ['Subscriber', 'Employee'],
-    section: 'Work Management',
-  },
-  {
-    titleKey: 'Appointments',
-    route: 'Appointments',
-    icon: Calendar,
-    allowedTo: ['Subscriber', 'Employee'],
-    section: 'Work Management',
-  },
-
-  // ═══════════════════════════════════════════
-  // Section: My Work (Employee only)
-  // ═══════════════════════════════════════════
-  {
-    titleKey: 'My Tasks',
-    route: 'MyTasks',
-    icon: CheckSquare,
-    allowedTo: ['Employee'],
-    section: 'My Work',
-  },
-  {
-    titleKey: 'My Projects',
-    route: 'MyProjects',
-    icon: FolderKanban,
-    allowedTo: ['Employee'],
-    section: 'My Work',
-  },
-  {
-    titleKey: 'Attendance',
-    route: 'Attendance',
-    icon: Calendar,
-    allowedTo: ['Employee'],
-    section: 'My Work',
-  },
-  {
-    titleKey: 'Salary',
-    route: 'Salary',
-    icon: DollarSign,
-    allowedTo: ['Employee'],
-    section: 'My Work',
-  },
-  {
-    titleKey: 'Short Leave Requests',
-    route: 'Leaves',
-    icon: Clock,
-    allowedTo: ['Employee'],
-    section: 'My Work',
-  },
-  {
-    titleKey: 'Requests',
-    route: 'Requests',
-    icon: ClipboardList,
-    allowedTo: ['Employee'],
-    section: 'My Work',
-  },
-
-  // ═══════════════════════════════════════════
-  // Section: Billing (Subscriber only)
-  // ═══════════════════════════════════════════
-  {
-    titleKey: 'Subscriptions',
-    route: 'Subscriptions',
-    icon: CreditCard,
-    allowedTo: ['Subscriber'],
-    section: 'Billing',
-  },
-  {
-    titleKey: 'Templates',
-    route: 'Templates',
-    icon: FileText,
-    allowedTo: ['Subscriber'],
-    section: 'Billing',
-  },
-  {
-    titleKey: 'Payment Methods',
-    route: 'PaymentMethods',
-    icon: Banknote,
-    allowedTo: ['Subscriber'],
-    section: 'Billing',
-  },
-
-  // ═══════════════════════════════════════════
-  // Section: Internal Communication (التواصل الداخلي)
-  // ═══════════════════════════════════════════
-  {
-    titleKey: 'Conversations',
-    route: 'Conversations',
-    icon: MessageSquare,
-    allowedTo: ['Subscriber', 'Employee'],
-    section: 'Internal Communication',
-  },
-
-  // ═══════════════════════════════════════════
-  // Section: Content Management (إدارة المحتوى)
-  // ═══════════════════════════════════════════
-  {
-    titleKey: 'Social Media Management',
-    route: 'SocialMedia',
-    icon: Share2,
-    allowedTo: ['Subscriber', 'Employee'],
-    section: 'Content Management',
-  },
-
-  // ═══════════════════════════════════════════
-  // Section: Support
-  // ═══════════════════════════════════════════
-  {
-    titleKey: 'Support Tickets',
-    route: 'SupportTickets',
-    icon: Ticket,
-    allowedTo: ['Admin', 'Subscriber'],
-    section: 'Support',
-  },
-
-  // ═══════════════════════════════════════════
-  // Section: Administration
+  // Section: Administration (Subscriber & Employee)
   // ═══════════════════════════════════════════
   {
     titleKey: 'Roles',
@@ -328,44 +331,43 @@ export const menuItems: MenuItemType[] = [
     icon: ShieldCheck,
     allowedTo: ['Subscriber', 'Employee'],
     section: 'Administration',
+    permissionAnyOf: ['roles.list'],
   },
   {
     titleKey: 'Permissions',
     route: 'Permissions',
     icon: KeyRound,
-    allowedTo: ['Admin', 'Subscriber'],
+    allowedTo: ['Subscriber'],
     section: 'Administration',
   },
 
   // ═══════════════════════════════════════════
-  // Section: Settings & Profile
+  // Section: Support (الدعم)
   // ═══════════════════════════════════════════
   {
-    titleKey: 'Todo List',
-    route: 'TodoList',
-    icon: CheckSquare,
+    titleKey: 'Notifications',
+    route: 'Notifications',
+    icon: Bell,
     allowedTo: ['Admin', 'Subscriber', 'Employee'],
-    section: 'Settings',
+    section: 'Support',
   },
   {
-    titleKey: 'Timeline',
-    route: 'Timeline',
-    icon: Clock,
+    titleKey: 'Support Tickets',
+    route: 'SupportTickets',
+    icon: Ticket,
     allowedTo: ['Admin', 'Subscriber', 'Employee'],
-    section: 'Settings',
+    section: 'Support',
+    permission: 'admin.support_tickets.list',
   },
+
+  // ═══════════════════════════════════════════
+  // Section: Settings (أسفل القائمة)
+  // ═══════════════════════════════════════════
   {
-    titleKey: 'Profile',
-    route: 'Profile',
-    icon: User,
-    allowedTo: ['Admin', 'Subscriber', 'Employee'],
-    section: 'Settings',
-  },
-  {
-    titleKey: 'Activity Logs',
-    route: 'ActivityLogs',
-    icon: Activity,
-    allowedTo: ['Admin', 'Subscriber'],
+    titleKey: 'Subscriptions',
+    route: 'Subscriptions',
+    icon: CreditCard,
+    allowedTo: ['Subscriber'],
     section: 'Settings',
   },
   {

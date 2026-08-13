@@ -18,6 +18,7 @@ export type EmployeeDetail = {
 export type ProfileUser = User & {
   phone?: string;
   is_active?: boolean;
+  is_verified?: boolean;
   imageProfile?: string;
   employee_detail?: EmployeeDetail;
   organization?: { name?: string; website?: string; email?: string; logo?: string };

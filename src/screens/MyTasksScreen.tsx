@@ -1,17 +1,19 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { RefreshCw, Eye } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { Badge } from '../components/Badge';
 import { EvaluationModal } from '../components/EvaluationModal';
+import { StarRating } from '../components/StarRating';
+import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { ListScreen } from '../generators/ListScreen';
 import { fetchMyTasks, updateMyTaskStatus, evaluateTask } from '../services/tasks';
 import { TaskItem } from '../types';
 import { extractErrorMessage } from '../lib/http';
-import { font } from '../theme';
+import { font, radii, spacing } from '../theme';
 
 const priorityVariant: Record<string, 'danger' | 'warning' | 'info' | 'default'> = {
   urgent: 'danger', high: 'danger', medium: 'info', low: 'default',
@@ -28,15 +30,22 @@ const statusLabels: Record<string, string> = {
   done: 'Done', rejected: 'Rejected', cancelled: 'Cancelled', delayed: 'Delayed',
 };
 
-const CHANGEABLE_STATUSES = ['open', 'pending', 'in-progress', 'completed', 'rejected', 'cancelled'];
+const ALL_STATUSES = ['open', 'pending', 'in-progress', 'completed', 'done', 'rejected', 'cancelled'];
+const RESTRICTED_STATUSES = ['done', 'rejected', 'cancelled'];
 
 export function MyTasksScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const { permissions } = useAuth();
   const navigation = useNavigation<any>();
   const [reloadKey, setReloadKey] = useState(0);
   const [evalTask, setEvalTask] = useState<TaskItem | null>(null);
+
+  // Mirrors the web: users with `tasks.update` may use all statuses (incl.
+  // done/rejected/cancelled); everyone else only sees the basic workflow ones.
+  const canEditTask = Array.isArray(permissions) && permissions.includes('tasks.update');
+  const allowedStatuses = canEditTask ? ALL_STATUSES : ALL_STATUSES.filter((s) => !RESTRICTED_STATUSES.includes(s));
 
   const fetchData = useCallback(async () => {
     const data = await fetchMyTasks();
@@ -44,9 +53,13 @@ export function MyTasksScreen() {
   }, [reloadKey]);
 
   const handleChangeStatus = (task: TaskItem) => {
-    const buttons = CHANGEABLE_STATUSES.map((s) => ({
+    const buttons = allowedStatuses.map((s) => ({
       text: t(statusLabels[s] || s),
       onPress: async () => {
+        if (s === 'done') {
+          setEvalTask(task);
+          return;
+        }
         try {
           await updateMyTaskStatus(task._id, s);
           setReloadKey((k) => k + 1);
@@ -55,10 +68,6 @@ export function MyTasksScreen() {
         }
       },
     }));
-    buttons.push({
-      text: t('Done'),
-      onPress: async () => { setEvalTask(task); },
-    });
     Alert.alert(t('Update Task Status'), task.title || task.name || '', [
       ...buttons,
       { text: t('Cancel'), style: 'cancel' as const },
@@ -76,6 +85,11 @@ export function MyTasksScreen() {
   };
 
   const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
+
+  const averageRating = (item: TaskItem) => {
+    if (!item.ratings || item.ratings.length === 0) return 0;
+    return item.ratings.reduce((acc, r) => acc + (r.score || 0), 0) / item.ratings.length;
+  };
 
   const columns = [
     {
@@ -116,11 +130,33 @@ export function MyTasksScreen() {
     {
       key: 'progress',
       titleKey: 'Progress',
-      width: 90,
+      width: 110,
+      render: (item: TaskItem) => {
+        const progress = item.progress ?? 0;
+        return (
+          <View style={{ alignItems: 'center', flexDirection: 'row', gap: spacing.sm }}>
+            <View style={[styles.progressTrack, { backgroundColor: colors.primaryLight }]}>
+              <View style={[styles.progressFill, { backgroundColor: colors.primary, width: `${Math.min(100, Math.max(0, progress))}%` }]} />
+            </View>
+            <Text style={{ color: colors.textMuted, fontSize: font.sizes.xs, fontWeight: font.weights.semibold }}>
+              {progress}%
+            </Text>
+          </View>
+        );
+      },
+    },
+    {
+      key: 'rating',
+      titleKey: 'Rating',
+      width: 100,
       render: (item: TaskItem) => (
-        <Text style={{ color: colors.ink, fontWeight: font.weights.semibold, fontSize: font.sizes.sm, textAlign: 'center' }}>
-          {item.progress ?? 0}%
-        </Text>
+        item.ratings && item.ratings.length > 0 ? (
+          <StarRating rating={averageRating(item)} />
+        ) : (
+          <Text style={{ color: colors.textMuted, fontSize: font.sizes.xs, fontStyle: 'italic' }}>
+            {t('No rating yet')}
+          </Text>
+        )
       ),
     },
     {
@@ -157,7 +193,22 @@ export function MyTasksScreen() {
         onClose={() => setEvalTask(null)}
         onSubmit={handleEvaluate}
         type="task"
+        hasStages={!!evalTask && Array.isArray(evalTask.stages) && evalTask.stages.length > 0}
       />
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  progressFill: {
+    borderRadius: radii.full,
+    height: 6,
+  },
+  progressTrack: {
+    borderRadius: radii.full,
+    flex: 1,
+    height: 6,
+    minWidth: 48,
+    overflow: 'hidden',
+  },
+});

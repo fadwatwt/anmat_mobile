@@ -69,7 +69,12 @@ import AdminPermissionsScreen from '../screens/AdminPermissionsScreen';
 import FinancialScreen from '../screens/FinancialScreen';
 import RegistrationScreen from '../screens/RegistrationScreen';
 import VerificationScreen from '../screens/VerificationScreen';
+import CompleteRegistrationScreen from '../screens/CompleteRegistrationScreen';
+import ForgotPasswordSentScreen from '../screens/ForgotPasswordSentScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import TimelineScreen from '../screens/TimelineScreen';
+import EscalationScreen from '../screens/EscalationScreen';
+import TranslationsScreen from '../screens/TranslationsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -78,7 +83,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export function RootNavigator() {
-  const { isLoading, token, user } = useAuth();
+  const { isLoading, token, user, lastUserType } = useAuth();
   const { colors } = useTheme();
 
   if (isLoading) {
@@ -99,13 +104,32 @@ export function RootNavigator() {
   const employeeBlocked =
     user?.type === 'Employee' && user?.has_subscription_access === false;
 
+  if (!token) {
+    // Logged-out stack: send admins back to the Admin Sign In screen.
+    return (
+      <Stack.Navigator
+        screenOptions={{ headerShown: false }}
+        initialRouteName={lastUserType === 'Admin' ? 'AdminSignIn' : 'Login'}
+      >
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="AdminSignIn" component={AdminSignInScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="ForgotPasswordSent" component={ForgotPasswordSentScreen} />
+        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+        <Stack.Screen name="Registration" component={RegistrationScreen} />
+        <Stack.Screen name="Verification" component={VerificationScreen} />
+        <Stack.Screen name="CompleteRegistration" component={CompleteRegistrationScreen} />
+      </Stack.Navigator>
+    );
+  }
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {token && employeeBlocked ? (
+      {employeeBlocked ? (
         <Stack.Group>
           <Stack.Screen name="SubscriptionInactive" component={SubscriptionInactiveScreen} />
         </Stack.Group>
-      ) : token && subscriberNeedsPlans ? (
+      ) : subscriberNeedsPlans ? (
         <Stack.Group>
           <Stack.Screen name="Plans">
             {() => <Layout><PlansScreen /></Layout>}
@@ -114,7 +138,7 @@ export function RootNavigator() {
             {() => <Layout><SettingsScreen /></Layout>}
           </Stack.Screen>
         </Stack.Group>
-      ) : token ? (
+      ) : (
         <Stack.Group>
           <Stack.Screen name="DashboardMain">
             {() => <Layout><DashboardMain /></Layout>}
@@ -296,13 +320,12 @@ export function RootNavigator() {
           <Stack.Screen name="Timeline">
             {() => <Layout><TimelineScreen /></Layout>}
           </Stack.Screen>
-        </Stack.Group>
-      ) : (
-        <Stack.Group>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="AdminSignIn" component={AdminSignInScreen} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          <Stack.Screen name="Registration" component={RegistrationScreen} />
+          <Stack.Screen name="Escalation">
+            {() => <Layout><EscalationScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="Translations">
+            {() => <Layout><TranslationsScreen /></Layout>}
+          </Stack.Screen>
         </Stack.Group>
       )}
     </Stack.Navigator>

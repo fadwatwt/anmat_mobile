@@ -11,6 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/Button';
 import { EmptyState } from '../components/EmptyState';
 import { fetchMyAttendances, checkIn, checkOut, AttendanceRow } from '../services/attendance';
@@ -34,10 +35,15 @@ export function AttendanceScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const { permissions } = useAuth();
   const [records, setRecords] = useState<AttendanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Mirrors the web: check-in requires `attendances.create`, check-out `attendances.update`.
+  const canCheckIn = Array.isArray(permissions) && permissions.includes('attendances.create');
+  const canCheckOut = Array.isArray(permissions) && permissions.includes('attendances.update');
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -128,11 +134,11 @@ export function AttendanceScreen() {
             </Text>
           </View>
         </View>
-        {!hasOpenRecord ? (
+        {!hasOpenRecord && canCheckIn ? (
           <Button label={t('Check In')} onPress={handleCheckIn} loading={submitting} />
-        ) : (
+        ) : hasOpenRecord && canCheckOut ? (
           <Button label={t('Check Out')} variant="danger" onPress={handleCheckOut} loading={submitting} />
-        )}
+        ) : null}
       </View>
 
       {/* History */}

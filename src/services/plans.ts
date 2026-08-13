@@ -23,7 +23,7 @@ export async function fetchFeatureTypes(): Promise<FeatureType[]> {
 
 // ===== Subscription plans (web: subscriptionPlansApi) =====
 export type PlanFeature = {
-  plan_feature?: { title?: string };
+  plan_feature?: { _id?: string; title?: string };
   feature_type?: { title?: string };
   feature_type_id?: string;
   properties?: { key: string; value: string }[];
@@ -86,6 +86,54 @@ export async function toggleSubscriptionPlanTrial(id: string): Promise<void> {
   await http.patch(`/api/admin/subscription-plans/${id}/trial/toggle-activity`);
 }
 
+// ===== Subscription plan translations (web: planTranslationsApi) =====
+export type PlanFeatureTranslation = {
+  feature_type_id: string;
+  title?: string;
+  details?: string;
+};
+
+export type PlanTranslation = {
+  _id?: string;
+  plan_id?: string;
+  locale: string;
+  name?: string;
+  description?: string;
+  feature_translations?: {
+    feature_type_id?: string;
+    plan_feature?: { _id?: string };
+    title?: string;
+    details?: string;
+  }[];
+};
+
+export type PlanTranslationPayload = {
+  locale: string;
+  name?: string;
+  description?: string;
+  feature_translations?: PlanFeatureTranslation[];
+};
+
+export async function fetchPlanTranslations(planId: string): Promise<PlanTranslation[]> {
+  const response = await http.get<ApiResponse<PlanTranslation[]> | PlanTranslation[]>(
+    `/api/admin/subscription-plans/${planId}/translations`,
+  );
+  const data = (response.data as ApiResponse<PlanTranslation[]>).data ?? response.data;
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createPlanTranslation(planId: string, payload: PlanTranslationPayload): Promise<void> {
+  await http.post(`/api/admin/subscription-plans/${planId}/translations`, payload);
+}
+
+export async function updatePlanTranslation(planId: string, locale: string, payload: Omit<PlanTranslationPayload, 'locale'>): Promise<void> {
+  await http.patch(`/api/admin/subscription-plans/${planId}/translations/${locale}`, payload);
+}
+
+export async function deletePlanTranslation(planId: string, locale: string): Promise<void> {
+  await http.delete(`/api/admin/subscription-plans/${planId}/translations/${locale}`);
+}
+
 // ===== AI token packages (web: tokenPackagesApi) =====
 export type TokenPackage = {
   _id: string;
@@ -132,4 +180,8 @@ export async function deleteTokenPackage(id: string): Promise<void> {
 
 export async function toggleTokenPackageActive(id: string, isActive: boolean): Promise<void> {
   await http.put(`/api/ai/admin/token-packages/${id}`, { is_active: !isActive });
+}
+
+export async function seedTokenPackages(): Promise<void> {
+  await http.post('/api/ai/admin/token-packages/seed');
 }

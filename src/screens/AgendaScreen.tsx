@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +16,7 @@ import { CreateAgendaModal } from '../components/agenda/CreateAgendaModal';
 import {
   Appointment, DailyTask,
   fetchTodayAppointments, fetchMonthAppointments, fetchAppointments, fetchDailyTasks,
-  completeAppointment, cancelAppointment, completeDailyTask, deleteDailyTask,
+  completeAppointment, cancelAppointment, deleteAppointment, completeDailyTask, deleteDailyTask,
 } from '../services/appointments';
 import { font, radii, spacing } from '../theme';
 
@@ -24,7 +24,7 @@ const Tab = createMaterialTopTabNavigator();
 
 // ===== Today tab =====
 
-function TodayTab() {
+function TodayTab({ canUpdate, canDelete }: { canUpdate: boolean; canDelete: boolean }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
@@ -81,7 +81,7 @@ function TodayTab() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Priorities')}</Text>
           {priorities.map((tk) => (
-            <DailyTaskCard key={tk._id} task={tk} onComplete={handleCompleteTask} onDelete={handleDeleteTask} />
+            <DailyTaskCard key={tk._id} task={tk} onComplete={canUpdate ? handleCompleteTask : undefined} onDelete={canDelete ? handleDeleteTask : undefined} />
           ))}
         </View>
       )}
@@ -93,7 +93,7 @@ function TodayTab() {
           <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('No daily tasks')}</Text>
         ) : (
           tasks.map((tk) => (
-            <DailyTaskCard key={tk._id} task={tk} onComplete={handleCompleteTask} onDelete={handleDeleteTask} />
+            <DailyTaskCard key={tk._id} task={tk} onComplete={canUpdate ? handleCompleteTask : undefined} onDelete={canDelete ? handleDeleteTask : undefined} />
           ))
         )}
       </View>
@@ -168,7 +168,7 @@ function CalendarTab() {
 
 // ===== List tab =====
 
-function ListTab() {
+function ListTab({ canUpdate, canDelete }: { canUpdate: boolean; canDelete: boolean }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
@@ -198,6 +198,12 @@ function ListTab() {
 
   const handleComplete = async (id: string) => { await completeAppointment(role, id).catch(() => {}); load(); };
   const handleCancel = async (id: string) => { await cancelAppointment(role, id).catch(() => {}); load(); };
+  const handleDeleteAppt = (id: string) => {
+    Alert.alert(t('Delete Appointment?'), t('Are you sure you want to delete this appointment?'), [
+      { text: t('Cancel'), style: 'cancel' },
+      { text: t('Delete'), style: 'destructive', onPress: async () => { await deleteAppointment(role, id).catch(() => {}); load(); } },
+    ]);
+  };
   const handleCompleteTask = async (id: string) => { await completeDailyTask(role, id).catch(() => {}); load(); };
   const handleDeleteTask = async (id: string) => { await deleteDailyTask(role, id).catch(() => {}); load(); };
 
@@ -220,7 +226,7 @@ function ListTab() {
         {upcoming.length === 0 ? (
           <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('No appointments found')}</Text>
         ) : (
-          upcoming.map((a) => <AppointmentCard key={a._id} appointment={a} onComplete={handleComplete} onCancel={handleCancel} showCountdown />)
+          upcoming.map((a) => <AppointmentCard key={a._id} appointment={a} onComplete={canUpdate ? handleComplete : undefined} onCancel={canUpdate ? handleCancel : undefined} onDelete={canDelete ? handleDeleteAppt : undefined} showCountdown />)
         )}
       </View>
 
@@ -238,7 +244,7 @@ function ListTab() {
         {tasks.length === 0 ? (
           <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('No daily tasks')}</Text>
         ) : (
-          tasks.map((tk) => <DailyTaskCard key={tk._id} task={tk} onComplete={handleCompleteTask} onDelete={handleDeleteTask} />)
+          tasks.map((tk) => <DailyTaskCard key={tk._id} task={tk} onComplete={canUpdate ? handleCompleteTask : undefined} onDelete={canDelete ? handleDeleteTask : undefined} />)
         )}
       </View>
     </ScrollView>
@@ -250,8 +256,18 @@ function ListTab() {
 export default function AgendaScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const { permissions } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+
+  const has = useCallback(
+    (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm)),
+    [permissions],
+  );
+
+  const canCreate = has('appointments.create');
+  const canUpdate = has('appointments.update');
+  const canDelete = has('appointments.delete');
 
   const tabs = [
     { name: 'Today', component: TodayTab, icon: CalendarDays, title: t('Today') },
@@ -280,14 +296,22 @@ export default function AgendaScreen() {
           };
         }}
       >
-        {tabs.map(({ name, component }) => (
-          <Tab.Screen key={name} name={name} component={component} />
+        {tabs.map(({ name, component: Cmp }) => (
+          <Tab.Screen key={name} name={name}>
+            {() => {
+              if (name === 'Today') return <TodayTab canUpdate={canUpdate} canDelete={canDelete} />;
+              if (name === 'List') return <ListTab canUpdate={canUpdate} canDelete={canDelete} />;
+              return <Cmp />;
+            }}
+          </Tab.Screen>
         ))}
       </Tab.Navigator>
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setCreateOpen(true)} activeOpacity={0.85}>
-        <Plus size={24} color="#FFF" />
-      </TouchableOpacity>
+      {canCreate && (
+        <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setCreateOpen(true)} activeOpacity={0.85}>
+          <Plus size={24} color="#FFF" />
+        </TouchableOpacity>
+      )}
 
       <CreateAgendaModal
         visible={createOpen}

@@ -29,14 +29,16 @@ const TABS: { id: EmployeeAuthRequestType; labelKey: string }[] = [
   { id: 'DAY_OFF', labelKey: 'Day Off' },
   { id: 'SALARY_ADVANCE', labelKey: 'Financial' },
   { id: 'WORK_DELAY', labelKey: 'Delay' },
+  { id: 'SHORT_LEAVE', labelKey: 'Short Leave' },
 ];
 
 function statusVariant(status?: string): 'success' | 'danger' | 'warning' | 'default' {
   switch (status) {
-    case 'approved': return 'success';
+    case 'accepted': return 'success';
     case 'rejected':
     case 'cancelled': return 'danger';
     case 'open':
+    case 'in-progress':
     case 'pending': return 'warning';
     default: return 'default';
   }
@@ -136,6 +138,13 @@ export function RequestsScreen() {
                 )}
                 {activeTab === 'WORK_DELAY' && (
                   <Detail labelKey="Work Due At" value={r.work_due_at} align={align} />
+                )}
+                {activeTab === 'SHORT_LEAVE' && (
+                  <>
+                    <Detail labelKey="Leave Date" value={r.leave_date} align={align} />
+                    <Detail labelKey="Start Time" value={r.leave_start_time} align={align} />
+                    <Detail labelKey="End Time" value={r.leave_end_time} align={align} />
+                  </>
                 )}
 
                 <Detail labelKey="Reason" value={r.reason} align={align} />

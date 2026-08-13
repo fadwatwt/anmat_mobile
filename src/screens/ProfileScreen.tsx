@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Mail, Phone, User as UserIcon, Cake, MapPin, Building2, Briefcase,
   DollarSign, Clock, Calendar, CalendarDays, KeyRound, Pencil, LogOut,
+  Globe, CheckCircle2,
 } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -12,7 +13,9 @@ import { Button } from '../components/Button';
 import { StarRating } from '../components/StarRating';
 import { EditProfileModal } from './profile/EditProfileModal';
 import { ChangePasswordModal } from './profile/ChangePasswordModal';
+import { EditOrganizationModal } from '../modals/EditOrganizationModal';
 import { fetchMe, ProfileUser } from '../services/profile';
+import { fetchMyOrganization, Organization } from '../services/organizations';
 import { font, radii, spacing } from '../theme';
 
 function age(dob?: string) {
@@ -25,14 +28,19 @@ export default function ProfileScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
-  const { user, refreshUser, logout } = useAuth();
+  const { user, permissions, refreshUser, logout } = useAuth();
   const isAdmin = user?.type === 'Admin';
   const isEmployee = user?.type === 'Employee';
+  const has = (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm));
+  const canManageOrg = !isAdmin && has('organizations.manage_settings');
 
   const [profile, setProfile] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
+  const [org, setOrg] = useState<Organization | null>(null);
+  const [orgLoading, setOrgLoading] = useState(false);
+  const [orgEditOpen, setOrgEditOpen] = useState(false);
 
   const load = async () => {
     try {
@@ -46,6 +54,17 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      setOrgLoading(true);
+      fetchMyOrganization()
+        .then(setOrg)
+        .catch(() => setOrg(null))
+        .finally(() => setOrgLoading(false));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -83,7 +102,15 @@ export default function ProfileScreen() {
       {/* Header card */}
       <View style={[styles.headerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Image source={{ uri: avatar }} style={[styles.avatar, { borderColor: colors.primary }]} />
-        <Text style={[styles.name, { color: colors.ink }]}>{p?.name || '-'}</Text>
+        <View style={styles.nameRow}>
+          <Text style={[styles.name, { color: colors.ink }]} numberOfLines={1}>{p?.name || '-'}</Text>
+          {p?.is_verified && (
+            <View style={[styles.verifiedBadge, { backgroundColor: colors.primaryLight }]}>
+              <CheckCircle2 size={12} color={colors.primary} />
+              <Text style={[styles.verifiedText, { color: colors.primary }]}>{t('Verified')}</Text>
+            </View>
+          )}
+        </View>
         <Text style={[styles.email, { color: colors.textMuted }]}>{p?.email}</Text>
         <View style={[styles.typeBadge, { backgroundColor: colors.primaryLight }]}>
           <Text style={[styles.typeText, { color: colors.primary }]}>{p?.type || '-'}</Text>
@@ -97,6 +124,58 @@ export default function ProfileScreen() {
           </View>
         </View>
       </View>
+
+      {/* Organization card */}
+      {!isAdmin && (
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.orgHeader}>
+            <View style={[styles.orgLogo, { backgroundColor: colors.primaryLight }]}>
+              <Building2 size={20} color={colors.primary} />
+            </View>
+            <View style={styles.orgHeaderText}>
+              <Text style={[styles.orgName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+                {org?.name || (orgLoading ? '...' : '-')}
+              </Text>
+              <Text style={[styles.cardTitle, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{t('Organization')}</Text>
+            </View>
+          </View>
+
+          {org ? (
+            <>
+              <View style={styles.orgRows}>
+                {[
+                  { icon: Globe, label: t('Website'), value: org.website || '-' },
+                  { icon: Mail, label: t('Email'), value: org.email || '-' },
+                  { icon: Building2, label: t('Industry'), value: org.industry?.name || '-' },
+                  { icon: MapPin, label: t('Country'), value: org.country || '-' },
+                  { icon: MapPin, label: t('City'), value: org.city || '-' },
+                  { icon: Phone, label: t('Phone'), value: org.phone || '-' },
+                ].map((row, i) => {
+                  const Icon = row.icon;
+                  return (
+                    <View key={i} style={[styles.infoRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                      <Icon size={16} color={colors.textMuted} />
+                      <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{row.label}:</Text>
+                      <Text style={[styles.infoValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{row.value}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+              {canManageOrg && (
+                <Button
+                  label={t('Edit Organization')}
+                  variant="secondary"
+                  size="sm"
+                  icon={<Pencil size={14} color={colors.primary} />}
+                  onPress={() => setOrgEditOpen(true)}
+                />
+              )}
+            </>
+          ) : orgLoading ? (
+            <ActivityIndicator color={colors.primary} size="small" />
+          ) : null}
+        </View>
+      )}
 
       {/* Personal info */}
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -170,6 +249,14 @@ export default function ProfileScreen() {
         onSaved={() => { load(); refreshUser(); }}
       />
       <ChangePasswordModal visible={pwOpen} onClose={() => setPwOpen(false)} isAdmin={isAdmin} />
+      <EditOrganizationModal
+        visible={orgEditOpen}
+        onClose={() => setOrgEditOpen(false)}
+        organization={org}
+        onSaved={() => {
+          fetchMyOrganization().then(setOrg).catch(() => undefined);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -193,7 +280,15 @@ const styles = StyleSheet.create({
   infoRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
   infoValue: { flex: 1, fontSize: font.sizes.sm, fontWeight: font.weights.medium },
   loading: { flex: 1, padding: spacing.xxl },
-  name: { fontSize: font.sizes.xl, fontWeight: font.weights.bold, marginTop: spacing.sm },
+  name: { flex: 1, fontSize: font.sizes.xl, fontWeight: font.weights.bold },
+  nameRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.xs, marginTop: spacing.sm, maxWidth: '100%' },
+  orgHeader: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+  orgHeaderText: { flex: 1, gap: 2 },
+  orgLogo: { alignItems: 'center', borderRadius: radii.lg, height: 44, justifyContent: 'center', width: 44 },
+  orgName: { fontSize: font.sizes.lg, fontWeight: font.weights.bold },
+  orgRows: { gap: spacing.sm },
+  verifiedBadge: { alignItems: 'center', borderRadius: radii.full, flexDirection: 'row', gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 2 },
+  verifiedText: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
   ratingBig: { fontSize: 44, fontWeight: font.weights.bold },
   ratingCard: { alignItems: 'center' },
   ratingComment: { fontSize: font.sizes.xs, marginTop: 2 },

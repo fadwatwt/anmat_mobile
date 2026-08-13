@@ -8,10 +8,13 @@ export type SupportTicket = {
   status?: string;
   priority?: string;
   created_by?: { _id: string; name: string; email?: string };
+  subscriber?: { _id: string; name: string; email?: string };
   assigned_to?: { _id: string; name: string };
   messages?: { text: string; user: string; createdAt: string }[];
   createdAt?: string;
   updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export async function fetchSupportTickets(): Promise<SupportTicket[]> {
@@ -33,6 +36,10 @@ export type CreateTicketPayload = {
 export async function createSupportTicket(data: CreateTicketPayload): Promise<SupportTicket> {
   const response = await http.post<ApiResponse<SupportTicket>>('/api/support-tickets', data);
   return response.data.data;
+}
+
+export async function deleteSupportTicket(id: string): Promise<void> {
+  await http.delete(`/api/support-tickets/${id}`);
 }
 
 export async function updateSupportTicketStatus(id: string, status: string): Promise<void> {

@@ -50,3 +50,35 @@ export type EvaluationData = {
 export async function evaluateTask(id: string, data: EvaluationData): Promise<void> {
   await http.put(`/api/employee/tasks/${id}/status-update`, { status: 'done', ...data });
 }
+
+export async function evaluateSubscriberTask(id: string, data: EvaluationData): Promise<void> {
+  await http.post(`/api/subscriber/tasks/${id}/evaluate`, data);
+}
+
+// ===== Task comments (web: subscriberTasksApi / employeeTasksApi) =====
+export type TaskComment = {
+  _id: string;
+  text?: string;
+  comment?: string;
+  user?: { _id: string; name: string; avatar?: string };
+  created_at?: string;
+  createdAt?: string;
+};
+
+export async function addSubscriberTaskComment(taskId: string, text: string): Promise<TaskComment> {
+  const response = await http.post<ApiResponse<TaskComment>>(`/api/subscriber/organization/tasks/${taskId}/comments`, { text });
+  return response.data.data ?? (response.data as any);
+}
+
+export async function deleteSubscriberTaskComment(taskId: string, commentId: string): Promise<void> {
+  await http.delete(`/api/subscriber/organization/tasks/${taskId}/comments/${commentId}`);
+}
+
+export async function addEmployeeTaskComment(taskId: string, text: string): Promise<TaskComment> {
+  const response = await http.post<ApiResponse<TaskComment>>(`/api/employee/tasks/${taskId}/comments`, { text });
+  return response.data.data ?? (response.data as any);
+}
+
+export async function deleteEmployeeTaskComment(taskId: string, commentId: string): Promise<void> {
+  await http.delete(`/api/employee/tasks/${taskId}/comments/${commentId}`);
+}

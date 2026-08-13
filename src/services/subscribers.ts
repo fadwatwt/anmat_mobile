@@ -23,6 +23,13 @@ export type Subscriber = {
     industry?: { name?: string };
     used_storage?: number;
   };
+  activePlan?: {
+    _id?: string;
+    name?: string;
+    pricing?: { price?: number; discount?: number }[];
+  };
+  subscribed_at?: string;
+  expires_at?: string;
   createdAt?: string;
 };
 

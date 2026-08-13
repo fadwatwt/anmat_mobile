@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { CreditCard, Star, Plus } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
-import { fetchPaymentMethods, setDefaultPaymentMethod, PaymentMethod } from '../services/paymentMethods';
+import { fetchPaymentMethods, setDefaultPaymentMethod, paymentMethodAttr, PaymentMethod } from '../services/paymentMethods';
 import { EmptyState } from '../components/EmptyState';
 import { Button } from '../components/Button';
 import { font, spacing, radii } from '../theme';
@@ -51,14 +51,14 @@ export default function PaymentMethodsScreen() {
         </View>
         <View style={[s.cardInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
           <View style={[s.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[s.typeText, { color: colors.ink }]}>{t(item.type.replace('_', ' '))}</Text>
+            <Text style={[s.typeText, { color: colors.ink }]}>{t(paymentMethodAttr(item, 'brand') || 'Card')}</Text>
             {item.is_default && (
               <Star size={14} color="#F59E0B" fill="#F59E0B" />
             )}
           </View>
-          {item.last_four && (
+          {paymentMethodAttr(item, 'last4') && (
             <Text style={[s.lastFour, { color: colors.textMuted }]}>
-              **** {item.last_four}
+              **** {paymentMethodAttr(item, 'last4')}
             </Text>
           )}
         </View>

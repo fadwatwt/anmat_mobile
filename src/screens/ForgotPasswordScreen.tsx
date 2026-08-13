@@ -35,11 +35,9 @@ export default function ForgotPasswordScreen() {
       setNotice(t('Enter your email'));
       return;
     }
-    // Password reset is not yet supported by the backend; inform the user
-    // instead of triggering a non-functional request.
-    setNotice(
-      t('Password reset is not available yet. Please contact your administrator to reset your password.'),
-    );
+    setNotice('');
+    // Mirrors the web flow: forget-password → sent confirmation screen.
+    navigation.navigate('ForgotPasswordSent', { email: email.trim() });
   }
 
   return (

@@ -161,6 +161,15 @@ export default function LoginScreen() {
                 {t('Admin Sign In')}
               </Text>
             </TouchableOpacity>
+
+            <View style={[styles.registerRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <Text style={[styles.registerPrompt, { color: colors.cellSecondary }]}>
+                {t('Not have an account?')}
+              </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Registration')} disabled={loading}>
+                <Text style={[styles.registerLink, { color: colors.primary }]}>{t('Register')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -261,6 +270,18 @@ const styles = StyleSheet.create({
   },
   rememberText: {
     fontSize: font.sizes.sm,
+  },
+  registerLink: {
+    fontSize: font.sizes.sm,
+    fontWeight: font.weights.semibold,
+  },
+  registerPrompt: {
+    fontSize: font.sizes.sm,
+  },
+  registerRow: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    justifyContent: 'center',
   },
   row: {
     alignItems: 'center',

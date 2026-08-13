@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -213,9 +214,19 @@ export default function SupportTicketDetailScreen() {
                   {msg.attachments && msg.attachments.length > 0 ? (
                     <View style={s.attachmentList}>
                       {msg.attachments.map((att) => (
-                        <Text key={att._id} style={[s.attachmentLink, { color: isMe ? '#FFF' : colors.primary }]}>
-                          {att.name || t('Attachment')}
-                        </Text>
+                        <TouchableOpacity
+                          key={att._id}
+                          accessibilityRole="link"
+                          accessibilityLabel={att.name || t('Attachment')}
+                          onPress={() => {
+                            if (!att.url) return;
+                            Linking.openURL(att.url).catch(() => Alert.alert(t('Error'), t('Unable to open file')));
+                          }}
+                        >
+                          <Text style={[s.attachmentLink, { color: isMe ? '#FFF' : colors.primary }]}>
+                            {att.name || t('Attachment')}
+                          </Text>
+                        </TouchableOpacity>
                       ))}
                     </View>
                   ) : null}

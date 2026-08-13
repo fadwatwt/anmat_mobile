@@ -4,6 +4,11 @@ export type RootStackParamList = {
   Login: undefined;
   AdminSignIn: undefined;
   ForgotPassword: undefined;
+  ForgotPasswordSent: { email: string } | undefined;
+  ResetPassword: undefined;
+  Registration: undefined;
+  Verification: { email: string } | undefined;
+  CompleteRegistration: { email: string; token: string } | undefined;
   DashboardMain: undefined;
   HRMain: undefined;
   EmployeeDetail: { employee: EmployeeDetailItem } | { employee_id: string };
@@ -41,4 +46,6 @@ export type RootStackParamList = {
   SystemAdmins: undefined;
   SupportTickets: undefined;
   MoneyMethods: undefined;
+  Escalation: undefined;
+  Translations: undefined;
 };

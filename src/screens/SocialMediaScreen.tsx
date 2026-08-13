@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Bird, Globe, Trash2, Pencil, Plus, FolderCog } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { Badge } from '../components/Badge';
 import { EmptyState } from '../components/EmptyState';
 import { AccountQuotaCard } from '../components/social/AccountQuotaCard';
@@ -30,6 +31,7 @@ function TwitterTab() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const { permissions } = useAuth();
   const [accounts, setAccounts] = useState<TwitterAccount[]>([]);
   const [quota, setQuota] = useState<SocialMediaQuota | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,16 @@ function TwitterTab() {
   const [accountModal, setAccountModal] = useState(false);
   const [editAccount, setEditAccount] = useState<TwitterAccount | null>(null);
   const [catModal, setCatModal] = useState(false);
+
+  const has = useCallback(
+    (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm)),
+    [permissions],
+  );
+
+  const canCreate = has('social_media_accounts.create');
+  const canUpdate = has('social_media_accounts.update');
+  const canDelete = has('social_media_accounts.delete');
+  const canManageCategories = has('social_media_categories.list');
 
   const load = useCallback(async () => {
     try {
@@ -83,21 +95,25 @@ function TwitterTab() {
 
         {/* Quick actions */}
         <View style={[styles.actions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: colors.primary, opacity: quotaFull ? 0.5 : 1 }]}
-            onPress={openCreate}
-            disabled={quotaFull}
-          >
-            <Plus size={16} color="#FFF" />
-            <Text style={styles.actionText}>{t('Add Account')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBtnOutline, { borderColor: colors.border }]}
-            onPress={() => setCatModal(true)}
-          >
-            <FolderCog size={16} color={colors.primary} />
-            <Text style={[styles.actionTextOutline, { color: colors.primary }]}>{t('Manage Categories')}</Text>
-          </TouchableOpacity>
+          {canCreate && (
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: colors.primary, opacity: quotaFull ? 0.5 : 1 }]}
+              onPress={openCreate}
+              disabled={quotaFull}
+            >
+              <Plus size={16} color="#FFF" />
+              <Text style={styles.actionText}>{t('Add Account')}</Text>
+            </TouchableOpacity>
+          )}
+          {canManageCategories && (
+            <TouchableOpacity
+              style={[styles.actionBtnOutline, { borderColor: colors.border }]}
+              onPress={() => setCatModal(true)}
+            >
+              <FolderCog size={16} color={colors.primary} />
+              <Text style={[styles.actionTextOutline, { color: colors.primary }]}>{t('Manage Categories')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Twitter Accounts')}</Text>
@@ -130,12 +146,16 @@ function TwitterTab() {
                 )}
               </View>
               <View style={styles.cardActions}>
-                <TouchableOpacity style={styles.delBtn} onPress={() => openEdit(acc)}>
-                  <Pencil size={18} color={colors.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.delBtn} onPress={() => handleDelete(acc)}>
-                  <Trash2 size={18} color={colors.danger} />
-                </TouchableOpacity>
+                {canUpdate && (
+                  <TouchableOpacity style={styles.delBtn} onPress={() => openEdit(acc)}>
+                    <Pencil size={18} color={colors.primary} />
+                  </TouchableOpacity>
+                )}
+                {canDelete && (
+                  <TouchableOpacity style={styles.delBtn} onPress={() => handleDelete(acc)}>
+                    <Trash2 size={18} color={colors.danger} />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           ))

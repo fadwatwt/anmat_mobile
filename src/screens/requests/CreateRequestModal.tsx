@@ -21,6 +21,7 @@ const TYPES: { id: EmployeeAuthRequestType; labelKey: string }[] = [
   { id: 'DAY_OFF', labelKey: 'Day Off' },
   { id: 'SALARY_ADVANCE', labelKey: 'Salary Advance' },
   { id: 'WORK_DELAY', labelKey: 'Work Delay' },
+  { id: 'SHORT_LEAVE', labelKey: 'Short Leave' },
 ];
 
 export function CreateRequestModal({ visible, onClose, onCreated }: Props) {
@@ -37,12 +38,16 @@ export function CreateRequestModal({ visible, onClose, onCreated }: Props) {
   const [advanceBy, setAdvanceBy] = useState('');
   const [oldSalary, setOldSalary] = useState('');
   const [workDueAt, setWorkDueAt] = useState('');
+  const [leaveDate, setLeaveDate] = useState('');
+  const [leaveStartTime, setLeaveStartTime] = useState('');
+  const [leaveEndTime, setLeaveEndTime] = useState('');
   const [loading, setLoading] = useState(false);
 
   const reset = () => {
     setType('DAY_OFF'); setReason(''); setComment('');
     setVacationDate(''); setVacationEndDate('');
     setAdvanceBy(''); setOldSalary(''); setWorkDueAt('');
+    setLeaveDate(''); setLeaveStartTime(''); setLeaveEndTime('');
   };
 
   const handleSubmit = async () => {
@@ -68,6 +73,11 @@ export function CreateRequestModal({ visible, onClose, onCreated }: Props) {
       if (!advanceBy || !oldSalary) { Alert.alert(t('Required'), t('Please fill all fields')); return; }
       payload.advance_salary_by = advanceBy;
       payload.old_salary_amount = oldSalary;
+    } else if (type === 'SHORT_LEAVE') {
+      if (!leaveDate || !leaveStartTime || !leaveEndTime) { Alert.alert(t('Required'), t('Please fill all fields')); return; }
+      payload.leave_date = leaveDate;
+      payload.leave_start_time = leaveStartTime;
+      payload.leave_end_time = leaveEndTime;
     } else {
       if (!workDueAt) { Alert.alert(t('Required'), t('Work due at is required')); return; }
       payload.work_due_at = workDueAt;
@@ -138,6 +148,14 @@ export function CreateRequestModal({ visible, onClose, onCreated }: Props) {
           <Field label={t('Work Due At')}>
             <TextInput style={inputStyle} placeholder="YYYY-MM-DD HH:MM" placeholderTextColor={colors.textMuted} value={workDueAt} onChangeText={setWorkDueAt} />
           </Field>
+        )}
+
+        {type === 'SHORT_LEAVE' && (
+          <>
+            <DateField mode="date" label={t('Leave Date')} value={leaveDate} onChange={setLeaveDate} />
+            <DateField mode="time" label={t('Start Time')} value={leaveStartTime} onChange={setLeaveStartTime} />
+            <DateField mode="time" label={t('End Time')} value={leaveEndTime} onChange={setLeaveEndTime} />
+          </>
         )}
 
         <Field label={t('Reason')}>

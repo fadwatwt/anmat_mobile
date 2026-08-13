@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Clock, MapPin, Check, X } from 'lucide-react-native';
+import { Clock, MapPin, Check, X, Trash2 } from 'lucide-react-native';
 import { Badge } from '../Badge';
 import { useTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LanguageContext';
@@ -13,6 +13,7 @@ type Props = {
   appointment: Appointment;
   onComplete?: (id: string) => void;
   onCancel?: (id: string) => void;
+  onDelete?: (id: string) => void;
   showCountdown?: boolean;
 };
 
@@ -23,7 +24,7 @@ function statusVariant(s?: string): 'success' | 'warning' | 'danger' | 'info' | 
   return 'default';
 }
 
-export function AppointmentCard({ appointment, onComplete, onCancel, showCountdown }: Props) {
+export function AppointmentCard({ appointment, onComplete, onCancel, onDelete, showCountdown }: Props) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
@@ -64,7 +65,7 @@ export function AppointmentCard({ appointment, onComplete, onCancel, showCountdo
           </Text>
         )}
 
-        {isUpcoming && (onComplete || onCancel) && (
+        {isUpcoming && (onComplete || onCancel || onDelete) && (
           <View style={[styles.actions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             {onComplete && (
               <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.successBg }]} onPress={() => onComplete(appointment._id)}>
@@ -76,6 +77,12 @@ export function AppointmentCard({ appointment, onComplete, onCancel, showCountdo
               <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.dangerBg }]} onPress={() => onCancel(appointment._id)}>
                 <X size={14} color={colors.dangerText} />
                 <Text style={[styles.actionText, { color: colors.dangerText }]}>{t('Cancel')}</Text>
+              </TouchableOpacity>
+            )}
+            {onDelete && (
+              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.dangerBg }]} onPress={() => onDelete(appointment._id)}>
+                <Trash2 size={14} color={colors.dangerText} />
+                <Text style={[styles.actionText, { color: colors.dangerText }]}>{t('Delete')}</Text>
               </TouchableOpacity>
             )}
           </View>

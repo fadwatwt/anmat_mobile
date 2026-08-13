@@ -2,12 +2,12 @@ import { http } from '../lib/http';
 import { ApiResponse } from '../types';
 
 // Matches the web `employeeAuthRequestsApi` (api/employee/employee-requests).
-export type EmployeeAuthRequestType = 'DAY_OFF' | 'SALARY_ADVANCE' | 'WORK_DELAY';
+export type EmployeeAuthRequestType = 'DAY_OFF' | 'SALARY_ADVANCE' | 'WORK_DELAY' | 'SHORT_LEAVE';
 
 export type EmployeeAuthRequest = {
   _id: string;
   type: EmployeeAuthRequestType;
-  status: string; // "open" | "approved" | "rejected" | "cancelled"
+  status: string; // "open" | "in-progress" | "accepted" | "rejected" | "cancelled"
   reason?: string;
   comment?: string;
   created_at?: string;
@@ -19,6 +19,10 @@ export type EmployeeAuthRequest = {
   old_salary_amount?: number | string;
   // WORK_DELAY
   work_due_at?: string;
+  // SHORT_LEAVE
+  leave_date?: string;
+  leave_start_time?: string;
+  leave_end_time?: string;
 };
 
 export type CreateRequestPayload = {
@@ -31,6 +35,9 @@ export type CreateRequestPayload = {
   old_salary_amount?: string;
   vacation_date?: string;
   vacation_end_date?: string;
+  leave_date?: string;
+  leave_start_time?: string;
+  leave_end_time?: string;
 };
 
 export async function fetchMyRequests(): Promise<EmployeeAuthRequest[]> {
