@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '../Modal';
@@ -11,8 +11,9 @@ import { createAppointment, createDailyTask } from '../../services/appointments'
 import { extractErrorMessage } from '../../lib/http';
 import { font, radii, spacing } from '../../theme';
 import { CATEGORY_OPTIONS, PRIORITY_OPTIONS, todayISO } from './agendaShared';
+import { Chips, ColorField, Field, ReminderChips } from './agendaForm';
 
-type Tab = 'appointment' | 'task';
+type Tab = 'appointment' | 'task' | 'reminder';
 
 type Props = {
   visible: boolean;
@@ -38,12 +39,19 @@ export function CreateAgendaModal({ visible, onClose, initialTab = 'appointment'
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState('task');
   const [priority, setPriority] = useState('medium');
+  const [color, setColor] = useState('#3B82F6');
+  const [reminderTypes, setReminderTypes] = useState<string[]>([]);
+  const [enableReminders, setEnableReminders] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const reset = () => {
-    setTitle(''); setDescription(''); setLocation(''); setStartTime('09:00'); setEndTime('');
-    setCategory('task'); setPriority('medium'); setDate(initialDate || todayISO());
-  };
+  useEffect(() => {
+    if (visible) {
+      setTab(initialTab);
+      setTitle(''); setDescription(''); setLocation(''); setStartTime('09:00'); setEndTime('');
+      setCategory('task'); setPriority('medium'); setDate(initialDate || todayISO());
+      setColor('#3B82F6'); setReminderTypes([]); setEnableReminders(true);
+    }
+  }, [visible, initialTab, initialDate]);
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -56,13 +64,18 @@ export function CreateAgendaModal({ visible, onClose, initialTab = 'appointment'
         await createAppointment(role, {
           title: title.trim(), description, location, date, start_time: startTime,
           end_time: endTime || undefined, category, priority: priority as any,
+          color, reminder_types: reminderTypes, enable_reminders: enableReminders,
+        });
+      } else if (tab === 'reminder') {
+        await createAppointment(role, {
+          title: title.trim(), description, date, start_time: startTime,
+          category: 'reminder', reminder_types: reminderTypes, enable_reminders: true,
         });
       } else {
         await createDailyTask(role, {
           title: title.trim(), description, date, priority: priority as any, category: 'other',
         });
       }
-      reset();
       onCreated();
       onClose();
     } catch (e) {
@@ -78,27 +91,35 @@ export function CreateAgendaModal({ visible, onClose, initialTab = 'appointment'
     <Modal visible={visible} onClose={onClose} title={t('Add to Agenda')} size="lg">
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
-          {/* Tab switch */}
-          <View style={[styles.tabs, { backgroundColor: colors.statusBg }]}>
-            {(['appointment', 'task'] as Tab[]).map((tb) => (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[styles.tabsContent, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+            style={[styles.tabs, { backgroundColor: colors.statusBg }]}
+          >
+            {(['appointment', 'task', 'reminder'] as Tab[]).map((tb) => (
               <TouchableOpacity
                 key={tb}
                 style={[styles.tab, tab === tb && { backgroundColor: colors.surface }]}
                 onPress={() => setTab(tb)}
               >
-                <Text style={[styles.tabText, { color: tab === tb ? colors.primary : colors.textMuted }]}>
-                  {tb === 'appointment' ? t('Appointment') : t('Task')}
+                <Text numberOfLines={1} style={[styles.tabText, { color: tab === tb ? colors.primary : colors.textMuted }]}>
+                  {tb === 'appointment' ? t('Appointment') : tb === 'task' ? t('Task') : t('Reminder')}
                 </Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
 
           <Field label={t('Title')}>
             <TextInput style={inputStyle} value={title} onChangeText={setTitle} placeholder={t('Enter title')} placeholderTextColor={colors.textMuted} />
           </Field>
-          <Field label={t('Description')}>
-            <TextInput style={[inputStyle, styles.textarea]} value={description} onChangeText={setDescription} multiline placeholder={t('Enter description')} placeholderTextColor={colors.textMuted} />
-          </Field>
+
+          {tab !== 'reminder' && (
+            <Field label={t('Description')}>
+              <TextInput style={[inputStyle, styles.textarea]} value={description} onChangeText={setDescription} multiline placeholder={t('Enter description')} placeholderTextColor={colors.textMuted} />
+            </Field>
+          )}
+
           <DateField mode="date" label={t('Date')} value={date} onChange={setDate} />
 
           {tab === 'appointment' && (
@@ -120,9 +141,35 @@ export function CreateAgendaModal({ visible, onClose, initialTab = 'appointment'
             </>
           )}
 
-          <Field label={t('Priority')}>
-            <Chips options={PRIORITY_OPTIONS} value={priority} onChange={setPriority} />
-          </Field>
+          {tab !== 'appointment' && (
+            <Field label={t('Time')}>
+              <DateField mode="time" label="" value={startTime} onChange={setStartTime} />
+            </Field>
+          )}
+
+          {tab === 'task' && (
+            <Field label={t('Priority')}>
+              <Chips options={PRIORITY_OPTIONS} value={priority} onChange={setPriority} />
+            </Field>
+          )}
+
+          {tab !== 'task' && (
+            <>
+              <Field label={t('Color')}>
+                <ColorField value={color} onChange={setColor} />
+              </Field>
+              <Field label={tab === 'appointment' ? t('Reminders') : t('Notify me')}>
+                <ReminderChips value={reminderTypes} onChange={setReminderTypes} />
+              </Field>
+              {tab === 'appointment' && (
+                <ToggleRow
+                  label={t('Enable reminders')}
+                  value={enableReminders}
+                  onChange={setEnableReminders}
+                />
+              )}
+            </>
+          )}
 
           <Button label={t('Save')} onPress={handleSave} loading={loading} />
         </View>
@@ -131,47 +178,34 @@ export function CreateAgendaModal({ visible, onClose, initialTab = 'appointment'
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function ToggleRow({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   const { colors } = useTheme();
   const { isRTL } = useLocale();
   return (
-    <View style={styles.field}>
-      <Text style={[styles.label, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
-      {children}
-    </View>
-  );
-}
-
-function Chips({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  return (
-    <View style={styles.chips}>
-      {options.map((o) => (
-        <TouchableOpacity
-          key={o}
-          style={[styles.chip, { borderColor: value === o ? colors.primary : colors.border, backgroundColor: value === o ? colors.primary : colors.statusBg }]}
-          onPress={() => onChange(o)}
-        >
-          <Text style={[styles.chipText, { color: value === o ? '#FFF' : colors.ink }]}>{t(o)}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
+    <TouchableOpacity
+      style={[styles.row, { flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center', gap: spacing.sm }]}
+      onPress={() => onChange(!value)}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.checkbox, { borderColor: value ? colors.primary : colors.border, backgroundColor: value ? colors.primary : 'transparent' }]}>
+        {value ? <Text style={styles.checkboxText}>✓</Text> : null}
+      </View>
+      <Text style={[styles.toggleLabel, { color: colors.ink }]}>{label}</Text>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  chip: { borderRadius: radii.full, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
-  chipText: { fontSize: font.sizes.xs, fontWeight: font.weights.medium },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  field: { gap: spacing.xs },
+  checkbox: { alignItems: 'center', borderRadius: 4, borderWidth: 1.5, height: 20, justifyContent: 'center', width: 20 },
+  checkboxText: { color: '#FFF', fontSize: font.sizes.xs, fontWeight: 'bold' },
   form: { gap: spacing.md, paddingBottom: spacing.md },
   half: { flex: 1 },
   input: { borderRadius: radii.lg, borderWidth: 1, fontSize: font.sizes.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  label: { fontSize: font.sizes.xs, fontWeight: font.weights.medium },
   row: { gap: spacing.sm },
-  tab: { alignItems: 'center', borderRadius: radii.md, flex: 1, paddingVertical: spacing.sm },
+  tab: { alignItems: 'center', borderRadius: radii.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   tabText: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
-  tabs: { borderRadius: radii.lg, flexDirection: 'row', padding: 3 },
+  tabs: { borderRadius: radii.lg, padding: 3 },
+  tabsContent: { gap: spacing.xs },
   textarea: { minHeight: 60, textAlignVertical: 'top' },
+  toggleLabel: { fontSize: font.sizes.sm },
 });

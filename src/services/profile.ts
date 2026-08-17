@@ -56,3 +56,15 @@ export async function changePassword(payload: ChangePasswordPayload, isAdmin: bo
   const url = isAdmin ? '/api/admin/account/update-password' : '/api/user/account/update-password';
   await http.put<ApiResponse<unknown>>(url, payload);
 }
+
+/** Uploads the current user's avatar (PUT /api/user/account/avatar). */
+export async function uploadAvatar(file: { uri: string; name?: string; type?: string }): Promise<string> {
+  const formData = new FormData();
+  formData.append('avatar', file as any);
+  const res = await http.put<ApiResponse<{ avatar: string }>>(
+    '/api/user/account/avatar',
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  );
+  return res.data.data?.avatar ?? (res.data as any)?.avatar ?? '';
+}

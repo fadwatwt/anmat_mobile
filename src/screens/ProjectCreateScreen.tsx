@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import { FormScreen } from '../generators/FormScreen';
+import { Button } from '../components/Button';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { createProject, updateProject, fetchDepartments, fetchProjectTemplateById, createProjectFromTemplate, Project } from '../services/projects';
+import { createTask } from '../services/tasks';
 import { fetchEmployees } from '../services/employees';
-import { font, spacing } from '../theme';
+import { font, radii, spacing } from '../theme';
 
 const statusOptions = [
   { label: 'Open', value: 'open' },
@@ -16,6 +18,23 @@ const statusOptions = [
   { label: 'On Hold', value: 'on_hold' },
   { label: 'Completed', value: 'completed' },
   { label: 'Cancelled', value: 'cancelled' },
+];
+
+const taskStatusOptions = [
+  { label: 'Open', value: 'open' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'In Progress', value: 'in-progress' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Done', value: 'done' },
+  { label: 'Rejected', value: 'rejected' },
+  { label: 'Cancelled', value: 'cancelled' },
+];
+
+const priorityOptions = [
+  { label: 'Low', value: 'low' },
+  { label: 'Medium', value: 'medium' },
+  { label: 'High', value: 'high' },
+  { label: 'Urgent', value: 'urgent' },
 ];
 
 const toISO = (v?: string) => {
@@ -36,8 +55,13 @@ export default function ProjectCreateScreen() {
   const templateId = route.params?.templateId as string | undefined;
   const isFromTemplate = !!templateId && !isEdit;
 
+  const [phase, setPhase] = useState<'form' | 'prompt' | 'task'>('form');
+  const [createdProject, setCreatedProject] = useState<Project | null>(null);
+  const [taskCount, setTaskCount] = useState(0);
+
   const [departmentOptions, setDepartmentOptions] = useState<{ label: string; value: string }[]>([]);
   const [employeeOptions, setEmployeeOptions] = useState<{ label: string; value: string }[]>([]);
+  const [taskAssigneeOptions, setTaskAssigneeOptions] = useState<{ label: string; value: string }[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -45,6 +69,7 @@ export default function ProjectCreateScreen() {
         const [depts, emps] = await Promise.all([fetchDepartments(), fetchEmployees({ limit: 200 })]);
         setDepartmentOptions(depts.map(d => ({ label: d.name, value: d._id })));
         setEmployeeOptions(emps.map(e => ({ label: e.user?.name || '--', value: e._id })));
+        setTaskAssigneeOptions(emps.map(e => ({ label: e.user?.name || '--', value: e.user_id })));
       } catch {}
     })();
   }, []);
@@ -86,16 +111,6 @@ export default function ProjectCreateScreen() {
     assignees_ids: existing!.assignees_ids || existing!.assignees?.map(a => a._id) || [],
     start_date: existing!.start_date || existing!.startDate || '',
     due_date: existing!.due_date || existing!.endDate || '',
-  } : isFromTemplate ? {
-    name: '',
-    description: '',
-    status: 'open',
-    progress: '0',
-    manager_id: '',
-    department_id: '',
-    assignees_ids: [],
-    start_date: '',
-    due_date: '',
   } : {
     name: '',
     description: '',
@@ -106,6 +121,43 @@ export default function ProjectCreateScreen() {
     assignees_ids: [],
     start_date: '',
     due_date: '',
+  };
+
+  const taskSections = [
+    {
+      titleKey: 'Main Info',
+      fields: [
+        { name: 'title', labelKey: 'Task Title', type: 'text' as const, required: true, placeholder: 'Enter task title' },
+        { name: 'description', labelKey: 'Description', type: 'multiline' as const },
+      ],
+    },
+    {
+      titleKey: 'Assignment',
+      fields: [
+        { name: 'assignee_id', labelKey: 'Assignee', type: 'autocomplete' as const, options: taskAssigneeOptions },
+        { name: 'priority', labelKey: 'Priority', type: 'select' as const, options: priorityOptions },
+        { name: 'status', labelKey: 'Status', type: 'select' as const, options: taskStatusOptions },
+      ],
+    },
+    {
+      titleKey: 'Dates & Progress',
+      fields: [
+        { name: 'start_date', labelKey: 'Start Date', type: 'date' as const },
+        { name: 'due_date', labelKey: 'Due Date', type: 'date' as const },
+        { name: 'progress', labelKey: 'Progress (%)', type: 'number' as const },
+      ],
+    },
+  ];
+
+  const taskInitialValues = {
+    title: '',
+    description: '',
+    assignee_id: '',
+    priority: 'medium',
+    status: 'open',
+    start_date: '',
+    due_date: '',
+    progress: '0',
   };
 
   const handleSubmit = async (values: Record<string, any>) => {
@@ -122,32 +174,118 @@ export default function ProjectCreateScreen() {
     };
     if (isEdit) {
       await updateProject(existing!._id, payload);
-    } else if (isFromTemplate) {
-      await createProjectFromTemplate(templateId!, payload);
-    } else {
-      await createProject(payload);
+      navigation.goBack();
+      return;
     }
-    navigation.goBack();
+    const created = isFromTemplate
+      ? await createProjectFromTemplate(templateId!, payload)
+      : await createProject(payload);
+    setCreatedProject(created);
+    setPhase('prompt');
   };
 
+  const handleCreateTask = async (values: Record<string, any>) => {
+    const payload = {
+      project_id: createdProject?._id,
+      title: values.title,
+      description: values.description || undefined,
+      assignee_id: values.assignee_id || undefined,
+      priority: values.priority || 'medium',
+      status: values.status || 'open',
+      start_date: toISO(values.start_date),
+      due_date: toISO(values.due_date),
+      progress: Number(values.progress) || 0,
+    };
+    await createTask(payload);
+    setTaskCount(c => c + 1);
+    setPhase('prompt');
+  };
+
+  const headerTitle = isEdit ? t('Edit Project') : isFromTemplate ? t('Publish Project') : t('New Project');
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1, paddingHorizontal: spacing.md, paddingVertical: spacing.md }}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ArrowLeft size={24} color={colors.ink} />
         </TouchableOpacity>
-        <Text style={{ fontSize: font.sizes.lg, fontWeight: font.weights.semibold, color: colors.ink, marginLeft: spacing.md, textAlign: isRTL ? 'right' : 'left' }}>
-          {isEdit ? t('Edit Project') : isFromTemplate ? t('Publish Project') : t('New Project')}
+        <Text style={[styles.title, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>
+          {headerTitle}
         </Text>
+        <View style={styles.backBtn} />
       </View>
-      <FormScreen
-        sections={sections}
-        onSubmit={handleSubmit}
-        initialValues={initialValues}
-        submitLabelKey={isEdit ? 'Update' : 'Create'}
-        successMessageKey={isEdit ? 'Project updated' : 'Project created'}
-        errorMessageKey="Failed to save project"
-      />
+
+      {phase === 'form' && (
+        <FormScreen
+          sections={sections}
+          onSubmit={handleSubmit}
+          initialValues={initialValues}
+          submitLabelKey={isEdit ? 'Update' : 'Create'}
+          successMessageKey={isEdit ? 'Project updated' : 'Project created'}
+          errorMessageKey="Failed to save project"
+        />
+      )}
+
+      {phase === 'prompt' && (
+        <View style={styles.phaseCenter}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.primary + '1A' }]}>
+            <CheckCircle2 size={44} color={colors.primary} />
+          </View>
+          <Text style={[styles.phaseTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>
+            {t('Project created successfully')}
+          </Text>
+          <Text style={[styles.phaseSub, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+            {t(taskCount === 0 ? 'Would you like to add tasks to this project?' : 'Add another task?')}
+          </Text>
+          <Button label={t(taskCount === 0 ? 'Add Task' : 'Add another task?')} onPress={() => setPhase('task')} />
+          <Button
+            label={t(taskCount === 0 ? 'Skip & Finish' : 'Finish')}
+            variant="secondary"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
+      )}
+
+      {phase === 'task' && (
+        <FormScreen
+          sections={taskSections}
+          onSubmit={handleCreateTask}
+          initialValues={taskInitialValues}
+          submitLabelKey="Create"
+          successMessageKey="Task created"
+          errorMessageKey="Failed to save task"
+        />
+      )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+  },
+  backBtn: { width: 40, padding: spacing.xs },
+  title: { fontSize: font.sizes.lg, fontWeight: font.weights.semibold, flex: 1 },
+  phaseCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    padding: spacing.xl,
+  },
+  iconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  phaseTitle: { fontSize: font.sizes.xl, fontWeight: font.weights.bold },
+  phaseSub: { fontSize: font.sizes.base, marginBottom: spacing.md },
+});

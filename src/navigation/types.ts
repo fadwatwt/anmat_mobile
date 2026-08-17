@@ -15,6 +15,8 @@ export type RootStackParamList = {
   CreateEmployee: undefined;
   EditEmployee: { employee: any };
   HRDepartments: undefined;
+  DepartmentProfile: { department_id: string };
+  HRChats: undefined;
   HRPositions: undefined;
   HRMeetings: undefined;
   HRHolidays: undefined;

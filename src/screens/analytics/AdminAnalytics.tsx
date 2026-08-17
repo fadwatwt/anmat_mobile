@@ -19,9 +19,13 @@ const decorate = (arr: NamedValue[] | undefined) =>
     color: item.color || COLORS[i % COLORS.length],
   }));
 
-const toBars = (arr: any[] | undefined, color: string) =>
+const toBars = (arr: any[] | undefined, color: string, t: (k: string) => string) =>
   (arr || []).map((m, i) => ({
-    key: String(m.name ?? i), label: String(m.name ?? ''), value: Number(m.total ?? m.value ?? m.completed ?? 0), color,
+    key: String(m.name ?? i),
+    // A9: translate month label via i18n so Arabic locale shows Arabic month names
+    label: t(String(m.name ?? '')) || String(m.name ?? ''),
+    value: Number(m.total ?? m.value ?? m.completed ?? 0),
+    color,
   }));
 
 function SectionTitle({ children }: { children: string }) {
@@ -54,9 +58,9 @@ export function AdminAnalytics() {
   if (error || !data) return <Text style={[styles.errorText, { color: colors.danger }]}>{t('Error loading admin analytics.')}</Text>;
 
   const industries = decorate(data.industriesChart);
-  const subsMonthly = toBars(data.companiesSubscriptionsMonthly, '#38C793');
-  const projectsPerf = toBars(data.projectsPerformanceMonthly, '#375DFB');
-  const revenues = toBars(data.revenuesMonthly, '#7E3AF2');
+  const subsMonthly = toBars(data.companiesSubscriptionsMonthly, '#38C793', t);
+  const projectsPerf = toBars(data.projectsPerformanceMonthly, '#375DFB', t);
+  const revenues = toBars(data.revenuesMonthly, '#7E3AF2', t);
   const topCompanies = data.topCompanies || [];
   const lastProjects = data.lastProjects || [];
 

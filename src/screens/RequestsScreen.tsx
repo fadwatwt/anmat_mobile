@@ -94,7 +94,12 @@ export function RequestsScreen() {
   return (
     <View style={styles.container}>
       {/* Tabs */}
-      <View style={[styles.tabBar, { backgroundColor: colors.statusBg, borderColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={[styles.tabBarContent, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+        style={[styles.tabBar, { backgroundColor: colors.statusBg, borderColor: colors.border }]}
+      >
         {TABS.map((tab) => {
           const active = tab.id === activeTab;
           return (
@@ -103,11 +108,11 @@ export function RequestsScreen() {
               style={[styles.tab, active && { backgroundColor: colors.surface }]}
               onPress={() => setActiveTab(tab.id)}
             >
-              <Text style={[styles.tabText, { color: active ? colors.primary : colors.textMuted }]}>{t(tab.labelKey)}</Text>
+              <Text numberOfLines={1} style={[styles.tabText, { color: active ? colors.primary : colors.textMuted }]}>{t(tab.labelKey)}</Text>
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
 
       {loading ? (
         <ActivityIndicator color={colors.primary} size="large" style={{ marginTop: spacing.xl }} />
@@ -205,7 +210,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', borderRadius: radii.full, bottom: spacing.lg, elevation: 4,
     height: 44, justifyContent: 'center', position: 'absolute', width: 44,
   },
-  tab: { alignItems: 'center', borderRadius: radii.md, flex: 1, paddingVertical: spacing.sm },
+  tab: { alignItems: 'center', borderRadius: radii.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   tabBar: { borderRadius: radii.lg, borderWidth: 1, margin: spacing.md, padding: spacing.xs },
+  tabBarContent: { gap: spacing.xs },
   tabText: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
 });

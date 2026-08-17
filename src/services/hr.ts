@@ -277,6 +277,43 @@ export async function deleteDepartment(id: string): Promise<void> {
   await http.delete(`/api/subscriber/organization/departments/${id}`);
 }
 
+export type DepartmentProfileData = {
+  _id: string;
+  name: string;
+  description?: string;
+  rate?: number;
+  overall_rating?: number;
+  evaluation_method?: string;
+  ratings?: Array<{
+    _id?: string;
+    details?: string;
+    comment?: string;
+    score?: number;
+    created_at?: string;
+  }>;
+  stats?: {
+    totalEmployees: number;
+    totalTasks: number;
+    completedTasks: number;
+    successRate: number;
+    totalPoints: number;
+  };
+  employees?: Array<{
+    _id: string;
+    imageProfile?: string;
+    user?: { _id?: string; name?: string; avatar?: string; type?: string };
+    position?: { _id?: string; title?: string };
+    overall_rating?: number;
+  }>;
+};
+
+export async function fetchDepartmentProfile(id: string): Promise<DepartmentProfileData> {
+  const response = await http.get<ApiResponse<DepartmentProfileData>>(
+    `/api/subscriber/organization/departments/${id}/profile`
+  );
+  return response.data.data;
+}
+
 export async function assignEmployeesToDepartment(departmentId: string, employeeIds: string[]): Promise<void> {
   await http.patch(`/api/subscriber/organization/departments/${departmentId}/employees`, { employeeIds });
 }

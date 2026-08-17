@@ -1,5 +1,5 @@
 export const API_URL =
-  process.env.EXPO_PUBLIC_API_URL || 'https://anmat-backend-system.onrender.com';
+  process.env.EXPO_PUBLIC_API_URL || 'https://api.anmaat.com';
 
 // External tweetAPI service (Twitter accounts/actions) — separate origin from main backend.
 export const EXTERNAL_API_URL =

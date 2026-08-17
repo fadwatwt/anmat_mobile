@@ -19,6 +19,20 @@ export const CATEGORY_COLORS: Record<string, string> = {
 export const CATEGORY_OPTIONS = ['meeting', 'task', 'project', 'interview', 'training', 'deadline', 'other'];
 export const PRIORITY_OPTIONS = ['low', 'medium', 'high', 'urgent'];
 
+export const TASK_CATEGORY_OPTIONS = [
+  'follow_up', 'review', 'analysis', 'design', 'coding', 'testing', 'documentation', 'communication', 'other',
+];
+
+export const REMINDER_OPTIONS = [
+  { value: '5_min', key: '5 minutes before' },
+  { value: '15_min', key: '15 minutes before' },
+  { value: '1_hour', key: '1 hour before' },
+  { value: '1_day', key: '1 day before' },
+  { value: '1_week', key: '1 week before' },
+];
+
+export const REMINDER_COLOR = '#F59E0B';
+
 export function fmtTime(time?: string) {
   if (!time) return '';
   return time;

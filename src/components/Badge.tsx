@@ -33,7 +33,7 @@ export function Badge({ label, size = 'sm', variant = 'default' }: Props) {
         size === 'md' && styles.md,
       ]}
     >
-      <Text style={[styles.text, { color: style.text, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{label}</Text>
+      <Text style={[styles.text, { color: style.text, writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={1}>{label}</Text>
     </View>
   );
 }

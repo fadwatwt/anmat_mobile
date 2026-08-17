@@ -180,7 +180,7 @@ function AdminDashboardContent() {
           <View>
             <View style={[s.tableHead, { backgroundColor: colors.background }]}>
               {[t('Subscriber'), t('Company'), t('Status'), t('Start'), t('Expiration')].map(h => (
-                <Text key={h} style={[s.th, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{h}</Text>
+                <Text key={h} style={[s.th, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{h}</Text>
               ))}
             </View>
             {subscriptions.map(sub => (
@@ -188,8 +188,8 @@ function AdminDashboardContent() {
                 <Text style={[s.td2, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{sub.subscriber?.name}</Text>
                 <Text style={[s.td2, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{sub.organization?.name}</Text>
                 <View><Badge label={statusLabel(sub.status, t)} variant={statusVariant(sub.status)} size="sm" /></View>
-                <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(sub.starts_at, locale)}</Text>
-                <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(sub.expires_at, locale)}</Text>
+                <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{fmtDate(sub.starts_at, locale)}</Text>
+                <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{fmtDate(sub.expires_at, locale)}</Text>
               </View>
             ))}
           </View>
@@ -289,7 +289,7 @@ function SubscriberDashboardContent() {
           </View>
           <View style={[s.tableHead, { backgroundColor: colors.background }]}>
             {[t('Project'), t('Department'), t('Status'), t('Progress'), t('Delivery')].map(h => (
-              <Text key={h} style={[s.th, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{h}</Text>
+              <Text key={h} style={[s.th, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{h}</Text>
             ))}
           </View>
           {projects.map(p => (
@@ -301,9 +301,9 @@ function SubscriberDashboardContent() {
                 <View style={[s.progressTrack, { backgroundColor: colors.background }]}>
                   <View style={[s.progressFill, { backgroundColor: statusColorMap[p.status || ''] || colors.primary, width: `${p.progress || 0}%` as any }]} />
                 </View>
-                <Text style={[s.progressText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{p.progress || 0}%</Text>
+                <Text style={[s.progressText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{p.progress || 0}%</Text>
               </View>
-              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(p.due_date, locale)}</Text>
+              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{fmtDate(p.due_date, locale)}</Text>
             </View>
           ))}
         </View>
@@ -419,7 +419,7 @@ function EmployeeDashboardContent() {
           </View>
           <View style={[s.tableHead, { backgroundColor: colors.background }]}>
             {[t('Task'), t('Department'), t('Status'), t('Due Date')].map(h => (
-              <Text key={h} style={[s.th, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{h}</Text>
+              <Text key={h} style={[s.th, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{h}</Text>
             ))}
           </View>
           {tasks.map(task => (
@@ -427,7 +427,7 @@ function EmployeeDashboardContent() {
               <Text style={[s.td2, s.tdName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{task.title || task.name}</Text>
               <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{task.department?.name || '-'}</Text>
               <View><Badge label={statusLabel(task.status, t)} variant={statusVariant(task.status)} size="sm" /></View>
-              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(task.due_date, locale)}</Text>
+              <Text style={[s.td2, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{fmtDate(task.due_date, locale)}</Text>
             </View>
           ))}
         </View>
@@ -517,9 +517,9 @@ const s = StyleSheet.create({
   trendText: { fontSize: 10, fontWeight: font.weights.semibold },
 
   // Charts
-  chartsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chartsRow: { flexDirection: 'column', gap: spacing.md },
   chartCard: {
-    flex: 1, minWidth: '46%', borderRadius: radii.xxl, borderWidth: 1, padding: spacing.md,
+    width: '100%', borderRadius: radii.xxl, borderWidth: 1, padding: spacing.md,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 2,
   },
   chartCardTitle: { fontSize: font.sizes.base, fontWeight: font.weights.semibold, marginBottom: spacing.sm },

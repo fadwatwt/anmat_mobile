@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MoreHorizontal } from 'lucide-react-native';
 import { useLocale } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import { font, radii, spacing } from '../theme';
 
 export type ActionItem = {
@@ -18,16 +19,17 @@ type Props = {
 export function StatusActions({ actions }: Props) {
   const [visible, setVisible] = useState(false);
   const { isRTL } = useLocale();
+  const { colors } = useTheme();
 
   return (
     <View>
       <TouchableOpacity onPress={() => setVisible(true)} style={styles.trigger}>
-        <MoreHorizontal size={18} color="#6B7280" />
+        <MoreHorizontal size={18} color={colors.textMuted} />
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
         <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
-          <View style={styles.menu}>
+          <View style={[styles.menu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {actions.map((action, i) => (
               <TouchableOpacity
                 key={i}
@@ -35,7 +37,7 @@ export function StatusActions({ actions }: Props) {
                 onPress={() => { setVisible(false); action.onPress(); }}
               >
                 {action.icon && <View style={styles.menuIcon}>{action.icon}</View>}
-                <Text style={[styles.menuText, action.destructive && { color: '#DF1C41' }, { textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.menuText, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }, action.destructive && { color: colors.danger }]}>
                   {action.label}
                 </Text>
               </TouchableOpacity>
@@ -49,10 +51,8 @@ export function StatusActions({ actions }: Props) {
 
 const styles = StyleSheet.create({
   menu: {
-    backgroundColor: '#FFFFFF',
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     minWidth: 180,
     paddingVertical: spacing.xs,
     shadowColor: '#000',
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
   },
-  menuText: { fontSize: font.sizes.sm, color: '#374151', fontWeight: font.weights.medium },
+  menuText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.3)',

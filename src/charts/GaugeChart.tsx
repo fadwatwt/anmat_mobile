@@ -65,9 +65,10 @@ export function GaugeChart({
             )}
           </G>
         </Svg>
+        {/* A10: label text sits ABOVE the % value (matching web dy=-65 label above dy=-30 pct) */}
         <View style={styles.centerLabel}>
-          <Text style={[styles.pctText, { color: colors.tableTitle }]}>{pct}%</Text>
           <Text style={[styles.labelText, { color: colors.textMuted }]}>{label}</Text>
+          <Text style={[styles.pctText, { color: colors.tableTitle }]}>{pct}%</Text>
         </View>
       </View>
 
@@ -91,7 +92,8 @@ const styles = StyleSheet.create({
   footer: { gap: spacing.sm, marginTop: spacing.md, width: '100%' },
   footerRow: { alignItems: 'center', gap: spacing.sm },
   footerText: { flex: 1, fontSize: font.sizes.sm },
-  labelText: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold, letterSpacing: 1 },
+  // A10: label is smaller/muted (matches web "uppercase font-semibold fill-cell-secondary dy=-65")
+  labelText: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold, letterSpacing: 1, textTransform: 'uppercase' },
   pctText: { fontSize: 32, fontWeight: font.weights.bold },
   wrapper: { alignItems: 'center', width: '100%' },
 });

@@ -2,10 +2,11 @@ import { useCallback, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
-import { Edit3, Trash2, Eye, CheckCircle2 } from 'lucide-react-native';
+import { Edit3, Trash2, Eye, CheckCircle2, CalendarPlus } from 'lucide-react-native';
 import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
 import { EvaluationModal } from '../components/EvaluationModal';
+import { CreateAppointmentFromTaskModal } from '../components/agenda/CreateAppointmentFromTaskModal';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -69,7 +70,7 @@ export default function TasksScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
-  const { permissions } = useAuth();
+  const { permissions, user } = useAuth();
   const navigation = useNavigation<any>();
   const [statusFilter, setStatusFilter] = useState('all');
   const [reloadKey, setReloadKey] = useState(0);
@@ -78,6 +79,7 @@ export default function TasksScreen() {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [evalModalOpen, setEvalModalOpen] = useState(false);
   const [evalSubmitting, setEvalSubmitting] = useState(false);
+  const [appointmentTask, setAppointmentTask] = useState<TaskItem | null>(null);
 
   const has = useCallback(
     (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm)),
@@ -284,6 +286,11 @@ export default function TasksScreen() {
         onPress: () => handleDelete(item),
       });
     }
+    actions.push({
+      label: t('Create Appointment'),
+      icon: <CalendarPlus size={16} color="#8B5CF6" />,
+      onPress: () => setAppointmentTask(item),
+    });
     return actions;
   };
 
@@ -336,6 +343,15 @@ export default function TasksScreen() {
         type="task"
         isSubmitting={evalSubmitting}
         hasStages={!!selectedTask && Array.isArray(selectedTask.stages) && selectedTask.stages.length > 0}
+      />
+
+      {/* Create appointment from task modal */}
+      <CreateAppointmentFromTaskModal
+        visible={!!appointmentTask}
+        onClose={() => setAppointmentTask(null)}
+        task={appointmentTask}
+        onCreated={reload}
+        role={user?.type}
       />
     </>
   );

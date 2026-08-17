@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { G, Circle, Text as SvgText } from 'react-native-svg';
+import Svg, { G, Circle } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, font } from '../theme';
 
@@ -20,11 +21,6 @@ type Props = {
   centerLabel?: string;
 };
 
-const defaultColors = [
-  '#375DFB', '#38C793', '#F17B2C', '#DF1C41', '#7E3AF2',
-  '#FBBC05', '#0F9D58', '#4285F4', '#DB4437', '#673AB7',
-];
-
 export function DonutChart({
   data,
   total: totalProp,
@@ -33,6 +29,7 @@ export function DonutChart({
   subtitle = '',
   centerLabel,
 }: Props) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const total = totalProp ?? data.reduce((sum, s) => sum + s.value, 0);
   const radius = (size - strokeWidth) / 2;
@@ -50,6 +47,7 @@ export function DonutChart({
 
   return (
     <View style={styles.wrapper}>
+      {/* Chart ring */}
       <View style={[styles.chartContainer, { width: size, height: size }]}>
         <Svg width={size} height={size}>
           <G rotation="-90" origin={`${half}, ${half}`}>
@@ -77,24 +75,31 @@ export function DonutChart({
             ))}
           </G>
         </Svg>
+
+        {/* Center: subtitle (A5 — label context above total) then total value */}
         <View style={styles.centerLabel}>
-          <Text style={[styles.totalText, { color: colors.ink }]}>
-            {centerLabel ?? total}
-          </Text>
           {subtitle ? (
             <Text style={[styles.subtitleText, { color: colors.textMuted }]}>
               {subtitle}
             </Text>
           ) : null}
+          <Text style={[styles.totalText, { color: colors.ink }]}>
+            {centerLabel ?? total}
+          </Text>
         </View>
       </View>
+
+      {/* Legend — A4: column layout (dot+label row, then bold value below) */}
       <View style={styles.legend}>
         {data.map((slice) => (
           <View key={slice.key} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: slice.color }]} />
-            <Text style={[styles.legendLabel, { color: colors.textMuted }]}>
-              {slice.label}
-            </Text>
+            <View style={styles.legendTopRow}>
+              <View style={[styles.legendDot, { backgroundColor: slice.color }]} />
+              {/* A6 — translate label via i18n */}
+              <Text style={[styles.legendLabel, { color: colors.textMuted }]}>
+                {t(slice.label)}
+              </Text>
+            </View>
             <Text style={[styles.legendValue, { color: colors.ink }]}>
               {slice.value}
             </Text>
@@ -109,11 +114,15 @@ const styles = StyleSheet.create({
   wrapper: { alignItems: 'center', gap: spacing.md },
   chartContainer: { position: 'relative', justifyContent: 'center', alignItems: 'center' },
   centerLabel: { position: 'absolute', alignItems: 'center' },
+  // A5: subtitle (xs, muted) sits above the big number
+  subtitleText: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold, letterSpacing: 1, textTransform: 'uppercase' },
   totalText: { fontSize: font.sizes.xxl, fontWeight: font.weights.bold },
-  subtitleText: { fontSize: font.sizes.xs, fontWeight: font.weights.medium, marginTop: -2 },
-  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm, paddingHorizontal: spacing.sm },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.md, paddingHorizontal: spacing.sm },
+  // A4: each legend item is a column — dot+label on top row, value below
+  legendItem: { alignItems: 'center', gap: 2 },
+  legendTopRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendLabel: { fontSize: font.sizes.xs },
-  legendValue: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
+  // A4: value is bolder and slightly larger than label
+  legendValue: { fontSize: font.sizes.sm, fontWeight: font.weights.bold },
 });

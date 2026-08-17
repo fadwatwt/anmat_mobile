@@ -1,14 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Rect, Line, Text as SvgText, G } from 'react-native-svg';
+import Svg, { Path, Line, Text as SvgText, G } from 'react-native-svg';
 import { useTheme } from '../context/ThemeContext';
 import { font, spacing } from '../theme';
 
-type Group = {
-  key: string;
-  label: string;
-  bars: { key: string; value: number; color: string; label: string }[];
-};
+type Bar = { key: string; value: number; color: string; label: string };
+type Group = { key: string; label: string; bars: Bar[] };
 
 type Props = {
   groups: Group[];
@@ -18,7 +15,28 @@ type Props = {
   yAxisLabel?: string;
   showGrid?: boolean;
   gridCount?: number;
+  /** A7: optional legend items shown as dot+label below chart */
+  legendItems?: { label: string; color: string }[];
 };
+
+/**
+ * Build an SVG path for a rectangle with only the top two corners rounded.
+ * A8: matches web `radius={[4, 4, 0, 0]}` (recharts top-only rounded bars).
+ */
+function topRoundedRect(x: number, y: number, w: number, h: number, rx: number): string {
+  if (h <= 0) return '';
+  const r = Math.min(rx, w / 2, h / 2);
+  return [
+    `M ${x + r},${y}`,
+    `h ${w - 2 * r}`,
+    `a ${r},${r} 0 0 1 ${r},${r}`,
+    `v ${h - r}`,
+    `h ${-w}`,
+    `v ${-(h - r)}`,
+    `a ${r},${r} 0 0 1 ${r},${-r}`,
+    'z',
+  ].join(' ');
+}
 
 export function GroupedBarChart({
   groups,
@@ -28,6 +46,7 @@ export function GroupedBarChart({
   yAxisLabel,
   showGrid = true,
   gridCount = 4,
+  legendItems,
 }: Props) {
   const { colors } = useTheme();
   const barCount = groups[0]?.bars.length ?? 1;
@@ -40,7 +59,6 @@ export function GroupedBarChart({
   const padding = { top: 10, right: 10, bottom: 30, left: yAxisLabel ? 40 : 30 };
   const plotHeight = height - padding.top - padding.bottom;
   const plotWidth = groups.length * groupWidth;
-
   const chartWidth = plotWidth + padding.left + padding.right;
 
   const scaleY = (v: number) => padding.top + plotHeight - (v / range) * plotHeight;
@@ -50,6 +68,9 @@ export function GroupedBarChart({
     const y = scaleY(value);
     return { value: Math.round(value * 10) / 10, y };
   });
+
+  // Auto-derive legend items from first group's bars if not provided
+  const legend = legendItems ?? groups[0]?.bars.map((b) => ({ label: b.label, color: b.color })) ?? [];
 
   return (
     <View style={styles.wrapper}>
@@ -85,14 +106,10 @@ export function GroupedBarChart({
             const y = scaleY(bar.value);
             return (
               <G key={`${group.key}-${bar.key}`}>
-                <Rect
-                  x={x}
-                  y={y}
-                  width={barSize}
-                  height={Math.max(barH, 0)}
+                {/* A8: top-only rounded corners */}
+                <Path
+                  d={topRoundedRect(x, y, barSize, Math.max(barH, 0), barRadius)}
                   fill={bar.color}
-                  rx={barRadius}
-                  ry={barRadius}
                 />
               </G>
             );
@@ -115,10 +132,27 @@ export function GroupedBarChart({
           );
         })}
       </Svg>
+
+      {/* A7: footer dot + label legend (matches web <Legend iconType="circle" verticalAlign="bottom" />) */}
+      {legend.length > 0 && (
+        <View style={styles.legend}>
+          {legend.map((item, i) => (
+            <View key={i} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+              <Text style={[styles.legendLabel, { color: colors.textMuted }]}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: { alignItems: 'center' },
+  // A7: footer legend row
+  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.md, marginTop: spacing.sm },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendLabel: { fontSize: font.sizes.xs },
 });

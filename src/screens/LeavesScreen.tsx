@@ -20,12 +20,6 @@ import { fetchMyLeaves, deleteMyLeave, LeaveRow } from '../services/leaves';
 import { extractErrorMessage } from '../lib/http';
 import { font, radii, spacing } from '../theme';
 
-const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
-  pending: { bg: '#FEF3C7', text: '#B45309' },
-  approved: { bg: '#DCFCE7', text: '#15803D' },
-  rejected: { bg: '#FEE2E5', text: '#B91C1C' },
-};
-
 function formatTime(time?: string) {
   if (!time) return '—';
   const [h, m] = time.split(':').map(Number);
@@ -99,15 +93,20 @@ export function LeavesScreen() {
         ) : (
           <View style={[styles.table, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[styles.tableHead, { borderBottomColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]}>{t('Date')}</Text>
-              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]}>{t('Start Time')}</Text>
-              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]}>{t('End Time')}</Text>
-              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]}>{t('Reason')}</Text>
-              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]}>{t('Status')}</Text>
-              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]}>{''}</Text>
+              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]} numberOfLines={1}>{t('Date')}</Text>
+              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]} numberOfLines={1}>{t('Start Time')}</Text>
+              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]} numberOfLines={1}>{t('End Time')}</Text>
+              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]} numberOfLines={1}>{t('Reason')}</Text>
+              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]} numberOfLines={1}>{t('Status')}</Text>
+              <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]} numberOfLines={1}>{''}</Text>
             </View>
             {rows.map((r) => {
-              const st = STATUS_STYLES[r.status || 'pending'] || STATUS_STYLES.pending;
+              const st =
+                r.status === 'approved'
+                  ? { bg: colors.successBg, text: colors.successText }
+                  : r.status === 'rejected'
+                    ? { bg: colors.dangerBg, text: colors.dangerText }
+                    : { bg: colors.warningBg, text: colors.warningText };
               const statusLabel = r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : t('Pending');
               return (
                 <View key={r._id} style={[styles.tableRow, { borderBottomColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
@@ -116,7 +115,7 @@ export function LeavesScreen() {
                   <Text style={[styles.tdCell, { color: colors.textMuted, textAlign: align }]} numberOfLines={1}>{formatTime(r.end_time)}</Text>
                   <Text style={[styles.tdCell, { color: colors.textMuted, textAlign: align }]} numberOfLines={1}>{r.reason || '—'}</Text>
                   <View style={[styles.badge, { backgroundColor: st.bg }]}>
-                    <Text style={[styles.badgeText, { color: st.text }]}>{t(statusLabel)}</Text>
+                    <Text style={[styles.badgeText, { color: st.text }]} numberOfLines={1}>{t(statusLabel)}</Text>
                   </View>
                   <View>
                     {r.status === 'pending' ? (

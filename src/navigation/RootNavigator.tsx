@@ -11,7 +11,9 @@ import { EmployeeDetailScreen } from '../screens/EmployeeDetailScreen';
 import { CreateEmployeeScreen } from '../screens/CreateEmployeeScreen';
 import { EditEmployeeScreen } from '../screens/EditEmployeeScreen';
 import HRDepartmentsScreen from '../screens/HRDepartmentsScreen';
+import DepartmentProfileScreen from '../screens/DepartmentProfileScreen';
 import HRPositionsScreen from '../screens/HRPositionsScreen';
+import HRChatsScreen from '../screens/HRChatsScreen';
 import HRMeetingsScreen from '../screens/HRMeetingsScreen';
 import HRHolidaysScreen from '../screens/HRHolidaysScreen';
 import HRTeamsScreen from '../screens/HRTeamsScreen';
@@ -37,6 +39,7 @@ import SystemAdminsScreen from '../screens/SystemAdminsScreen';
 import SupportTicketsScreen from '../screens/SupportTicketsScreen';
 import SupportTicketDetailScreen from '../screens/SupportTicketDetailScreen';
 import AppointmentsScreen from '../screens/AppointmentsScreen';
+import AppointmentDetailScreen from '../screens/AppointmentDetailScreen';
 import MoneyMethodsScreen from '../screens/MoneyMethodsScreen';
 import AIScreen from '../screens/AIScreen';
 import ConversationsScreen from '../screens/ConversationsScreen';
@@ -158,8 +161,14 @@ export function RootNavigator() {
           <Stack.Screen name="HRDepartments">
             {() => <Layout><HRDepartmentsScreen /></Layout>}
           </Stack.Screen>
+          <Stack.Screen name="DepartmentProfile">
+            {() => <Layout><DepartmentProfileScreen /></Layout>}
+          </Stack.Screen>
           <Stack.Screen name="HRPositions">
             {() => <Layout><HRPositionsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="HRChats">
+            {() => <Layout><HRChatsScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="HRMeetings">
             {() => <Layout><HRMeetingsScreen /></Layout>}
@@ -271,6 +280,9 @@ export function RootNavigator() {
           </Stack.Screen>
           <Stack.Screen name="Appointments">
             {() => <Layout><AppointmentsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="AppointmentDetail">
+            {() => <Layout><AppointmentDetailScreen /></Layout>}
           </Stack.Screen>
           <Stack.Screen name="Analytics">
             {() => <Layout><AnalyticsScreen /></Layout>}

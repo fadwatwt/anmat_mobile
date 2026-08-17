@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Clock, MapPin, Check, X, Trash2 } from 'lucide-react-native';
+import { Clock, MapPin, Check, X, Trash2, Edit3 } from 'lucide-react-native';
 import { Badge } from '../Badge';
 import { useTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LanguageContext';
@@ -14,6 +14,8 @@ type Props = {
   onComplete?: (id: string) => void;
   onCancel?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onEdit?: (appointment: Appointment) => void;
+  onPress?: (appointment: Appointment) => void;
   showCountdown?: boolean;
 };
 
@@ -24,7 +26,7 @@ function statusVariant(s?: string): 'success' | 'warning' | 'danger' | 'info' | 
   return 'default';
 }
 
-export function AppointmentCard({ appointment, onComplete, onCancel, onDelete, showCountdown }: Props) {
+export function AppointmentCard({ appointment, onComplete, onCancel, onDelete, onEdit, onPress, showCountdown }: Props) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
@@ -32,7 +34,12 @@ export function AppointmentCard({ appointment, onComplete, onCancel, onDelete, s
   const isUpcoming = appointment.status === 'upcoming' || !appointment.status;
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      onPress={() => onPress?.(appointment)}
+      activeOpacity={onPress ? 0.7 : 1}
+      disabled={!onPress}
+    >
       <View style={[styles.accent, { backgroundColor: catColor }]} />
       <View style={styles.body}>
         <View style={styles.headRow}>
@@ -65,8 +72,14 @@ export function AppointmentCard({ appointment, onComplete, onCancel, onDelete, s
           </Text>
         )}
 
-        {isUpcoming && (onComplete || onCancel || onDelete) && (
+        {isUpcoming && (onComplete || onCancel || onDelete || onEdit) && (
           <View style={[styles.actions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            {onEdit && (
+              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.statusBg }]} onPress={() => onEdit(appointment)}>
+                <Edit3 size={14} color={colors.primary} />
+                <Text style={[styles.actionText, { color: colors.primary }]}>{t('Edit')}</Text>
+              </TouchableOpacity>
+            )}
             {onComplete && (
               <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.successBg }]} onPress={() => onComplete(appointment._id)}>
                 <Check size={14} color={colors.successText} />
@@ -88,7 +101,7 @@ export function AppointmentCard({ appointment, onComplete, onCancel, onDelete, s
           </View>
         )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

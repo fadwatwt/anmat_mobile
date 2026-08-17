@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text,
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { Bird, Globe, Trash2, Pencil, Plus, FolderCog } from 'lucide-react-native';
+import { Bird, FileUp, FolderCog, Globe, Heart, LogIn, Pencil, Plus, Reply, Trash2, UserPlus } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,12 @@ import { EmptyState } from '../components/EmptyState';
 import { AccountQuotaCard } from '../components/social/AccountQuotaCard';
 import { TwitterAccountModal } from '../modals/TwitterAccountModal';
 import { ManageCategoriesModal } from '../modals/ManageCategoriesModal';
+import { ImportAccountsModal } from '../modals/ImportAccountsModal';
+import { LoginAccountsModal } from '../modals/LoginAccountsModal';
+import { PostTweetModal } from '../modals/PostTweetModal';
+import { FollowModal } from '../modals/FollowModal';
+import { LikeModal } from '../modals/LikeModal';
+import { ReplyModal } from '../modals/ReplyModal';
 import {
   fetchSocialMediaQuota, fetchTwitterAccounts, deleteTwitterAccount,
   SocialMediaQuota, TwitterAccount,
@@ -39,6 +45,12 @@ function TwitterTab() {
   const [accountModal, setAccountModal] = useState(false);
   const [editAccount, setEditAccount] = useState<TwitterAccount | null>(null);
   const [catModal, setCatModal] = useState(false);
+  const [importModal, setImportModal] = useState(false);
+  const [loginModal, setLoginModal] = useState(false);
+  const [postModal, setPostModal] = useState(false);
+  const [followModal, setFollowModal] = useState(false);
+  const [likeModal, setLikeModal] = useState(false);
+  const [replyModal, setReplyModal] = useState(false);
 
   const has = useCallback(
     (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm)),
@@ -48,7 +60,12 @@ function TwitterTab() {
   const canCreate = has('social_media_accounts.create');
   const canUpdate = has('social_media_accounts.update');
   const canDelete = has('social_media_accounts.delete');
+  const canImport = has('social_media_accounts.import');
   const canManageCategories = has('social_media_categories.list');
+  const canPost = has('social_media_actions.post');
+  const canFollow = has('social_media_actions.follow');
+  const canLike = has('social_media_actions.like');
+  const canReply = has('social_media_actions.reply');
 
   const load = useCallback(async () => {
     try {
@@ -94,7 +111,7 @@ function TwitterTab() {
         <AccountQuotaCard used={quota?.used} limit={quota?.limit} unlimited={quota?.unlimited} />
 
         {/* Quick actions */}
-        <View style={[styles.actions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.actions, { flexDirection: isRTL ? 'row-reverse' : 'row', flexWrap: 'wrap' }]}>
           {canCreate && (
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: colors.primary, opacity: quotaFull ? 0.5 : 1 }]}
@@ -103,6 +120,16 @@ function TwitterTab() {
             >
               <Plus size={16} color="#FFF" />
               <Text style={styles.actionText}>{t('Add Account')}</Text>
+            </TouchableOpacity>
+          )}
+          {canImport && (
+            <TouchableOpacity
+              style={[styles.actionBtnOutline, { borderColor: colors.border, opacity: quotaFull ? 0.5 : 1 }]}
+              onPress={() => setImportModal(true)}
+              disabled={quotaFull}
+            >
+              <FileUp size={16} color={colors.primary} />
+              <Text style={[styles.actionTextOutline, { color: colors.primary }]}>{t('Import CSV')}</Text>
             </TouchableOpacity>
           )}
           {canManageCategories && (
@@ -115,6 +142,42 @@ function TwitterTab() {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Automation actions */}
+        {(canPost || canFollow || canLike || canReply || canUpdate) && (
+          <View style={[styles.actions, { flexDirection: isRTL ? 'row-reverse' : 'row', flexWrap: 'wrap' }]}>
+            {canPost && (
+              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={() => setPostModal(true)}>
+                <Plus size={16} color="#FFF" />
+                <Text style={styles.actionText}>{t('Post')}</Text>
+              </TouchableOpacity>
+            )}
+            {canFollow && (
+              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={() => setFollowModal(true)}>
+                <UserPlus size={16} color="#FFF" />
+                <Text style={styles.actionText}>{t('Follow')}</Text>
+              </TouchableOpacity>
+            )}
+            {canLike && (
+              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={() => setLikeModal(true)}>
+                <Heart size={16} color="#FFF" />
+                <Text style={styles.actionText}>{t('Like')}</Text>
+              </TouchableOpacity>
+            )}
+            {canReply && (
+              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={() => setReplyModal(true)}>
+                <Reply size={16} color="#FFF" />
+                <Text style={styles.actionText}>{t('Reply')}</Text>
+              </TouchableOpacity>
+            )}
+            {canUpdate && (
+              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={() => setLoginModal(true)}>
+                <LogIn size={16} color="#FFF" />
+                <Text style={styles.actionText}>{t('Login')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         <Text style={[styles.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Twitter Accounts')}</Text>
 
@@ -173,6 +236,21 @@ function TwitterTab() {
         onClose={() => setCatModal(false)}
         onChanged={load}
       />
+      <ImportAccountsModal
+        visible={importModal}
+        onClose={() => setImportModal(false)}
+        onImported={load}
+      />
+      <LoginAccountsModal
+        visible={loginModal}
+        onClose={() => setLoginModal(false)}
+        accounts={accounts}
+        onChecked={load}
+      />
+      <PostTweetModal visible={postModal} onClose={() => setPostModal(false)} accounts={accounts} />
+      <FollowModal visible={followModal} onClose={() => setFollowModal(false)} accounts={accounts} />
+      <LikeModal visible={likeModal} onClose={() => setLikeModal(false)} accounts={accounts} />
+      <ReplyModal visible={replyModal} onClose={() => setReplyModal(false)} accounts={accounts} />
     </>
   );
 }
@@ -211,6 +289,9 @@ export default function SocialMediaScreen() {
           tabBarStyle: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border, elevation: 0 },
           tabBarIndicatorStyle: { backgroundColor: colors.primary, height: 3 },
           tabBarLabelStyle: { fontSize: 12, fontWeight: '600', textTransform: 'none' },
+          tabBarScrollEnabled: true,
+          tabBarItemStyle: { width: 'auto', minWidth: 80, paddingHorizontal: spacing.xs },
+          sceneStyle: { backgroundColor: colors.background },
           headerShown: false,
         };
       }}

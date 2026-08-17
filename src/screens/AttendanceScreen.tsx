@@ -151,19 +151,19 @@ export function AttendanceScreen() {
       ) : (
         <View style={[styles.table, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={[styles.tableHead, { borderBottomColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]}>{t('Date')}</Text>
-            <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]}>{t('Check In')}</Text>
-            <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]}>{t('Check Out')}</Text>
+            <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]} numberOfLines={1}>{t('Date')}</Text>
+            <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]} numberOfLines={1}>{t('Check In')}</Text>
+            <Text style={[styles.thCell, { color: colors.textMuted, textAlign: align }]} numberOfLines={1}>{t('Check Out')}</Text>
           </View>
           {records.map((r) => (
             <View key={r._id} style={[styles.tableRow, { borderBottomColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <Text style={[styles.tdCell, { color: colors.ink, textAlign: align }]} numberOfLines={1}>{r.date || '—'}</Text>
-              <Text style={[styles.tdCell, { color: colors.ink, textAlign: align }]}>{r.start_time || '—'}</Text>
-              <Text style={[styles.tdCell, { textAlign: align }]}>
+              <Text style={[styles.tdCell, { color: colors.ink, textAlign: align }]} numberOfLines={1}>{r.start_time || '—'}</Text>
+              <Text style={[styles.tdCell, { textAlign: align }]} numberOfLines={1}>
                 {r.end_time ? (
-                  <Text style={{ color: colors.ink }}>{r.end_time}</Text>
+                  <Text style={{ color: colors.ink }} numberOfLines={1}>{r.end_time}</Text>
                 ) : (
-                  <Text style={{ color: '#C2540A' }}>{t('In Progress')}</Text>
+                  <Text style={{ color: '#C2540A' }} numberOfLines={1}>{t('In Progress')}</Text>
                 )}
               </Text>
             </View>

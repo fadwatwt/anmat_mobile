@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Rect, Line, Text as SvgText, G } from 'react-native-svg';
+import { View, StyleSheet } from 'react-native';
+import Svg, { Path, Line, Text as SvgText, G } from 'react-native-svg';
 import { useTheme } from '../context/ThemeContext';
-import { font, spacing } from '../theme';
+import { font } from '../theme';
 
 type BarItem = {
   key: string;
@@ -25,6 +25,27 @@ type Props = {
 
 const defaultColor = '#375DFB';
 
+/**
+ * Build an SVG path for a rectangle with only the top two corners rounded.
+ * A8: matches web `radius={[4, 4, 0, 0]}` (recharts top-only rounded bars).
+ */
+function topRoundedRect(x: number, y: number, w: number, h: number, rx: number): string {
+  if (h <= 0) return '';
+  const r = Math.min(rx, w / 2, h / 2);
+  // Clockwise from top-left arc start:
+  // (x+r, y) → right → arc top-right → down → left bottom (square) → up → arc top-left → close
+  return [
+    `M ${x + r},${y}`,
+    `h ${w - 2 * r}`,
+    `a ${r},${r} 0 0 1 ${r},${r}`,
+    `v ${h - r}`,
+    `h ${-w}`,
+    `v ${-(h - r)}`,
+    `a ${r},${r} 0 0 1 ${r},${-r}`,
+    'z',
+  ].join(' ');
+}
+
 export function BarChart({
   data,
   height = 200,
@@ -37,7 +58,6 @@ export function BarChart({
   gridCount = 4,
 }: Props) {
   const { colors } = useTheme();
-  const isRtl = true;
 
   const values = data.map((d) => d.value);
   const minValue = yDomain?.[0] ?? 0;
@@ -90,14 +110,10 @@ export function BarChart({
           const y = scaleY(d.value);
           return (
             <G key={d.key}>
-              <Rect
-                x={x}
-                y={y}
-                width={barSize}
-                height={Math.max(barH, 0)}
+              {/* A8: top-only rounded corners */}
+              <Path
+                d={topRoundedRect(x, y, barSize, Math.max(barH, 0), barRadius)}
                 fill={d.color ?? color}
-                rx={barRadius}
-                ry={barRadius}
               />
               <SvgText
                 x={x + barSize / 2}

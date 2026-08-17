@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,7 +10,8 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { User, Lock, Check, Eye, EyeOff } from 'lucide-react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import { User, Lock, Check, Eye, EyeOff, Camera } from 'lucide-react-native';
 import { SelectDropdown } from '../../components/SelectDropdown';
 import { useTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LanguageContext';
@@ -20,7 +22,9 @@ import {
   updateProfile,
   updateEmployeeDetail,
   changePassword,
+  uploadAvatar,
 } from '../../services/profile';
+import { extractErrorMessage } from '../../lib/http';
 
 const COUNTRIES = [
   { label: 'Egypt', value: 'Egypt' },
@@ -62,6 +66,9 @@ export default function ProfileSecurityTab() {
   const isEmployee = user?.type === 'Employee';
   const isAdmin = user?.type === 'Admin';
 
+  // Avatar upload
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
   // Profile form
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -86,6 +93,29 @@ export default function ProfileSecurityTab() {
 
   const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
   const cityOptions = CITIES[pCountry] || CITIES.default;
+
+  const handlePickImage = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'image/*',
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets[0]) return;
+      const asset = result.assets[0];
+      setAvatarUploading(true);
+      await uploadAvatar({
+        uri: asset.uri,
+        name: asset.name,
+        type: asset.mimeType || 'image/jpeg',
+      });
+      await refreshUser();
+      Alert.alert(t('Success'), t('Profile image updated successfully'));
+    } catch (e: any) {
+      Alert.alert(t('Error'), extractErrorMessage(e) || t('Failed to upload image'));
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   const handleSaveProfile = async () => {
     if (!name.trim()) {
@@ -207,6 +237,29 @@ export default function ProfileSecurityTab() {
         <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.ink, textAlign: align }]}>{t('Personal Information')}</Text>
           <Text style={[styles.sectionDesc, { color: colors.textMuted, textAlign: align }]}>{t('Update your personal details')}</Text>
+
+          <View style={[styles.avatarRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Image
+              source={{ uri: user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=random` }}
+              style={[styles.avatar, { borderColor: colors.primary }]}
+            />
+            <View style={[styles.avatarTextWrap, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+              <Text style={[styles.avatarLabel, { color: colors.ink, textAlign: align }]}>{t('Upload Image')}</Text>
+              <Text style={[styles.avatarHint, { color: colors.textMuted, textAlign: align }]}>{t('Min 400x400px, PNG or JPEG')}</Text>
+              <TouchableOpacity
+                style={[styles.uploadBtn, { borderColor: colors.border, backgroundColor: colors.background }]}
+                onPress={handlePickImage}
+                disabled={avatarUploading}
+              >
+                <Camera size={14} color={colors.primary} />
+                <Text style={[styles.uploadBtnText, { color: colors.ink }]}>
+                  {avatarUploading ? t('Uploading...') : t('Upload')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.fieldGroup}>
             <View>
@@ -344,6 +397,28 @@ const styles = StyleSheet.create({
   sectionDesc: { fontSize: font.sizes.xs, marginTop: -spacing.sm },
   fieldGroup: { gap: spacing.md },
   fieldLabel: { fontSize: font.sizes.xs, fontWeight: font.weights.medium, marginBottom: 4 },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: radii.full,
+    borderWidth: 2,
+  },
+  avatarRow: { alignItems: 'center', gap: spacing.md },
+  avatarTextWrap: { flex: 1, gap: 2 },
+  avatarLabel: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
+  avatarHint: { fontSize: font.sizes.xs },
+  uploadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    marginTop: spacing.xs,
+  },
+  uploadBtnText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  divider: { height: 1, marginVertical: spacing.xs },
   input: {
     borderWidth: 1,
     borderRadius: radii.lg,

@@ -18,6 +18,8 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { useNavigation } from '@react-navigation/native';
+import { extractErrorMessage } from '../lib/http';
+import { createChat, fetchChats } from '../services/conversations';
 import { AssignDepartmentModal } from '../modals/AssignDepartmentModal';
 import { CreateEmployeeModal } from '../modals/CreateEmployeeModal';
 import { EditEmployeeModal } from '../modals/EditEmployeeModal';
@@ -39,7 +41,7 @@ const HEADERS = ['Employees', 'Contact', 'Department', 'Salary', 'Rating', 'Regi
 
 export function EmployeeListScreen() {
   const navigation = useNavigation<any>();
-  const { permissions } = useAuth();
+  const { permissions, user } = useAuth();
   const { colors, isDark } = useTheme();
   const { isRTL } = useLocale();
   const { t } = useTranslation();
@@ -136,6 +138,21 @@ export function EmployeeListScreen() {
     );
   };
 
+  const handleChatWithEmployee = async (emp: EmployeeDetailItem) => {
+    const uid = emp.user_id;
+    if (!uid) return;
+    try {
+      const chats = await fetchChats(user?._id);
+      const existing = chats.find((c) => !c.is_group && c.participants?.some((p) => p?._id === uid));
+      if (!existing) {
+        await createChat({ participants_ids: [uid], is_group: false });
+      }
+      navigation.navigate('Conversations');
+    } catch (e) {
+      Alert.alert(t('Error'), extractErrorMessage(e) || t('Failed to start chat'));
+    }
+  };
+
   const handleUnassignDepartment = (emp: EmployeeDetailItem) => {
     const deptId = typeof emp.department_id === 'object' ? emp.department_id?._id : emp.department_id;
     if (!deptId) return;
@@ -161,38 +178,38 @@ export function EmployeeListScreen() {
     const hasDept = !!(emp.department || emp.department_id);
     const items: ActionItem[] = [];
     if (canUpdate) {
-      items.push({ label: t('Edit'), icon: <Edit3 size={16} color="#375DFB" />, onPress: () => { setSelectedEmp(emp); setShowEdit(true); } });
+      items.push({ label: t('Edit'), icon: <Edit3 size={16} color={colors.primary} />, onPress: () => { setSelectedEmp(emp); setShowEdit(true); } });
     }
     if (canNotify) {
-      items.push({ label: t('Send Notification'), icon: <Bell size={16} color="#375DFB" />, onPress: () => { setSelectedEmp(emp); setShowNotify(true); } });
+      items.push({ label: t('Send Notification'), icon: <Bell size={16} color={colors.primary} />, onPress: () => { setSelectedEmp(emp); setShowNotify(true); } });
     }
     if (canUpdate) {
       items.push({
         label: hasDept ? t('Change Department') : t('Assign Department'),
-        icon: <Building2 size={16} color="#10B981" />,
+        icon: <Building2 size={16} color={colors.success} />,
         onPress: () => { setSelectedEmp(emp); setShowAssign(true); },
       });
       if (hasDept) {
         items.push({
-          label: t('Unassign Department'), icon: <LogOut size={16} color="#F59E0B" />,
+          label: t('Unassign Department'), icon: <LogOut size={16} color={colors.warning} />,
           onPress: () => handleUnassignDepartment(emp),
         });
       }
       items.push({
         label: emp.user?.is_active ? t('Deactivate') : t('Activate'),
-        icon: emp.user?.is_active ? <ToggleRight size={16} color="#F59E0B" /> : <ToggleLeft size={16} color="#10B981" />,
+        icon: emp.user?.is_active ? <ToggleRight size={16} color={colors.warning} /> : <ToggleLeft size={16} color={colors.success} />,
         onPress: () => handleToggleActive(emp),
       });
     }
     if (canChat) {
       items.push({
-        label: t('Chat'), icon: <MessageCircle size={16} color="#3B82F6" />,
-        onPress: () => {},
+        label: t('Chat'), icon: <MessageCircle size={16} color={colors.primary} />,
+        onPress: () => handleChatWithEmployee(emp),
       });
     }
     if (canDelete) {
       items.push({
-        label: t('Delete'), icon: <Trash2 size={16} color="#DF1C41" />,
+        label: t('Delete'), icon: <Trash2 size={16} color={colors.danger} />,
         onPress: () => handleDelete(emp), destructive: true,
       });
     }
@@ -216,42 +233,42 @@ export function EmployeeListScreen() {
           />
         </View>
         <View style={[s.td, { width: COL_WIDTHS[1] }]}>
-          <Text style={[s.contactEmail, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{u.email || 'N/A'}</Text>
-          <Text style={[s.contactPhone, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{u.phone || 'N/A'}</Text>
+          <Text style={[s.contactEmail, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{u.email || 'N/A'}</Text>
+          <Text style={[s.contactPhone, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{u.phone || 'N/A'}</Text>
         </View>
         <View style={[s.td, { width: COL_WIDTHS[2] }]}>
-          <Text style={[s.deptName, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
+          <Text style={[s.deptName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
             {(emp.department?.name || (typeof emp.department_id === 'object' ? emp.department_id?.name : null)) || 'N/A'}
           </Text>
-          <Text style={[s.deptLocation, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{emp.country ? `${emp.country}, ${emp.city || ''}` : ''}</Text>
+          <Text style={[s.deptLocation, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{emp.country ? `${emp.country}, ${emp.city || ''}` : ''}</Text>
         </View>
         <View style={[s.td, { width: COL_WIDTHS[3] }]}>
-          <Text style={[s.salaryAmount, { textAlign: isRTL ? 'right' : 'left' }]}>${emp.salary?.toLocaleString?.() || '0'}</Text>
-          <Text style={[s.salaryHours, { textAlign: isRTL ? 'right' : 'left' }]}>{emp.work_hours || 0} {t('hrs/day')}</Text>
+          <Text style={[s.salaryAmount, { color: colors.primary, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>${emp.salary?.toLocaleString?.() || '0'}</Text>
+          <Text style={[s.salaryHours, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{emp.work_hours || 0} {t('hrs/day')}</Text>
         </View>
         <View style={[s.td, { width: COL_WIDTHS[4] }]}>
           {emp.overall_rating > 0 ? (
             <StarRating rating={emp.overall_rating} />
           ) : (
-            <Text style={[s.noRating, { textAlign: isRTL ? 'right' : 'left' }]}>{t('No rating yet')}</Text>
+            <Text style={[s.noRating, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{t('No rating yet')}</Text>
           )}
         </View>
         <View style={[s.td, { width: COL_WIDTHS[5] }]}>
           {emp.registration_status === 'complete' ? (
             <View style={[s.regRow, { flexDirection: rowDir }]}>
-              <CheckCircle size={16} color="#059669" />
-              <Text style={[s.regComplete, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Complete')}</Text>
+              <CheckCircle size={16} color={colors.success} />
+              <Text style={[s.regComplete, { color: colors.successText, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{t('Complete')}</Text>
             </View>
           ) : emp.registration_status === 'registered' ? (
             <View style={[s.regRow, { flexDirection: rowDir }]}>
-              <UserRound size={16} color="#3B82F6" />
-              <Text style={[s.regRegistered, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Registered')}</Text>
+              <UserRound size={16} color={colors.primary} />
+              <Text style={[s.regRegistered, { color: colors.primary, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{t('Registered')}</Text>
             </View>
           ) : (
             <View style={s.regCol}>
               <View style={[s.regRow, { flexDirection: rowDir }]}>
-                <UserPlus size={16} color="#F59E0B" />
-                <Text style={[s.regPending, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Pending')}</Text>
+                <UserPlus size={16} color={colors.warning} />
+                <Text style={[s.regPending, { color: colors.warningText, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{t('Pending')}</Text>
               </View>
               {emp.invitation_token && (
                 <TouchableOpacity style={[s.copyLink, { flexDirection: rowDir }]} onPress={() => {
@@ -259,16 +276,16 @@ export function EmployeeListScreen() {
                   navigator.clipboard?.writeText(link);
                   Alert.alert(t('Copied'), t('Invitation link copied to clipboard'));
                 }}>
-                  <Copy size={10} color="#375DFB" />
-                  <Text style={[s.copyLinkText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Copy Link')}</Text>
+                  <Copy size={10} color={colors.primary} />
+                  <Text style={[s.copyLinkText, { color: colors.primary, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{t('Copy Link')}</Text>
                 </TouchableOpacity>
               )}
             </View>
           )}
         </View>
         <View style={[s.td, { width: COL_WIDTHS[6] }]}>
-          <View style={[s.statusBadge, { backgroundColor: u.is_active ? '#DCFCE7' : '#FEE2E2' }]}>
-            <Text style={[s.statusText, { color: u.is_active ? '#166534' : '#991B1B', textAlign: isRTL ? 'right' : 'left' }]}>
+          <View style={[s.statusBadge, { backgroundColor: u.is_active ? colors.successBg : colors.dangerBg }]}>
+            <Text style={[s.statusText, { color: u.is_active ? colors.successText : colors.dangerText, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
               {u.is_active ? t('Active') : t('Inactive')}
             </Text>
           </View>
@@ -295,15 +312,15 @@ export function EmployeeListScreen() {
           {(canNotify || canCreate) && (
             <>
               {canNotify && (
-                <TouchableOpacity style={[s.toolBtn, s.notifyBtn, { flexDirection: rowDir }]} onPress={() => setShowNotify(true)}>
-                  <Bell size={16} color="#375DFB" />
-                  <Text style={[s.notifyBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Send Notification')}</Text>
+                <TouchableOpacity style={[s.toolBtn, s.notifyBtn, { backgroundColor: colors.primaryLight, flexDirection: rowDir }]} onPress={() => setShowNotify(true)}>
+                  <Bell size={16} color={colors.primary} />
+                  <Text style={[s.notifyBtnText, { color: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{t('Send Notification')}</Text>
                 </TouchableOpacity>
               )}
               {canCreate && (
-                <TouchableOpacity style={[s.toolBtn, s.inviteBtn, { flexDirection: rowDir }]} onPress={() => setShowInvite(true)}>
-                  <UserPlus size={16} color="#374151" />
-                  <Text style={[s.inviteBtnText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('Invite Employee')}</Text>
+                <TouchableOpacity style={[s.toolBtn, s.inviteBtn, { borderColor: colors.border, flexDirection: rowDir }]} onPress={() => setShowInvite(true)}>
+                  <UserPlus size={16} color={colors.ink} />
+                  <Text style={[s.inviteBtnText, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Invite Employee')}</Text>
                 </TouchableOpacity>
               )}
             </>
@@ -313,17 +330,17 @@ export function EmployeeListScreen() {
 
       {/* Search */}
       <View style={[s.searchBar, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: rowDir }]}>
-        <Search size={18} color="#9CA3AF" />
+        <Search size={18} color={colors.textMuted} />
         <TextInput
           placeholder={t('Search employees...')}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
           style={[s.searchInput, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}
         />
         {search ? (
           <TouchableOpacity onPress={() => setSearch('')}>
-            <X size={16} color="#9CA3AF" />
+            <X size={16} color={colors.textMuted} />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -332,10 +349,10 @@ export function EmployeeListScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator bounces={false} style={s.tableOuter}>
         <View>
           {/* Header */}
-          <View style={[s.thead, { backgroundColor: colors.background, flexDirection: rowDir }]}>
+          <View style={[s.thead, { backgroundColor: colors.background, borderBottomColor: colors.border, flexDirection: rowDir }]}>
             {HEADERS.map((h, i) => (
               <View key={i} style={[s.th, { width: COL_WIDTHS[i] }]}>
-                <Text style={[s.thText, { textAlign: isRTL ? 'right' : 'left' }]}>{h ? t(h) : ''}</Text>
+                <Text style={[s.thText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{h ? t(h) : ''}</Text>
               </View>
             ))}
           </View>
@@ -370,25 +387,25 @@ export function EmployeeListScreen() {
         </View>
         <View style={[s.pagCenter, { flexDirection: rowDir }]}>
           <TouchableOpacity onPress={() => setPage(1)} disabled={page <= 1} style={s.pagBtn}>
-            <ChevronLeft size={16} color={page <= 1 ? '#D1D5DB' : '#374151'} />
+            <ChevronLeft size={16} color={page <= 1 ? colors.border : colors.ink} />
           </TouchableOpacity>
           {Array.from({ length: totalPages }).map((_, i) => {
             if (totalPages > 5 && Math.abs(page - (i + 1)) > 1 && i !== 0 && i !== totalPages - 1) {
-              if (i === 1 || i === totalPages - 2) return <Text key={i} style={[s.pagDots, { textAlign: isRTL ? 'right' : 'left' }]}>...</Text>;
+              if (i === 1 || i === totalPages - 2) return <Text key={i} style={[s.pagDots, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>...</Text>;
               return null;
             }
             return (
               <TouchableOpacity
                 key={i}
                 onPress={() => setPage(i + 1)}
-                style={[s.pagNum, page === i + 1 && { backgroundColor: colors.primary }]}
+                style={[s.pagNum, { borderColor: colors.border }, page === i + 1 && { backgroundColor: colors.primary, borderColor: colors.primary }]}
               >
                 <Text style={[s.pagNumText, { textAlign: isRTL ? 'right' : 'left' }, page === i + 1 && { color: '#FFF' }]}>{i + 1}</Text>
               </TouchableOpacity>
             );
           })}
           <TouchableOpacity onPress={() => setPage(totalPages)} disabled={page >= totalPages} style={s.pagBtn}>
-            <ChevronRight size={16} color={page >= totalPages ? '#D1D5DB' : '#374151'} />
+            <ChevronRight size={16} color={page >= totalPages ? colors.border : colors.ink} />
           </TouchableOpacity>
         </View>
         <View style={s.pagRight}>
@@ -433,10 +450,10 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.lg,
   },
-  notifyBtn: { backgroundColor: '#EEF2FF' },
-  notifyBtnText: { color: '#375DFB', fontSize: font.sizes.sm, fontWeight: font.weights.medium },
-  inviteBtn: { borderWidth: 1, borderColor: '#E5E7EB' },
-  inviteBtnText: { color: '#374151', fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  notifyBtn: {},
+  notifyBtnText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  inviteBtn: { borderWidth: 1 },
+  inviteBtnText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
   fab: {
     position: 'absolute',
     bottom: spacing.xl,
@@ -460,10 +477,10 @@ const s = StyleSheet.create({
   tableOuter: { flex: 1 },
   thead: {
     flexDirection: 'row', paddingVertical: spacing.sm, paddingHorizontal: spacing.sm,
-    borderBottomWidth: 1, borderBottomColor: '#E5E7EB',
+    borderBottomWidth: 1,
   },
   th: { paddingHorizontal: spacing.sm },
-  thText: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold, color: '#6B7280' },
+  thText: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
   tableBody: { flex: 1 },
   tr: {
     flexDirection: 'row', paddingHorizontal: spacing.sm,
@@ -472,20 +489,20 @@ const s = StyleSheet.create({
   td: {
     paddingHorizontal: spacing.sm, justifyContent: 'center',
   },
-  contactEmail: { fontSize: font.sizes.sm, fontWeight: font.weights.medium, color: '#111827' },
-  contactPhone: { fontSize: font.sizes.xs, color: '#6B7280', marginTop: 1 },
-  deptName: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold, color: '#111827' },
-  deptLocation: { fontSize: 10, color: '#9CA3AF', marginTop: 1 },
-  salaryAmount: { fontSize: font.sizes.sm, fontWeight: font.weights.bold, color: '#375DFB' },
-  salaryHours: { fontSize: 10, color: '#9CA3AF' },
-  noRating: { fontSize: 10, color: '#9CA3AF', fontStyle: 'italic' },
+  contactEmail: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
+  contactPhone: { fontSize: font.sizes.xs, marginTop: 1 },
+  deptName: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
+  deptLocation: { fontSize: 10, marginTop: 1 },
+  salaryAmount: { fontSize: font.sizes.sm, fontWeight: font.weights.bold },
+  salaryHours: { fontSize: 10 },
+  noRating: { fontSize: 10, fontStyle: 'italic' },
   regRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   regCol: { gap: 2 },
-  regComplete: { fontSize: font.sizes.xs, fontWeight: font.weights.medium, color: '#059669' },
-  regRegistered: { fontSize: font.sizes.xs, fontWeight: font.weights.medium, color: '#3B82F6' },
-  regPending: { fontSize: font.sizes.xs, fontWeight: font.weights.medium, color: '#D97706' },
+  regComplete: { fontSize: font.sizes.xs, fontWeight: font.weights.medium },
+  regRegistered: { fontSize: font.sizes.xs, fontWeight: font.weights.medium },
+  regPending: { fontSize: font.sizes.xs, fontWeight: font.weights.medium },
   copyLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  copyLinkText: { fontSize: 10, color: '#375DFB', textDecorationLine: 'underline' },
+  copyLinkText: { fontSize: 10, textDecorationLine: 'underline' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 99 },
   statusText: { fontSize: font.sizes.xs, fontWeight: font.weights.medium },
   emptyState: { padding: spacing.xl, alignItems: 'center', justifyContent: 'center' },
@@ -499,9 +516,9 @@ const s = StyleSheet.create({
   pagInfo: { fontSize: font.sizes.xs },
   pagCenter: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   pagBtn: { padding: 4 },
-  pagDots: { color: '#9CA3AF', fontSize: font.sizes.sm },
-  pagNum: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
-  pagNumText: { fontSize: font.sizes.sm, color: '#374151', fontWeight: font.weights.medium },
+  pagDots: { fontSize: font.sizes.sm },
+  pagNum: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  pagNumText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
   pagRight: {},
   rowsPerPage: { borderWidth: 1, borderRadius: radii.lg, paddingHorizontal: spacing.sm, paddingVertical: 4 },
   rowsPerPageText: { fontSize: font.sizes.xs },

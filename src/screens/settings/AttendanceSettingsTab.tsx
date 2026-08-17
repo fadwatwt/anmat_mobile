@@ -14,6 +14,7 @@ import { Clock } from 'lucide-react-native';
 import { SelectDropdown } from '../../components/SelectDropdown';
 import { useTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import { font, radii, spacing } from '../../theme';
 import {
   fetchAttendanceSettings,
@@ -40,6 +41,11 @@ export default function AttendanceSettingsTab() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const { user, permissions } = useAuth();
+
+  const has = (perm: string) =>
+    Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm));
+  const canEdit = user?.type === 'Admin' || has('attendances.manage_settings');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -116,11 +122,13 @@ export default function AttendanceSettingsTab() {
         </View>
 
         <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: colors.primary }]}
-          onPress={handleSave}
+          style={[styles.saveBtn, { backgroundColor: canEdit ? colors.primary : colors.border }]}
+          onPress={canEdit ? handleSave : undefined}
           disabled={saving}
         >
-          <Text style={styles.saveBtnText}>{saving ? t('Saving...') : t('Apply Changes')}</Text>
+          <Text style={styles.saveBtnText}>
+            {saving ? t('Saving...') : canEdit ? t('Apply Changes') : t('You do not have permission')}
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

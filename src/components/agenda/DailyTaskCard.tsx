@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Check, Trash2 } from 'lucide-react-native';
+import { Check, Trash2, Edit3 } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LanguageContext';
 import { font, radii, spacing } from '../../theme';
@@ -12,9 +12,10 @@ type Props = {
   task: DailyTask;
   onComplete?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onEdit?: (task: DailyTask) => void;
 };
 
-export function DailyTaskCard({ task, onComplete, onDelete }: Props) {
+export function DailyTaskCard({ task, onComplete, onDelete, onEdit }: Props) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
@@ -46,6 +47,12 @@ export function DailyTaskCard({ task, onComplete, onDelete }: Props) {
       </View>
 
       <View style={[styles.dot, { backgroundColor: dotColor }]} />
+
+      {onEdit && (
+        <TouchableOpacity style={styles.delBtn} onPress={() => onEdit(task)}>
+          <Edit3 size={15} color={colors.primary} />
+        </TouchableOpacity>
+      )}
 
       {onDelete && (
         <TouchableOpacity style={styles.delBtn} onPress={() => onDelete(task._id)}>

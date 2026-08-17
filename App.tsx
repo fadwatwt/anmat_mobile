@@ -8,6 +8,7 @@ import { LanguageProvider } from './src/context/LanguageContext';
 import { ProcessingProvider } from './src/context/ProcessingContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { CallProvider } from './src/calls/CallContext';
 import {
   cleanupListeners,
   startForegroundListener,
@@ -32,9 +33,11 @@ function AppContent() {
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <ProcessingProvider>
         <AuthProvider>
-          <NavigationContainer>
-            <RootNavigator />
-          </NavigationContainer>
+          <CallProvider>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+          </CallProvider>
         </AuthProvider>
       </ProcessingProvider>
     </>

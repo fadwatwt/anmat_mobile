@@ -102,3 +102,68 @@ export async function updateAccountCategory(id: string, name: string, parent?: s
 export async function deleteAccountCategory(id: string): Promise<void> {
   await tweetHttp.delete(`/accountcategories/${id}`);
 }
+
+// ===== External file part (multipart) =====
+export type LocalFile = { uri: string; name: string; type: string };
+
+export type ImportResult = { insertedCount?: number; failed?: number };
+
+export type TweetAccountCheckResult = {
+  user: string;
+  status: boolean;
+  message?: string;
+};
+
+async function postForm(url: string, formData: FormData): Promise<void> {
+  await tweetHttp.post(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+}
+
+export async function importTwitterAccounts(file: LocalFile, category: string): Promise<ImportResult> {
+  const formData = new FormData();
+  formData.append('csvFile', file as unknown as Blob);
+  formData.append('Category', category);
+  const res = await tweetHttp.post<ImportResult>('/accounts/import/tweet', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data || {};
+}
+
+export async function checkTwitterAccounts(accounts: string[], userAgent: string): Promise<TweetAccountCheckResult[]> {
+  const res = await tweetHttp.post<{ data?: TweetAccountCheckResult[] }>('/accounts/check', {
+    accounts: accounts.map((name) => ({ name })),
+    userAgent,
+  });
+  return res.data?.data || [];
+}
+
+export async function postTweetSingle(account: string, text: string, images: LocalFile[]): Promise<void> {
+  const formData = new FormData();
+  formData.append('account', account);
+  formData.append('tweet', text);
+  images.forEach((img) => formData.append('images', img as unknown as Blob));
+  await postForm('/methods/tweet', formData);
+}
+
+export async function likeTweet(accounts: string[], url: string): Promise<void> {
+  await tweetHttp.post('/methods/like', { accounts, url });
+}
+
+export async function unlikeTweet(accounts: string[], url: string): Promise<void> {
+  await tweetHttp.post('/methods/like/delete', { accounts, url });
+}
+
+export async function followAccounts(accounts: string[], follow: string[]): Promise<void> {
+  await tweetHttp.post('/methods/follow', { accounts, follow });
+}
+
+export async function unfollowAccounts(accounts: string[], follow: string[]): Promise<void> {
+  await tweetHttp.post('/methods/follow/delete', { accounts, follow });
+}
+
+export async function replyToTweet(accounts: string[], url: string, txtFile: LocalFile): Promise<void> {
+  const formData = new FormData();
+  formData.append('txtFile', txtFile as unknown as Blob);
+  accounts.forEach((acc) => formData.append('accounts', acc));
+  formData.append('url', url);
+  await postForm('/methods/reply', formData);
+}

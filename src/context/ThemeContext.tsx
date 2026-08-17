@@ -13,7 +13,7 @@ import { darkColors, lightColors } from '../theme';
 
 const THEME_KEY = 'anmat.theme';
 
-type ThemeMode = 'light' | 'dark';
+type ThemeMode = 'light' | 'dark' | 'system';
 
 type ThemeContextValue = {
   mode: ThemeMode;
@@ -32,10 +32,10 @@ export function ThemeProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     SecureStore.getItemAsync(THEME_KEY).then((stored) => {
-      if (stored === 'light' || stored === 'dark') {
+      if (stored === 'light' || stored === 'dark' || stored === 'system') {
         setMode(stored);
-      } else if (systemScheme === 'dark') {
-        setMode('dark');
+      } else {
+        setMode('system');
       }
       setLoaded(true);
     });
@@ -47,13 +47,15 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   }, []);
 
   const toggleTheme = useCallback(async () => {
-    const next = mode === 'dark' ? 'light' : 'dark';
+    const resolved = mode === 'system' ? systemScheme : mode;
+    const next: ThemeMode = resolved === 'dark' ? 'light' : 'dark';
     setMode(next);
     await SecureStore.setItemAsync(THEME_KEY, next);
-  }, [mode]);
+  }, [mode, systemScheme]);
 
-  const colors = mode === 'dark' ? darkColors : lightColors;
-  const isDark = mode === 'dark';
+  const resolvedMode = mode === 'system' ? systemScheme : mode;
+  const colors = resolvedMode === 'dark' ? darkColors : lightColors;
+  const isDark = resolvedMode === 'dark';
 
   const value = useMemo(
     () => ({ mode, colors, isDark, toggleTheme, setThemeMode }),

@@ -35,6 +35,13 @@
           "color": "#3F6FE3",
           "sounds": []
         }
+      ],
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "نحتاج الوصول إلى الكاميرا لعقد مكالمات الفيديو",
+          "microphonePermission": "نحتاج الوصول إلى الميكروفون لإجراء المكالمات الصوتية"
+        }
       ]
     ],
     "extra": {

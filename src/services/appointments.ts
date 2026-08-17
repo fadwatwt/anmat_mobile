@@ -10,9 +10,21 @@ export type Appointment = {
   start_time?: string;
   end_time?: string;
   category?: string;
+  color?: string;
+  is_all_day?: boolean;
+  enable_reminders?: boolean;
+  reminder_types?: string[];
+  recurrence_type?: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   status?: 'upcoming' | 'completed' | 'cancelled';
   countdownDays?: number;
+  notes?: string;
+  attendee_list?: { _id: string; name: string; imageProfile?: string }[];
+  task?: { _id: string; title: string; status?: string; priority?: string };
+  user?: { _id: string; name: string; imageProfile?: string };
+  task_id?: string;
+  is_personal?: boolean;
+  created_at?: string;
 };
 
 export type DailyTask = {
@@ -24,6 +36,7 @@ export type DailyTask = {
   category?: string;
   status?: 'pending' | 'in_progress' | 'completed';
   notes?: string;
+  is_personal?: boolean;
 };
 
 export type AppointmentFilters = { status?: string; category?: string };
@@ -41,6 +54,16 @@ export async function fetchAppointments(role: UserType | undefined, filters: App
   if (filters.category) params.set('category', filters.category);
   const qs = params.toString();
   const res = await http.get<ApiResponse<Appointment[]>>(`/${base(role)}/appointments${qs ? `?${qs}` : ''}`);
+  return res.data.data || [];
+}
+
+export async function fetchAppointmentDetails(role: UserType | undefined, id: string): Promise<Appointment> {
+  const res = await http.get<ApiResponse<Appointment>>(`/${base(role)}/appointments/${id}`);
+  return res.data.data;
+}
+
+export async function searchAppointments(role: UserType | undefined, search: string): Promise<Appointment[]> {
+  const res = await http.get<ApiResponse<Appointment[]>>(`/${base(role)}/appointments/search?q=${encodeURIComponent(search)}`);
   return res.data.data || [];
 }
 
@@ -64,6 +87,10 @@ export async function createAppointment(role: UserType | undefined, body: Partia
   await http.post<ApiResponse<unknown>>(`/${base(role)}/appointments`, body);
 }
 
+export async function updateAppointment(role: UserType | undefined, id: string, body: Partial<Appointment>): Promise<void> {
+  await http.put<ApiResponse<unknown>>(`/${base(role)}/appointments/${id}`, body);
+}
+
 export async function completeAppointment(role: UserType | undefined, id: string): Promise<void> {
   await http.patch<ApiResponse<unknown>>(`/${base(role)}/appointments/${id}/complete`, {});
 }
@@ -76,6 +103,10 @@ export async function deleteAppointment(role: UserType | undefined, id: string):
   await http.delete<ApiResponse<unknown>>(`/${base(role)}/appointments/${id}`);
 }
 
+export async function addAppointmentNotes(role: UserType | undefined, id: string, notes: string): Promise<void> {
+  await http.patch<ApiResponse<unknown>>(`/${base(role)}/appointments/${id}/notes`, { notes });
+}
+
 // ===== Daily Tasks =====
 
 export async function fetchDailyTasks(role: UserType | undefined, params: { date?: string } = {}): Promise<DailyTask[]> {
@@ -86,6 +117,10 @@ export async function fetchDailyTasks(role: UserType | undefined, params: { date
 
 export async function createDailyTask(role: UserType | undefined, body: Partial<DailyTask>): Promise<void> {
   await http.post<ApiResponse<unknown>>(`/${base(role)}/daily-tasks`, body);
+}
+
+export async function updateDailyTask(role: UserType | undefined, id: string, body: Partial<DailyTask>): Promise<void> {
+  await http.put<ApiResponse<unknown>>(`/${base(role)}/daily-tasks/${id}`, body);
 }
 
 export async function completeDailyTask(role: UserType | undefined, id: string): Promise<void> {

@@ -400,6 +400,9 @@ export default function TranslationsScreen() {
             tabBarStyle: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border, elevation: 0 },
             tabBarIndicatorStyle: { backgroundColor: colors.primary, height: 3 },
             tabBarLabelStyle: { fontSize: 11, fontWeight: '600' as const, textTransform: 'none' as const },
+            tabBarScrollEnabled: true,
+            tabBarItemStyle: { width: 'auto', minWidth: 80, paddingHorizontal: spacing.xs },
+            sceneStyle: { backgroundColor: colors.background },
             headerShown: false,
           };
         }}

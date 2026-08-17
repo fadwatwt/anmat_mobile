@@ -9,11 +9,12 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Sun, Moon, Check } from 'lucide-react-native';
+import { Sun, Moon, Monitor, Check } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { SelectDropdown } from '../../components/SelectDropdown';
 import { useTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import { font, radii, spacing } from '../../theme';
 import {
   fetchOrganizationSettings,
@@ -55,6 +56,11 @@ export default function GeneralSettingsTab() {
   const { locale, setLocale } = useLocale();
   const { mode, setThemeMode } = useTheme();
   const { isRTL } = useLocale();
+  const { permissions } = useAuth();
+
+  const has = (perm: string) =>
+    Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm));
+  const canEditRegional = has('organizations.manage_settings');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -107,7 +113,21 @@ export default function GeneralSettingsTab() {
   const themeOptions = [
     { key: 'light' as const, label: t('Light Mode'), icon: <Sun size={20} color={colors.ink} />, description: t('Pick a clean and classic light theme') },
     { key: 'dark' as const, label: t('Dark Mode'), icon: <Moon size={20} color={colors.ink} />, description: t('Pick a clean and classic dark theme') },
+    { key: 'system' as const, label: t('System Mode'), icon: <Monitor size={20} color={colors.ink} />, description: t('Pick a clean and classic system theme') },
   ];
+
+  const handleThemeSelect = (value: 'light' | 'dark' | 'system') => {
+    if (value === mode) return;
+    const themeName = themeOptions.find((o) => o.key === value)?.label;
+    Alert.alert(
+      t('Change Theme'),
+      t('Are you sure you want to change the theme to {{theme}}?', { theme: themeName }),
+      [
+        { text: t('Cancel'), style: 'cancel' },
+        { text: t('Apply'), onPress: () => setThemeMode(value) },
+      ],
+    );
+  };
 
   if (loading) {
     return <ActivityIndicator color={colors.primary} size="large" style={{ marginTop: spacing.xxl }} />;
@@ -180,11 +200,13 @@ export default function GeneralSettingsTab() {
           </View>
 
           <TouchableOpacity
-            style={[styles.saveBtn, { backgroundColor: colors.primary }]}
-            onPress={handleSaveRegional}
+            style={[styles.saveBtn, { backgroundColor: canEditRegional ? colors.primary : colors.border }]}
+            onPress={canEditRegional ? handleSaveRegional : undefined}
             disabled={saving}
           >
-            <Text style={styles.saveBtnText}>{saving ? t('Saving...') : t('Apply Changes')}</Text>
+            <Text style={styles.saveBtnText}>
+              {saving ? t('Saving...') : canEditRegional ? t('Apply Changes') : t('You do not have permission')}
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -203,7 +225,7 @@ export default function GeneralSettingsTab() {
                     { borderColor: colors.border, backgroundColor: colors.background },
                     isActive && { borderColor: colors.primary, backgroundColor: colors.primary + '10' },
                   ]}
-                  onPress={() => setThemeMode(opt.key)}
+                  onPress={() => handleThemeSelect(opt.key)}
                 >
                   {opt.icon}
                   <View style={styles.themeTextWrap}>

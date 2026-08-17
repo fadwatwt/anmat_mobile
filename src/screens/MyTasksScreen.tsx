@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
-import { RefreshCw, Eye } from 'lucide-react-native';
+import { RefreshCw, Eye, CalendarPlus } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { Badge } from '../components/Badge';
 import { EvaluationModal } from '../components/EvaluationModal';
+import { AddToAgendaModal } from '../components/agenda/AddToAgendaModal';
 import { StarRating } from '../components/StarRating';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../context/LanguageContext';
@@ -41,6 +42,7 @@ export function MyTasksScreen() {
   const navigation = useNavigation<any>();
   const [reloadKey, setReloadKey] = useState(0);
   const [evalTask, setEvalTask] = useState<TaskItem | null>(null);
+  const [agendaTask, setAgendaTask] = useState<TaskItem | null>(null);
 
   // Mirrors the web: users with `tasks.update` may use all statuses (incl.
   // done/rejected/cancelled); everyone else only sees the basic workflow ones.
@@ -184,9 +186,17 @@ export function MyTasksScreen() {
         rowActions={(item: TaskItem) => [
           { label: t('View'), icon: <Eye size={16} color="#375DFB" />, onPress: () => navigation.navigate('TaskDetail', { task: item }) },
           { label: t('Change Status'), icon: <RefreshCw size={16} color={colors.primary} />, onPress: () => handleChangeStatus(item) },
+          { label: t('Add to Agenda'), icon: <CalendarPlus size={16} color={colors.primary} />, onPress: () => setAgendaTask(item) },
         ]}
         emptyTitleKey="No tasks found"
         emptyMessageKey="No tasks to display"
+      />
+      <AddToAgendaModal
+        visible={!!agendaTask}
+        onClose={() => setAgendaTask(null)}
+        task={agendaTask}
+        onCreated={() => setReloadKey((k) => k + 1)}
+        role="Employee"
       />
       <EvaluationModal
         visible={!!evalTask}

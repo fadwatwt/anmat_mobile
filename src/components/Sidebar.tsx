@@ -28,6 +28,7 @@ const routeToScreen: Record<string, string> = {
   HR_Meetings: 'HRMeetings',
   HR_Holidays: 'HRHolidays',
   HR_Teams: 'HRTeams',
+  HR_Chats: 'HRChats',
   HR_Attendances: 'HRAttendances',
   HR_Leaves: 'HRLeaves',
   HR_Requests: 'HRRequests',
@@ -183,11 +184,20 @@ export function Sidebar({ onClose }: Props) {
     const isCollapsed = collapsedSections[title] && !isSearching;
     return (
       <TouchableOpacity
-        style={[styles.sectionHeader, isFirst && styles.sectionHeaderFirst]}
+        style={[
+          styles.sectionHeader,
+          isFirst && styles.sectionHeaderFirst,
+          { flexDirection: isRTL ? 'row-reverse' : 'row' },
+        ]}
         onPress={() => toggleSectionCollapse(title)}
         activeOpacity={0.7}
       >
-        <Text style={[styles.sectionHeaderText, { color: colors.textMuted }]}>
+        <Text
+          style={[
+            styles.sectionHeaderText,
+            { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' },
+          ]}
+        >
           {t(title)}
         </Text>
         <ChevronDown
@@ -224,7 +234,11 @@ export function Sidebar({ onClose }: Props) {
         <View
           style={[
             styles.searchBox,
-            { backgroundColor: colors.background, borderColor: colors.border },
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+              flexDirection: isRTL ? 'row-reverse' : 'row',
+            },
           ]}
         >
           <Search size={16} color={colors.textMuted} />

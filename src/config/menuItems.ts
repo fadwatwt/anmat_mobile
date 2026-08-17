@@ -189,6 +189,11 @@ export const menuItems: MenuItemType[] = [
         route: 'HR_Holidays',
         permissionAnyOf: ['holidays.list'],
       },
+      {
+        titleKey: 'Chats',
+        route: 'HR_Chats',
+        permissionAnyOf: ['departments.list', 'teams.list', 'positions.list'],
+      },
     ],
   },
 

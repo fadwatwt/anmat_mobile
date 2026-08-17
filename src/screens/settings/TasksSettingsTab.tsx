@@ -16,6 +16,7 @@ import { ClipboardList, Star, Plus, X } from 'lucide-react-native';
 import { SelectDropdown } from '../../components/SelectDropdown';
 import { useTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import { font, radii, spacing } from '../../theme';
 import {
   fetchUserPreferences,
@@ -33,6 +34,11 @@ export default function TasksSettingsTab() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const { permissions } = useAuth();
+
+  const has = (perm: string) =>
+    Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm));
+  const canEditRating = has('organizations.manage_settings');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -226,11 +232,13 @@ export default function TasksSettingsTab() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.saveBtn, { backgroundColor: colors.primary }]}
-            onPress={handleSaveRating}
+            style={[styles.saveBtn, { backgroundColor: canEditRating ? colors.primary : colors.border }]}
+            onPress={canEditRating ? handleSaveRating : undefined}
             disabled={saving}
           >
-            <Text style={styles.saveBtnText}>{saving ? t('Saving...') : t('Apply Changes')}</Text>
+            <Text style={styles.saveBtnText}>
+              {saving ? t('Saving...') : canEditRating ? t('Apply Changes') : t('You do not have permission')}
+            </Text>
           </TouchableOpacity>
         </View>
       )}

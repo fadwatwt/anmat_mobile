@@ -85,7 +85,11 @@ export function SubscriberAnalytics() {
   };
 
   const tasksPerf = (data.tasksPerformanceMonthly || []).map((m, i) => ({
-    key: String(m.name ?? i), label: String(m.name ?? ''), value: Number((m as any).completed ?? (m as any).value ?? 0), color: '#4F46E5',
+    key: String(m.name ?? i),
+    // A9: translate month label
+    label: t(String(m.name ?? '')) || String(m.name ?? ''),
+    value: Number((m as any).completed ?? (m as any).value ?? 0),
+    color: '#4F46E5',
   }));
   const deptRanking = data.departmentsRanking || [];
 

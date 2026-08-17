@@ -1,11 +1,13 @@
 import React, { useCallback, useState } from 'react';
-import { Text } from 'react-native';
+import { Alert, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Edit3, Trash2 } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { ListScreen } from '../generators/ListScreen';
-import { fetchPositions } from '../services/hr';
+import { fetchPositions, deletePosition } from '../services/hr';
+import { extractErrorMessage } from '../lib/http';
 import { CreatePositionModal } from '../modals/CreatePositionModal';
 
 export default function HRPositionsScreen() {
@@ -24,6 +26,25 @@ export default function HRPositionsScreen() {
 
   const canCreate = has('positions.create');
   const canUpdate = has('positions.update');
+  const canDelete = has('positions.delete');
+
+  const handleDelete = (item: any) => {
+    Alert.alert(t('Delete Position'), t('Are you sure you want to delete this position?'), [
+      { text: t('Cancel'), style: 'cancel' },
+      {
+        text: t('Delete'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deletePosition(item._id);
+            setRefreshKey(k => k + 1);
+          } catch (e) {
+            Alert.alert(t('Error'), extractErrorMessage(e));
+          }
+        },
+      },
+    ]);
+  };
 
   const columns = [
     {
@@ -78,6 +99,10 @@ export default function HRPositionsScreen() {
         onRowPress={canUpdate ? (item: any) => { setEditing(item); setModalVisible(true); } : undefined}
         emptyTitleKey="No Positions"
         emptyMessageKey="No positions found"
+        rowActions={(item: any) => [
+          ...(canUpdate ? [{ label: t('Edit'), icon: <Edit3 size={16} color={colors.primary} />, onPress: () => { setEditing(item); setModalVisible(true); } }] : []),
+          ...(canDelete ? [{ label: t('Delete'), icon: <Trash2 size={16} color="#DF1C41" />, onPress: () => handleDelete(item), destructive: true }] : []),
+        ]}
       />
       <CreatePositionModal
         visible={modalVisible}

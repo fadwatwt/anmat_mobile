@@ -74,6 +74,23 @@ type Props<T> = {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Recursively force every text cell onto a single line (truncated with an
+// ellipsis when it overflows its column) so table rows never wrap.
+function forceSingleLine(node: React.ReactNode): React.ReactNode {
+  if (node === null || node === undefined || typeof node === 'boolean') return node;
+  if (typeof node === 'string' || typeof node === 'number') {
+    return <Text numberOfLines={1}>{node}</Text>;
+  }
+  if (Array.isArray(node)) return React.Children.map(node, forceSingleLine);
+  if (!React.isValidElement(node)) return node;
+  const el = node as React.ReactElement<any>;
+  const children = React.Children.map(el.props.children, forceSingleLine);
+  if (el.type === Text) {
+    return React.cloneElement(el, { numberOfLines: 1, children });
+  }
+  return React.cloneElement(el, undefined, children);
+}
+
 export function ListScreen<T extends Record<string, any>>({
   columns,
   fetchData,
@@ -214,7 +231,7 @@ export function ListScreen<T extends Record<string, any>>({
     >
       {visibleColumns.map(col => (
         <View key={col.key} style={[s.td, { width: col.width }]}>
-          {col.render(item)}
+          {forceSingleLine(col.render(item))}
         </View>
       ))}
       {rowActions && (

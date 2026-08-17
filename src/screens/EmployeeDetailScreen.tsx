@@ -495,8 +495,8 @@ export function EmployeeDetailScreen() {
         </View>
         <Text style={[styles.profileName, { color: colors.ink }]}>{u.name || t('Unknown')}</Text>
         <Text style={[styles.profileEmail, { color: colors.textMuted }]}>{u.email || ''}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: isActive ? '#DCFCE7' : '#FEE2E2' }]}>
-          <Text style={[styles.statusText, { color: isActive ? '#166534' : '#991B1B' }]}>
+        <View style={[styles.statusBadge, { backgroundColor: isActive ? colors.successBg : colors.dangerBg }]}>
+          <Text style={[styles.statusText, { color: isActive ? colors.successText : colors.dangerText }]}>
             {isActive ? t('Active') : t('Inactive')}
           </Text>
         </View>
@@ -505,15 +505,15 @@ export function EmployeeDetailScreen() {
       {(canUpdateEmployee || canDeleteEmployee) && (
         <View style={styles.actionsRow}>
           {canUpdateEmployee && (
-            <TouchableOpacity style={styles.actionBtn} onPress={handleToggleActivity}>
-              {isActive ? <ToggleLeft size={20} color="#F59E0B" /> : <ToggleRight size={20} color="#10B981" />}
-              <Text style={[styles.actionText, { color: '#374151' }]}>{isActive ? t('Deactivate') : t('Activate')}</Text>
+            <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.border }]} onPress={handleToggleActivity}>
+              {isActive ? <ToggleLeft size={20} color={colors.warning} /> : <ToggleRight size={20} color={colors.success} />}
+              <Text style={[styles.actionText, { color: colors.ink }]}>{isActive ? t('Deactivate') : t('Activate')}</Text>
             </TouchableOpacity>
           )}
           {canDeleteEmployee && (
-            <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={handleDelete}>
-              <Trash2 size={20} color="#DF1C41" />
-              <Text style={[styles.actionText, { color: '#DF1C41' }]}>{t('Delete')}</Text>
+            <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn, { borderColor: colors.dangerBg }]} onPress={handleDelete}>
+              <Trash2 size={20} color={colors.danger} />
+              <Text style={[styles.actionText, { color: colors.danger }]}>{t('Delete')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -527,6 +527,8 @@ export function EmployeeDetailScreen() {
           tabBarInactiveTintColor: colors.textMuted,
           tabBarLabelStyle: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
           tabBarScrollEnabled: true,
+          tabBarItemStyle: { width: 'auto', minWidth: 80, paddingHorizontal: spacing.xs },
+          sceneStyle: { backgroundColor: colors.background },
         }}
       >
         <Tab.Screen name="profile" options={{ title: t('Profile') }} children={() => <ProfileTab employee={employee} />} />
@@ -555,9 +557,9 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 14, paddingVertical: 4, borderRadius: 99 },
   statusText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
   actionsRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.md, paddingVertical: spacing.sm },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.lg, borderWidth: 1, borderColor: '#E5E7EB' },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.lg, borderWidth: 1 },
   actionText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },
-  deleteBtn: { borderColor: '#FECDD3' },
+  deleteBtn: {},
   tabContent: { flex: 1, padding: spacing.md },
   sectionCard: { borderRadius: radii.xl, padding: spacing.md, marginBottom: spacing.md, borderWidth: 1 },
   sectionTitle: { fontSize: font.sizes.base, fontWeight: font.weights.semibold, marginBottom: spacing.md },

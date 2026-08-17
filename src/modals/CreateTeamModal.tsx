@@ -18,9 +18,11 @@ type Props = {
   onClose: () => void;
   onSaved: () => void;
   team?: Team | null;
+  /** When set, the team is linked to this project (related_model_type = 'Project'). */
+  projectId?: string;
 };
 
-export function CreateTeamModal({ visible, onClose, onSaved, team }: Props) {
+export function CreateTeamModal({ visible, onClose, onSaved, team, projectId }: Props) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
@@ -33,6 +35,7 @@ export function CreateTeamModal({ visible, onClose, onSaved, team }: Props) {
   const [loading, setLoading] = useState(false);
 
   const isEdit = !!team;
+  const isProjectTeam = !!projectId || team?.related_model_type === 'Project';
 
   useEffect(() => {
     if (!visible) return;
@@ -58,8 +61,8 @@ export function CreateTeamModal({ visible, onClose, onSaved, team }: Props) {
     try {
       const payload = {
         name: name.trim(),
-        related_model_type: departmentId ? ('Department' as const) : undefined,
-        related_model_id: departmentId || undefined,
+        related_model_type: isProjectTeam ? ('Project' as const) : departmentId ? ('Department' as const) : undefined,
+        related_model_id: isProjectTeam ? projectId || team?.related_model_id || undefined : departmentId || undefined,
         leader_id: leaderId || undefined,
         members_ids: memberIds,
       };
@@ -89,10 +92,12 @@ export function CreateTeamModal({ visible, onClose, onSaved, team }: Props) {
             onChangeText={setName}
           />
         </View>
-        <View style={styles.field}>
-          <Text style={[styles.label, { color: colors.textMuted, textAlign: align }]}>{t('Department')}</Text>
-          <SelectDropdown options={deptOptions} value={departmentId} onChange={setDepartmentId} placeholder={t('Select Department')} />
-        </View>
+        {!isProjectTeam && (
+          <View style={styles.field}>
+            <Text style={[styles.label, { color: colors.textMuted, textAlign: align }]}>{t('Department')}</Text>
+            <SelectDropdown options={deptOptions} value={departmentId} onChange={setDepartmentId} placeholder={t('Select Department')} />
+          </View>
+        )}
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.textMuted, textAlign: align }]}>{t('Team Leader')}</Text>
           <SelectDropdown options={empOptions} value={leaderId} onChange={setLeaderId} placeholder={t('Select Team Leader')} />
