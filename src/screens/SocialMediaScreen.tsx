@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   actionTextOutline: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
   actions: { gap: spacing.sm },
   cardActions: { gap: spacing.xs },
-  delBtn: { padding: spacing.xs },
+  delBtn: { padding: spacing.xs, minHeight: 44, minWidth: 44 },
   loading: { flex: 1, padding: spacing.xxl },
   metaText: { fontSize: font.sizes.xs },
   sectionTitle: { fontSize: font.sizes.base, fontWeight: font.weights.bold },

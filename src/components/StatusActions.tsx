@@ -76,5 +76,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  trigger: { padding: 4 },
+  trigger: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xs,
+  },
 });

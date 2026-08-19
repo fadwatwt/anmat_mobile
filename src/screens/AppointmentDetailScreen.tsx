@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   actionBtnText: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
   actionsRow: { gap: spacing.sm },
   addNoteBtn: { alignSelf: 'flex-start', marginTop: spacing.sm, padding: spacing.xs },
-  attendee: { alignItems: 'center', borderRadius: radii.full, borderWidth: 1, flexDirection: 'row', gap: 6, padding: 4, paddingRight: spacing.sm },
+  attendee: { alignItems: 'center', borderRadius: radii.full, borderWidth: 1, flexDirection: 'row', gap: 6, padding: 4, paddingEnd: spacing.sm },
   attendeeImg: { borderRadius: radii.full, height: 24, width: 24 },
   attendeeInitial: { alignItems: 'center', justifyContent: 'center' },
   attendeeInitialText: { fontSize: font.sizes.xs, fontWeight: font.weights.bold },

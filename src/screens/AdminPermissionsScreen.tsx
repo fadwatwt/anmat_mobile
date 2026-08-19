@@ -106,7 +106,7 @@ const s = StyleSheet.create({
   permKey: {
     fontSize: font.sizes.xs,
     fontFamily: 'monospace',
-    marginLeft: 'auto',
+    marginEnd: 'auto',
   },
   permName: {
     fontSize: font.sizes.sm,

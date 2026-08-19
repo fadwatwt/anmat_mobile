@@ -107,7 +107,7 @@ export function DashboardLayout({ children }: Props) {
           onMenuPress={() => setDrawerOpen(true)}
           title={currentRouteName === 'DashboardMain' ? undefined : screenTitle}
         />
-        <View style={[styles.content, { backgroundColor: colors.background }]}>
+        <View style={[styles.content, { backgroundColor: colors.background, paddingBottom: insets.bottom || spacing.md }]}>
           {children}
         </View>
       </View>
@@ -125,8 +125,8 @@ export function DashboardLayout({ children }: Props) {
             bottom: insets.bottom,
           },
           isRTL
-            ? { right: 0, transform: [{ translateX: drawerOpen ? 0 : 300 }] }
-            : { left: 0, transform: [{ translateX: drawerOpen ? 0 : -300 }] },
+            ? { right: 0, transform: [{ translateX: drawerOpen ? 0 : 280 }] }
+            : { left: 0, transform: [{ translateX: drawerOpen ? 0 : -280 }] },
         ]}
       >
         <Sidebar onClose={() => setDrawerOpen(false)} />

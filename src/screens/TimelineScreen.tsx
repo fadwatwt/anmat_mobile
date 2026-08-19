@@ -148,7 +148,7 @@ const s = StyleSheet.create({
   itemRow: {
     flexDirection: 'row',
     gap: spacing.sm,
-    paddingLeft: spacing.md,
+    paddingStart: spacing.md,
   },
   line: {
     flex: 1,

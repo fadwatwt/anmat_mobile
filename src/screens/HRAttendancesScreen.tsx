@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: 'center',
     position: 'absolute',
-    right: spacing.xl,
+    end: spacing.xl,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

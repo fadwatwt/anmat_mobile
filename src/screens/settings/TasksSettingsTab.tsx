@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     height: 44,
     fontSize: font.sizes.sm,
   },
-  removeBtn: { padding: spacing.xs },
+  removeBtn: { padding: spacing.xs, minHeight: 44, minWidth: 44 },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',

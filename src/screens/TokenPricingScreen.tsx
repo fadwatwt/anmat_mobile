@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 4,
     position: 'absolute',
-    right: spacing.md,
+    end: spacing.md,
     top: -10,
     zIndex: 1,
   },

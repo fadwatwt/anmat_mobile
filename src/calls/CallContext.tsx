@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { mediaDevices, MediaStream, RTCPeerConnection, isWebRTCSupported } from './webrtc';
 import { useAuth } from '../context/AuthContext';
 import { connectSocket, getSocket } from '../services/socket';
-import { CallOverlays } from './CallOverlays';
+
 
 type CallState = 'idle' | 'calling' | 'ringing' | 'connecting' | 'connected';
 
@@ -728,7 +728,6 @@ export function CallProvider({ children }: PropsWithChildren) {
     <CallProviderInner>
       <GroupCallProviderInner>
         {children}
-        <CallOverlays />
       </GroupCallProviderInner>
     </CallProviderInner>
   );

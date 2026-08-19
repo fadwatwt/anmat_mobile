@@ -198,14 +198,17 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     borderBottomWidth: 1,
-    height: 72,
     justifyContent: 'space-between',
+    minHeight: 52,
     paddingHorizontal: spacing.md,
   },
   iconBtn: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 2,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
     padding: spacing.xs,
   },
   langText: {
@@ -213,7 +216,11 @@ const styles = StyleSheet.create({
     fontWeight: font.weights.bold,
   },
   menuBtn: {
-    padding: 4,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xs,
   },
   menuOverlay: {
     flex: 1,

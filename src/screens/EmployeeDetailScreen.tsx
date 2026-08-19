@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: font.sizes.sm },
   rowValue: { fontSize: font.sizes.sm, fontWeight: font.weights.medium, maxWidth: '60%' },
   fab: {
-    position: 'absolute', bottom: spacing.xl, right: spacing.xl,
+    position: 'absolute', bottom: spacing.xl, end: spacing.xl,
     width: 44, height: 44, borderRadius: 22,
     alignItems: 'center', justifyContent: 'center',
     elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3,

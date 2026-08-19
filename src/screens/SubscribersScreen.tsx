@@ -37,7 +37,8 @@ export default function SubscribersScreen() {
 
   const fetchData = useCallback(async () => {
     const data = await fetchSubscribers();
-    return { data, total: data.length };
+    const list = Array.isArray(data) ? data : [];
+    return { data: list, total: list.length };
   }, [reloadKey]);
 
   const handleToggle = (item: Subscriber) => {

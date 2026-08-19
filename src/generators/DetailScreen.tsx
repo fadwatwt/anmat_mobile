@@ -131,7 +131,7 @@ export function DetailScreen({ sections, actions, loading, errorKey, header }: P
         ))}
 
         {actions && actions.length > 0 && (
-          <View style={s.actionsRow}>
+          <View style={[s.actionsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             {actions.map((action, i) => {
               const isPrimary = action.variant === 'primary' || !action.variant;
               const isDanger = action.variant === 'danger';
@@ -174,7 +174,7 @@ export function DetailScreen({ sections, actions, loading, errorKey, header }: P
 
 const s = StyleSheet.create({
   actionBtn: {
-    alignItems: 'center', borderRadius: radii.lg, flex: 1, flexDirection: 'row',
+    alignItems: 'center', borderRadius: radii.lg, flex: 1,
     gap: spacing.sm, height: 48, justifyContent: 'center',
   },
   actionBtnText: { fontSize: font.sizes.base, fontWeight: font.weights.semibold },

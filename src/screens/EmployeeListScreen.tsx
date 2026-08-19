@@ -457,7 +457,7 @@ const s = StyleSheet.create({
   fab: {
     position: 'absolute',
     bottom: spacing.xl,
-    right: spacing.xl,
+    end: spacing.xl,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -473,7 +473,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', margin: spacing.md,
     paddingHorizontal: spacing.md, borderRadius: radii.lg, borderWidth: 1, height: 40,
   },
-  searchInput: { flex: 1, fontSize: font.sizes.sm, marginLeft: spacing.sm },
+  searchInput: { flex: 1, fontSize: font.sizes.sm, marginStart: spacing.sm },
   tableOuter: { flex: 1 },
   thead: {
     flexDirection: 'row', paddingVertical: spacing.sm, paddingHorizontal: spacing.sm,
@@ -515,7 +515,7 @@ const s = StyleSheet.create({
   pagLeft: {},
   pagInfo: { fontSize: font.sizes.xs },
   pagCenter: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  pagBtn: { padding: 4 },
+  pagBtn: { padding: 4, minHeight: 44, minWidth: 44 },
   pagDots: { fontSize: font.sizes.sm },
   pagNum: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   pagNumText: { fontSize: font.sizes.sm, fontWeight: font.weights.medium },

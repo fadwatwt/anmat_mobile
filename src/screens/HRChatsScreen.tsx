@@ -96,7 +96,7 @@ export default function HRChatsScreen() {
         return (
           <View style={{ flexDirection: isRTL ? 'row-reverse' : 'row', alignItems: 'center' }}>
             {visible.map((a, i) => (
-              <Image key={a._id || i} source={{ uri: avatarUrl(a.name, a.avatar) }} style={[styles.miniAvatar, { marginLeft: i > 0 ? -8 : 0 }]} />
+              <Image key={a._id || i} source={{ uri: avatarUrl(a.name, a.avatar) }} style={[styles.miniAvatar, { marginStart: i > 0 ? -8 : 0 }]} />
             ))}
             {adminUsers.length > 3 && (
               <View style={[styles.miniAvatar, styles.miniMore]}>

@@ -473,7 +473,7 @@ const s = StyleSheet.create({
   avatar: {
     width: 26, height: 26, borderRadius: 13,
     alignItems: 'center', justifyContent: 'center',
-    marginRight: 8,
+    marginEnd: 8,
   },
   avatarHidden: { opacity: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -489,7 +489,7 @@ const s = StyleSheet.create({
     maxWidth: '100%',
   },
   fileName: { fontSize: font.sizes.xs, fontWeight: font.weights.medium, flexShrink: 1 },
-  fileRemove: { marginLeft: 2 },
+  fileRemove: { marginStart: 2 },
   filesPreview: {
     flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm,
     paddingHorizontal: spacing.md, paddingTop: spacing.sm,
@@ -527,7 +527,7 @@ const s = StyleSheet.create({
   },
   senderName: { fontSize: 10, fontWeight: font.weights.semibold, marginBottom: 2 },
   timestamp: { fontSize: 9, marginTop: 2 },
-  timestampMe: { textAlign: 'right', marginRight: 2 },
-  timestampOther: { textAlign: 'left', marginLeft: 2 },
+  timestampMe: { textAlign: 'right' as const, marginEnd: 2 },
+  timestampOther: { textAlign: 'left' as const, marginStart: 2 },
   title: { fontSize: font.sizes.lg, fontWeight: font.weights.bold, marginBottom: spacing.xs },
 });

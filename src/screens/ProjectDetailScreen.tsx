@@ -921,7 +921,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     flexDirection: 'row',
     gap: spacing.sm,
-    paddingLeft: spacing.md,
+    paddingStart: spacing.md,
     paddingVertical: spacing.xs,
   },
 });

@@ -171,7 +171,7 @@ export function RequestsScreen() {
 
       {/* FAB */}
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }, isRTL ? { left: spacing.lg } : { right: spacing.lg }]}
+        style={[styles.fab, { backgroundColor: colors.primary }, { end: spacing.lg }]}
         onPress={() => setModalOpen(true)}
       >
         <Plus size={24} color="#FFF" />

@@ -1,0 +1,131 @@
+[
+  {
+    "screen": "Dashboard",
+    "status": "ISSUES",
+    "issues": [
+      "NEG-H: \"Industries\" h=-158",
+      "NEG-H: \"Industries\" h=-158"
+    ]
+  },
+  {
+    "screen": "Conversations",
+    "status": "OK",
+    "issues": []
+  },
+  {
+    "screen": "Analytics",
+    "status": "ISSUES",
+    "issues": [
+      "NEG-H: \"Companies Subscriptions\" h=-19",
+      "NEG-H: \"Companies Subscriptions\" h=-210",
+      "NEG-H: \"Last Projects\" h=-128"
+    ]
+  },
+  {
+    "screen": "AI Assistant",
+    "status": "OK",
+    "issues": []
+  },
+  {
+    "screen": "System Admins",
+    "status": "OK",
+    "issues": []
+  },
+  {
+    "screen": "Roles",
+    "status": "ISSUES",
+    "issues": [
+      "NEG-W: \"Actions\" w=-34",
+      "NEG-W: \"Actions\" w=-34",
+      "NEG-W: \"Actions\" w=-34"
+    ]
+  },
+  {
+    "screen": "Permissions",
+    "status": "OK",
+    "issues": []
+  },
+  {
+    "screen": "Industries",
+    "status": "ISSUES",
+    "issues": [
+      "NEG-W: \"Subscribers\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"Subscribers\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"Subscribers\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34",
+      "NEG-W: \"0\" w=-34"
+    ]
+  },
+  {
+    "screen": "Subscribers",
+    "status": "OK",
+    "issues": []
+  },
+  {
+    "screen": "Plans",
+    "status": "ISSUES",
+    "issues": [
+      "NEG-H: \"Analytics\" h=-585",
+      "NEG-H: \"SMART TOOLS\" h=-450",
+      "NEG-H: \"AI Assistant\" h=-352",
+      "NEG-H: \"SYSTEM ADMINISTRATION\" h=-217",
+      "NEG-H: \"System Admins\" h=-119",
+      "NEG-H: \"SETTINGS\" h=-65",
+      "NEG-H: \"AI Assistant\" h=-634",
+      "NEG-H: \"SYSTEM ADMINISTRATION\" h=-499",
+      "NEG-H: \"System Admins\" h=-401",
+      "NEG-H: \"Roles\" h=-271",
+      "NEG-H: \"Permissions\" h=-142",
+      "NEG-H: \"Industries\" h=-13",
+      "NEG-H: \"AI Assistant\" h=-634",
+      "NEG-H: \"SYSTEM ADMINISTRATION\" h=-499",
+      "NEG-H: \"System Admins\" h=-401",
+      "NEG-H: \"Roles\" h=-271",
+      "NEG-H: \"Permissions\" h=-142",
+      "NEG-H: \"Industries\" h=-13"
+    ]
+  },
+  {
+    "screen": "Money Receiving Methods",
+    "status": "NOT_FOUND",
+    "issues": []
+  },
+  {
+    "screen": "Translations",
+    "status": "NOT_FOUND",
+    "issues": []
+  },
+  {
+    "screen": "Notifications",
+    "status": "NOT_FOUND",
+    "issues": []
+  },
+  {
+    "screen": "Support Tickets",
+    "status": "NOT_FOUND",
+    "issues": []
+  },
+  {
+    "screen": "Settings",
+    "status": "NOT_FOUND",
+    "issues": []
+  },
+  {
+    "screen": "Profile",
+    "status": "NOT_FOUND",
+    "issues": []
+  }
+]

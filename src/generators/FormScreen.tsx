@@ -359,7 +359,7 @@ export function FormScreen({
         </View>
       </ScrollView>
 
-      <View style={[s.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+      <View style={[s.footer, { backgroundColor: colors.surface, borderTopColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         {stepper && step > 0 && (
           <TouchableOpacity
             style={[s.secondaryBtn, { borderColor: colors.border }]}
@@ -404,6 +404,7 @@ const s = StyleSheet.create({
   errorText: { fontSize: font.sizes.xs, color: '#DF1C41', marginTop: spacing.xs },
   footer: {
     flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderTopWidth: 1,
+    paddingBottom: spacing.md,
   },
   input: {
     borderWidth: 1, borderRadius: radii.lg, height: 48, paddingHorizontal: spacing.md,

@@ -9,6 +9,7 @@ import { ProcessingProvider } from './src/context/ProcessingContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { CallProvider } from './src/calls/CallContext';
+import { CallOverlays } from './src/calls/CallOverlays';
 import {
   cleanupListeners,
   startForegroundListener,
@@ -37,6 +38,7 @@ function AppContent() {
             <NavigationContainer>
               <RootNavigator />
             </NavigationContainer>
+            <CallOverlays />
           </CallProvider>
         </AuthProvider>
       </ProcessingProvider>

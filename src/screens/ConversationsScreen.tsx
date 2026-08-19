@@ -889,7 +889,7 @@ const s = StyleSheet.create({
   attImageWrap: { borderRadius: radii.lg, marginBottom: spacing.xs, overflow: 'hidden' },
   avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 1 },
   avatarText: { color: '#FFF', fontSize: font.sizes.lg, fontWeight: font.weights.bold },
-  backBtn: { padding: spacing.xs, marginRight: spacing.sm },
+  backBtn: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center', padding: spacing.xs, marginEnd: spacing.sm },
   callChip: { borderRadius: radii.full, borderWidth: 1, marginVertical: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   chatAvatar: { borderRadius: radii.full, height: 34, width: 34, borderWidth: 1 },
@@ -912,7 +912,7 @@ const s = StyleSheet.create({
   fileChipName: { flex: 1, fontSize: font.sizes.xs },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1 },
   headerTitle: { fontSize: font.sizes.xl, fontWeight: font.weights.bold, flex: 1 },
-  iconBtn: { padding: spacing.xs },
+  iconBtn: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center', padding: spacing.xs },
   inputBar: {
     alignItems: 'flex-end', flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderTopWidth: 1,
   },
@@ -934,7 +934,7 @@ const s = StyleSheet.create({
   pollBtn: { borderWidth: 1, borderRadius: radii.xl, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   pollCard: { borderWidth: 1, borderRadius: radii.xl, padding: spacing.md, maxWidth: '85%', gap: spacing.sm },
   pollClosed: { fontSize: font.sizes.xs, fontWeight: font.weights.bold },
-  pollCloseBtn: { padding: spacing.xs },
+  pollCloseBtn: { padding: spacing.xs, minHeight: 44, minWidth: 44 },
   pollCloseText: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
   pollFooter: { alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.xs },
   pollHeader: { alignItems: 'center', gap: spacing.sm },
@@ -971,7 +971,7 @@ const s = StyleSheet.create({
   typingText: { fontSize: font.sizes.xs, fontWeight: font.weights.medium, fontStyle: 'italic' },
   unreadBadge: {
     backgroundColor: '#375DFB', borderRadius: 10, minWidth: 20, height: 20,
-    alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs,
+    alignItems: 'center', justifyContent: 'center', marginStart: spacing.xs,
   },
   unreadText: { color: '#FFF', fontSize: font.sizes.xs, fontWeight: font.weights.bold, paddingHorizontal: 6 },
 });

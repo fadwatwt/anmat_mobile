@@ -378,7 +378,7 @@ export function ListScreen<T extends Record<string, any>>({
         </View>
       )}
       <ScrollView horizontal showsHorizontalScrollIndicator bounces={false} style={s.tableOuter}>
-        <View>
+        <View style={{ minWidth: visibleColumns.reduce((sum, c) => sum + (c.width || 0), 0) + (rowActions ? 50 : 0) }}>
           {renderHeader()}
           <FlatList
             data={data}
@@ -400,7 +400,7 @@ const s = StyleSheet.create({
   fab: {
     position: 'absolute',
     bottom: spacing.xl,
-    right: spacing.xl,
+    end: spacing.xl,
     width: 52,
     height: 52,
     borderRadius: 26,
@@ -426,7 +426,7 @@ const s = StyleSheet.create({
     alignItems: 'center', borderRadius: radii.sm, borderWidth: 1, justifyContent: 'center',
     height: 32, width: 32,
   },
-  pageInfo: { fontSize: font.sizes.xs, marginLeft: spacing.sm },
+  pageInfo: { fontSize: font.sizes.xs, marginHorizontal: spacing.sm },
   pageNum: {
     alignItems: 'center', borderRadius: radii.sm, justifyContent: 'center',
     height: 32, width: 32,

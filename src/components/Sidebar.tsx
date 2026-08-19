@@ -421,6 +421,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   closeBtn: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: spacing.xs,
   },
   logoCircle: {

@@ -107,11 +107,11 @@ export default function TodoListScreen() {
 }
 
 const s = StyleSheet.create({
-  actionBtn: { padding: spacing.xs },
+  actionBtn: { padding: spacing.xs, minHeight: 44, minWidth: 44 },
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   container: { flex: 1 },
   emptyList: { flexGrow: 1 },
-  fab: { position: 'absolute', bottom: spacing.xl, right: spacing.lg, width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', elevation: 4 },
+  fab: { position: 'absolute', bottom: spacing.xl, end: spacing.lg, width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', elevation: 4 },
   input: { borderWidth: 1, borderRadius: radii.lg, padding: spacing.md, fontSize: font.sizes.sm },
   item: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: radii.xl, padding: spacing.md, gap: spacing.sm },
   list: { padding: spacing.md, gap: spacing.sm, paddingBottom: 100 },

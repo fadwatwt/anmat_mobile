@@ -105,14 +105,14 @@ export function BarChart({
           ))}
 
         {data.map((d, i) => {
-          const barH = ((d.value - minValue) / range) * plotHeight;
+          const rawBarH = range > 0 ? ((d.value - minValue) / range) * plotHeight : 0;
+          const barH = Math.max(rawBarH, 0);
           const x = padding.left + i * (barSize + 12) + (plotWidth - data.length * (barSize + 12)) / 2;
-          const y = scaleY(d.value);
+          const y = padding.top + plotHeight - barH;
           return (
             <G key={d.key}>
-              {/* A8: top-only rounded corners */}
               <Path
-                d={topRoundedRect(x, y, barSize, Math.max(barH, 0), barRadius)}
+                d={topRoundedRect(x, y, barSize, barH, barRadius)}
                 fill={d.color ?? color}
               />
               <SvgText

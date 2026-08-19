@@ -1,0 +1,50 @@
+[
+  {
+    "screen": "Subscribers",
+    "status": "OK",
+    "issues": []
+  },
+  {
+    "screen": "Plans",
+    "status": "ISSUES",
+    "issues": [
+      "NEG-H: \"Industries\" h=-158",
+      "NEG-H: \"Industries\" h=-158"
+    ]
+  },
+  {
+    "screen": "Money Receiving Methods",
+    "status": "NOT_FOUND",
+    "issues": []
+  },
+  {
+    "screen": "Translations",
+    "status": "NOT_FOUND",
+    "issues": []
+  },
+  {
+    "screen": "Notifications",
+    "status": "NOT_FOUND",
+    "issues": []
+  },
+  {
+    "screen": "Support Tickets",
+    "status": "NOT_FOUND",
+    "issues": []
+  },
+  {
+    "screen": "Settings",
+    "status": "NOT_FOUND",
+    "issues": []
+  },
+  {
+    "screen": "Profile",
+    "status": "NOT_FOUND",
+    "issues": []
+  },
+  {
+    "screen": "Profile",
+    "status": "OK",
+    "issues": []
+  }
+]

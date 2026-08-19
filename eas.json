@@ -20,6 +20,20 @@
       },
       "autoIncrement": true,
       "channel": "production"
+    },
+    "detox-debug": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "distribution": "internal"
+    },
+    "detox-release": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "distribution": "internal"
     }
   },
   "submit": {

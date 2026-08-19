@@ -187,5 +187,5 @@ export default function HRMeetingsScreen() {
 const styles = StyleSheet.create({
   linkRow: { alignItems: 'center', gap: spacing.xs },
   linkBtn: { alignItems: 'center', gap: 2 },
-  iconBtn: { padding: 2 },
+  iconBtn: { padding: 2, minHeight: 44, minWidth: 44 },
 });
