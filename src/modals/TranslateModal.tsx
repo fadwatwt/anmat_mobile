@@ -20,11 +20,16 @@ import {
   updateTokenPackageTranslation,
   deleteTokenPackageTranslation,
   fetchTokenPackageTranslations,
+  createFeatureTypeTranslation,
+  updateFeatureTypeTranslation,
+  deleteFeatureTypeTranslation,
+  fetchFeatureTypeTranslations,
   PlanTranslation,
   IndustryTranslation,
   TokenPackageTranslation,
+  FeatureTypeTranslation,
 } from '../services/translations';
-import { SubscriptionPlan, TokenPackage } from '../services/plans';
+import { SubscriptionPlan, TokenPackage, FeatureType } from '../services/plans';
 import { Industry } from '../services/industries';
 import { extractErrorMessage } from '../lib/http';
 import { font, radii, spacing } from '../theme';
@@ -34,14 +39,14 @@ const LOCALES = [
   { value: 'en', label: 'English' },
 ];
 
-type Kind = 'plan' | 'industry' | 'package';
+type Kind = 'plan' | 'industry' | 'package' | 'featureType';
 
 type Props = {
   visible: boolean;
   onClose: () => void;
   onSaved: () => void;
   kind: Kind;
-  item: SubscriptionPlan | Industry | TokenPackage | null;
+  item: SubscriptionPlan | Industry | TokenPackage | FeatureType | null;
 };
 
 export function TranslateModal({ visible, onClose, onSaved, kind, item }: Props) {
@@ -72,10 +77,11 @@ export function TranslateModal({ visible, onClose, onSaved, kind, item }: Props)
 
     const load = async () => {
       try {
-        let existing: PlanTranslation | IndustryTranslation | TokenPackageTranslation | undefined;
+        let existing: PlanTranslation | IndustryTranslation | TokenPackageTranslation | FeatureTypeTranslation | undefined;
         let list: unknown;
         if (kind === 'plan') list = await fetchPlanTranslations(id);
         else if (kind === 'industry') list = await fetchIndustryTranslations(id);
+        else if (kind === 'featureType') list = await fetchFeatureTypeTranslations(id);
         else list = await fetchTokenPackageTranslations(id);
         existing = (Array.isArray(list) ? list : []).find((tr: any) => tr.locale === 'ar');
 
@@ -109,6 +115,15 @@ export function TranslateModal({ visible, onClose, onSaved, kind, item }: Props)
           }
         } else if (kind === 'industry') {
           setName((existing as IndustryTranslation | undefined)?.name || '');
+        } else if (kind === 'featureType') {
+          const et = existing as FeatureTypeTranslation | undefined;
+          if (et) {
+            setName(et.title || '');
+            setDescription(et.details || '');
+          } else {
+            setName('');
+            setDescription('');
+          }
         } else {
           const et = existing as TokenPackageTranslation | undefined;
           if (et) {
@@ -153,6 +168,12 @@ export function TranslateModal({ visible, onClose, onSaved, kind, item }: Props)
         const has = (existing || []).some((tr) => tr.locale === locale);
         if (has) await updateIndustryTranslation(id, locale, { name });
         else await createIndustryTranslation(id, { locale, name });
+      } else if (kind === 'featureType') {
+        const body = { title: name, details: description };
+        const existing = await fetchFeatureTypeTranslations(id);
+        const has = (existing || []).some((tr) => tr.locale === locale);
+        if (has) await updateFeatureTypeTranslation(id, locale, body);
+        else await createFeatureTypeTranslation(id, { locale, ...body });
       } else {
         const body = { name, description, features: features.filter((f) => f && f.trim() !== '') };
         const existing = await fetchTokenPackageTranslations(id);
@@ -181,6 +202,7 @@ export function TranslateModal({ visible, onClose, onSaved, kind, item }: Props)
           try {
             if (kind === 'plan') await deletePlanTranslation(id, locale);
             else if (kind === 'industry') await deleteIndustryTranslation(id, locale);
+            else if (kind === 'featureType') await deleteFeatureTypeTranslation(id, locale);
             else await deleteTokenPackageTranslation(id, locale);
             onSaved();
             onClose();
@@ -199,6 +221,8 @@ export function TranslateModal({ visible, onClose, onSaved, kind, item }: Props)
       ? (item as SubscriptionPlan) && featureTranslations.length > 0
       : kind === 'package'
       ? !!(item as TokenPackage)?.features?.length && features.length > 0
+      : kind === 'featureType'
+      ? !!name
       : !!name;
 
   const updateFeatureTranslation = (index: number, field: 'title' | 'details', value: string) => {
@@ -221,7 +245,7 @@ export function TranslateModal({ visible, onClose, onSaved, kind, item }: Props)
     <Modal
       visible={visible}
       onClose={onClose}
-      title={`${t('Translations')} - ${(item as any)?.name || ''}`}
+      title={`${t('Translations')} - ${(item as any)?.name || (item as any)?.title || ''}`}
       size="full"
     >
       <View style={styles.form}>
@@ -232,11 +256,25 @@ export function TranslateModal({ visible, onClose, onSaved, kind, item }: Props)
           label={t('Language')}
         />
 
-        <Field label={kind === 'industry' ? t('Industry Name') : kind === 'package' ? t('Package Name') : t('Plan Name')} align={align} colors={colors}>
+        <Field label={kind === 'industry' ? t('Industry Name') : kind === 'package' ? t('Package Name') : kind === 'featureType' ? t('Feature Type Title') : t('Plan Name')} align={align} colors={colors}>
           <TextInput style={inputStyle} placeholderTextColor={colors.textMuted} value={name} onChangeText={setName} />
         </Field>
-        {kind !== 'industry' && (
+        {kind !== 'industry' && kind !== 'featureType' && (
           <Field label={t('Description')} align={align} colors={colors}>
+            <TextInput
+              style={[inputStyle, styles.multiline]}
+              placeholderTextColor={colors.textMuted}
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={3}
+            />
+          </Field>
+        )}
+
+        {/* Feature Type details */}
+        {kind === 'featureType' && (
+          <Field label={t('Details')} align={align} colors={colors}>
             <TextInput
               style={[inputStyle, styles.multiline]}
               placeholderTextColor={colors.textMuted}

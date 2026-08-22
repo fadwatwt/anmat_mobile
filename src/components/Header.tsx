@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,8 @@ import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { fetchNotifications, isUnread } from '../services/notifications';
 import { font, radii, spacing } from '../theme';
+
+const IS_MOBILE = Dimensions.get('window').width <= 400;
 
 type Props = {
   onMenuPress: () => void;
@@ -55,7 +57,7 @@ export function Header({ onMenuPress, title }: Props) {
         <TouchableOpacity onPress={onMenuPress} style={styles.menuBtn}>
           <Menu size={20} color={colors.ink} />
         </TouchableOpacity>
-        {title ? (
+        {!IS_MOBILE && title ? (
           <Text style={[styles.title, { color: colors.ink }]} numberOfLines={1}>
             {title}
           </Text>
@@ -65,11 +67,15 @@ export function Header({ onMenuPress, title }: Props) {
       <View style={[styles.sideSection, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <TouchableOpacity onPress={toggleLanguage} style={styles.iconBtn}>
           <Globe size={18} color={colors.textMuted} />
-          <Text style={[styles.langText, { color: colors.textMuted }]}>{locale === 'ar' ? 'EN' : 'AR'}</Text>
+          {!IS_MOBILE && (
+            <Text style={[styles.langText, { color: colors.textMuted }]}>{locale === 'ar' ? 'EN' : 'AR'}</Text>
+          )}
         </TouchableOpacity>
-        <TouchableOpacity onPress={toggleTheme} style={styles.iconBtn}>
-          {isDark ? <Sun size={18} color={colors.textMuted} /> : <Moon size={18} color={colors.textMuted} />}
-        </TouchableOpacity>
+        {!IS_MOBILE && (
+          <TouchableOpacity onPress={toggleTheme} style={styles.iconBtn}>
+            {isDark ? <Sun size={18} color={colors.textMuted} /> : <Moon size={18} color={colors.textMuted} />}
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Notifications')}>
           <Bell size={18} color={colors.textMuted} />
           {unreadCount > 0 && (
@@ -91,10 +97,14 @@ export function Header({ onMenuPress, title }: Props) {
               {(user?.name || user?.email || 'A').slice(0, 1).toUpperCase()}
             </Text>
           </View>
-          <Text style={[styles.userName, { color: colors.textMuted }]} numberOfLines={1}>
-            {user?.name || 'N/A'}
-          </Text>
-          <ChevronDown size={14} color={colors.textMuted} />
+          {!IS_MOBILE && (
+            <>
+              <Text style={[styles.userName, { color: colors.textMuted }]} numberOfLines={1}>
+                {user?.name || 'N/A'}
+              </Text>
+              <ChevronDown size={14} color={colors.textMuted} />
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -204,11 +214,9 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     alignItems: 'center',
-    flexDirection: 'row',
-    gap: 2,
+    justifyContent: 'center',
     minHeight: 44,
     minWidth: 44,
-    justifyContent: 'center',
     padding: spacing.xs,
   },
   langText: {
@@ -216,10 +224,10 @@ const styles = StyleSheet.create({
     fontWeight: font.weights.bold,
   },
   menuBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
     minHeight: 44,
     minWidth: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: spacing.xs,
   },
   menuOverlay: {
@@ -227,7 +235,7 @@ const styles = StyleSheet.create({
   },
   sideSection: {
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   title: {
     fontSize: font.sizes.base,
@@ -237,7 +245,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radii.lg,
     gap: spacing.xs,
-    maxWidth: 150,
+    minHeight: 44,
+    minWidth: 44,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },

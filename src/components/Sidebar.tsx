@@ -75,6 +75,7 @@ const routeToScreen: Record<string, string> = {
   Timeline: 'Timeline',
   Escalation: 'Escalation',
   Translations: 'Translations',
+  Notifications: 'Notifications',
   Profile: 'Profile',
 };
 

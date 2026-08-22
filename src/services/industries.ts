@@ -1,4 +1,5 @@
 import { http } from '../lib/http';
+import i18n from '../i18n';
 import { ApiResponse } from '../types';
 
 // Admin industries CRUD (web: industriesApi, api/admin/industries).
@@ -17,13 +18,15 @@ export type IndustryPayload = {
 };
 
 export async function fetchIndustries(): Promise<Industry[]> {
-  const res = await http.get<ApiResponse<Industry[]> | Industry[]>('/api/admin/industries');
+  const lang = (i18n.language || 'en').split('-')[0];
+  const res = await http.get<ApiResponse<Industry[]> | Industry[]>('/api/admin/industries', { params: { locale: lang } });
   const data = (res.data as ApiResponse<Industry[]>).data ?? res.data;
   return Array.isArray(data) ? data : [];
 }
 
 export async function fetchSubscriberIndustries(): Promise<Industry[]> {
-  const res = await http.get<ApiResponse<Industry[]> | Industry[]>('/api/subscriber/industries');
+  const lang = (i18n.language || 'en').split('-')[0];
+  const res = await http.get<ApiResponse<Industry[]> | Industry[]>('/api/subscriber/industries', { params: { locale: lang } });
   const data = (res.data as ApiResponse<Industry[]>).data ?? res.data;
   return Array.isArray(data) ? data : [];
 }

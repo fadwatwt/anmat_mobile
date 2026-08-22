@@ -1,5 +1,8 @@
 import { http } from '../lib/http';
 import { ApiResponse } from '../types';
+import * as SecureStore from 'expo-secure-store';
+
+const REGIONAL_KEY = 'anmat_regional_settings';
 
 // ===== User Preferences =====
 export type UserPreferences = {
@@ -66,12 +69,22 @@ export type OrganizationSettings = {
   rating_types?: string[];
 };
 
-export async function fetchOrganizationSettings(): Promise<OrganizationSettings> {
+export async function fetchOrganizationSettings(isSubscriber: boolean): Promise<OrganizationSettings> {
+  if (!isSubscriber) {
+    const stored = await SecureStore.getItemAsync(REGIONAL_KEY);
+    return stored ? JSON.parse(stored) : { timezone: 'UTC', time_format: '24h', date_format: 'yyyy-mm-dd' };
+  }
   const res = await http.get<ApiResponse<OrganizationSettings>>('/api/subscriber/organization');
   return res.data.data ?? {};
 }
 
-export async function updateOrganizationSettings(data: Partial<OrganizationSettings>): Promise<void> {
+export async function updateOrganizationSettings(data: Partial<OrganizationSettings>, isSubscriber: boolean): Promise<void> {
+  if (!isSubscriber) {
+    const stored = await SecureStore.getItemAsync(REGIONAL_KEY);
+    const current = stored ? JSON.parse(stored) : {};
+    await SecureStore.setItemAsync(REGIONAL_KEY, JSON.stringify({ ...current, ...data }));
+    return;
+  }
   await http.put('/api/subscriber/organization', data);
 }
 

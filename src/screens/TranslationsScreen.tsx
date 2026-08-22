@@ -10,7 +10,7 @@ import {
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { Zap, Sparkles, Leaf, Languages, Check, X } from 'lucide-react-native';
+import { Zap, Sparkles, Leaf, Languages, Check, X, SquareStack } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -18,9 +18,9 @@ import { Badge } from '../components/Badge';
 import { StatusActions } from '../components/StatusActions';
 import { EmptyState } from '../components/EmptyState';
 import { TranslateModal } from '../modals/TranslateModal';
-import { fetchSubscriptionPlans, SubscriptionPlan, TokenPackage, fetchTokenPackages } from '../services/plans';
+import { fetchSubscriptionPlans, SubscriptionPlan, TokenPackage, fetchTokenPackages, FeatureType, fetchFeatureTypes } from '../services/plans';
 import { Industry, fetchIndustries } from '../services/industries';
-import { fetchPlanTranslations, fetchIndustryTranslations, fetchTokenPackageTranslations } from '../services/translations';
+import { fetchPlanTranslations, fetchIndustryTranslations, fetchTokenPackageTranslations, fetchFeatureTypeTranslations } from '../services/translations';
 import { font, radii, spacing } from '../theme';
 
 const Tab = createMaterialTopTabNavigator();
@@ -355,6 +355,112 @@ function IndustriesTab() {
   );
 }
 
+// ===== Feature Types tab =====
+function FeatureTypesTab() {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  const { permissions } = useAuth();
+  const [featureTypes, setFeatureTypes] = useState<FeatureType[]>([]);
+  const [translationMap, setTranslationMap] = useState<Record<string, string[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedFeatureType, setSelectedFeatureType] = useState<FeatureType | null>(null);
+
+  const has = useCallback(
+    (perm: string) => Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm)),
+    [permissions],
+  );
+  const canUpdate = has('admin.subscription_feature_types.toggle_activation');
+
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    try {
+      const data = await fetchFeatureTypes();
+      setFeatureTypes(data);
+      const map: Record<string, string[]> = {};
+      await Promise.all(
+        data.map(async (ft) => {
+          try {
+            const trs = await fetchFeatureTypeTranslations(ft._id);
+            map[ft._id] = trs.map((tr) => tr.locale);
+          } catch {
+            map[ft._id] = [];
+          }
+        }),
+      );
+      setTranslationMap(map);
+    } catch {
+      setFeatureTypes([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const align = (isRTL ? 'right' : 'left') as 'right' | 'left';
+
+  if (loading) return <ActivityIndicator color={colors.primary} size="large" style={styles.loading} />;
+
+  return (
+    <>
+      <ScrollView
+        style={{ backgroundColor: colors.background }}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[colors.primary]} />}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={[styles.title, { color: colors.ink, textAlign: align }]}>{t('Feature Types Translations')}</Text>
+
+        {featureTypes.length === 0 ? (
+          <EmptyState title={t('No feature types')} message={t('No items to display')} icon="📦" />
+        ) : (
+          featureTypes.map((ft) => {
+            const locs = translationMap[ft._id] || [];
+            return (
+              <View key={ft._id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={[styles.cardHead, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                  <View style={[styles.titleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                    <SquareStack size={18} color="#F59E0B" />
+                    <Text style={[styles.cardTitle, { color: colors.ink, textAlign: align }]} numberOfLines={1}>{ft.title}</Text>
+                  </View>
+                  <StatusActions actions={canUpdate ? [
+                    { label: t('Translate'), icon: <Languages size={16} color="#3B82F6" />, onPress: () => { setSelectedFeatureType(ft); setModalOpen(true); } },
+                  ] : []} />
+                </View>
+                <View style={[styles.metaRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                  <Text style={[styles.price, { color: colors.ink }]}>{ft.details || '--'}</Text>
+                  <View style={[styles.badgeRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                    <View style={[styles.badgeLabel, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                      <Text style={[styles.badgeText, { color: colors.textMuted }]}>{t('Arabic')}</Text>
+                      <TranslationBadge has={locs.includes('ar')} />
+                    </View>
+                    <View style={[styles.badgeLabel, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                      <Text style={[styles.badgeText, { color: colors.textMuted }]}>{t('English')}</Text>
+                      <TranslationBadge has={locs.includes('en')} />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
+
+      <TranslateModal
+        visible={modalOpen}
+        onClose={() => { setModalOpen(false); setSelectedFeatureType(null); }}
+        onSaved={() => load()}
+        kind="featureType"
+        item={selectedFeatureType}
+      />
+    </>
+  );
+}
+
 export default function TranslationsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -366,6 +472,7 @@ export default function TranslationsScreen() {
   );
   const canViewPlans = has('admin.subscription_plans.list');
   const canViewIndustries = has('admin.industries.list');
+  const canViewFeatureTypes = has('admin.subscription_feature_types.list');
 
   const tabs = [] as { name: string; component: React.ComponentType<any>; icon: React.ComponentType<any>; title: string }[];
   if (canViewPlans) {
@@ -374,6 +481,9 @@ export default function TranslationsScreen() {
   }
   if (canViewIndustries) {
     tabs.push({ name: 'Industries', component: IndustriesTab, icon: Leaf, title: t('Industries') });
+  }
+  if (canViewFeatureTypes) {
+    tabs.push({ name: 'FeatureTypes', component: FeatureTypesTab, icon: SquareStack, title: t('Feature Types') });
   }
 
   if (tabs.length === 0) {

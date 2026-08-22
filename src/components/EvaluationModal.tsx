@@ -3,6 +3,7 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { Modal } from './Modal';
 import { StarRatingInput } from './StarRatingInput';
 import { Button } from './Button';
@@ -37,6 +38,8 @@ export function EvaluationModal({ visible, onClose, onSubmit, type = 'task', has
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const { user } = useAuth();
+  const isSubscriber = user?.type === 'Subscriber';
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [evaluationMethod, setEvaluationMethod] = useState('MANUAL');
   const [ratings, setRatings] = useState<Record<string, number>>({});
@@ -44,7 +47,7 @@ export function EvaluationModal({ visible, onClose, onSubmit, type = 'task', has
 
   useEffect(() => {
     if (visible) {
-      fetchOrganizationSettings().then((org: OrganizationSettings) => {
+      fetchOrganizationSettings(isSubscriber).then((org: OrganizationSettings) => {
         if (org.rating_types && org.rating_types.length > 0) {
           setCategories(org.rating_types.map((item: any) => {
             if (typeof item === 'string') return { key: item.toLowerCase().replace(/\s+/g, '_'), titleKey: item };

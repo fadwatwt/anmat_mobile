@@ -37,6 +37,7 @@ import { Badge } from '../components/Badge';
 import { StatusActions } from '../components/StatusActions';
 import { EmptyState } from '../components/EmptyState';
 import { http } from '../lib/http';
+import i18n from '../i18n';
 import { ApiResponse, SubscriptionBasic } from '../types';
 import { fetchAdminSubscriptions } from '../services/dashboard';
 import {
@@ -144,14 +145,15 @@ async function fetchMyPayments(): Promise<Payment[]> {
 }
 
 async function fetchSubscriberPlans(): Promise<SubscriberPlan[]> {
+  const lang = (i18n.language || 'en').split('-')[0];
   try {
     // Try subscriber-specific endpoint first, fall back to public
-    const res = await http.get<ApiResponse<SubscriberPlan[]>>('/api/subscriber/subscription-plans');
+    const res = await http.get<ApiResponse<SubscriberPlan[]>>('/api/subscriber/subscription-plans', { params: { locale: lang } });
     const data = (res.data as any).data ?? res.data;
     return Array.isArray(data) ? data : [];
   } catch {
     try {
-      const res = await http.get<ApiResponse<SubscriberPlan[]>>('/api/subscription-plans/public');
+      const res = await http.get<ApiResponse<SubscriberPlan[]>>('/api/subscription-plans/public', { params: { locale: lang } });
       const data = (res.data as any).data ?? res.data;
       return Array.isArray(data) ? data : [];
     } catch {

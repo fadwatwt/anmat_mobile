@@ -16,6 +16,7 @@ i18n.use(initReactI18next).init({
   resources,
   lng: detectedLanguage,
   fallbackLng: 'en',
+  keySeparator: false,
   interpolation: { escapeValue: false },
   compatibilityJSON: 'v4',
 });

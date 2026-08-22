@@ -78,6 +78,8 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import TimelineScreen from '../screens/TimelineScreen';
 import EscalationScreen from '../screens/EscalationScreen';
 import TranslationsScreen from '../screens/TranslationsScreen';
+import SubscriberPlansScreen from '../screens/SubscriberPlansScreen';
+import StripePaymentScreen from '../screens/StripePaymentScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -97,15 +99,14 @@ export function RootNavigator() {
     );
   }
 
-  // Subscription gating (mirrors the web dashboard layout):
-  // - Subscriber with no/expired subscription → Plans screen to (re)subscribe.
-  // - Employee whose org subscription lapsed → fully blocked.
-  // has_subscription_access is provided by GET /api/user/auth.
-  const subscriberNeedsPlans =
-    user?.type === 'Subscriber' &&
-    (user?.has_subscription_access === false || !user?.active_subscription_id);
+  // Employee whose org subscription lapsed → fully blocked.
   const employeeBlocked =
     user?.type === 'Employee' && user?.has_subscription_access === false;
+
+  // Subscriber without an active subscription → show Plans screen to subscribe.
+  const subscriberNeedsPlans =
+    user?.type === 'Subscriber' &&
+    user?.has_subscription_access === false;
 
   if (!token) {
     // Logged-out stack: send admins back to the Admin Sign In screen.
@@ -134,11 +135,13 @@ export function RootNavigator() {
         </Stack.Group>
       ) : subscriberNeedsPlans ? (
         <Stack.Group>
-          <Stack.Screen name="Plans">
-            {() => <Layout><PlansScreen /></Layout>}
-          </Stack.Screen>
+          <Stack.Screen name="SubscriberPlans" component={SubscriberPlansScreen} />
+          <Stack.Screen name="StripePayment" component={StripePaymentScreen} />
           <Stack.Screen name="Settings">
             {() => <Layout><SettingsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="Profile">
+            {() => <Layout><ProfileScreen /></Layout>}
           </Stack.Screen>
         </Stack.Group>
       ) : (

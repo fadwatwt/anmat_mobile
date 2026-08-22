@@ -1,4 +1,5 @@
 import { http } from '../lib/http';
+import i18n from '../i18n';
 import { ApiResponse } from '../types';
 
 export type Organization = {
@@ -38,7 +39,8 @@ export type OrganizationListParams = {
 };
 
 export async function fetchMyOrganization(): Promise<Organization> {
-  const res = await http.get<ApiResponse<Organization>>('/api/subscriber/organization');
+  const lang = (i18n.language || 'en').split('-')[0];
+  const res = await http.get<ApiResponse<Organization>>('/api/subscriber/organization', { params: { locale: lang } });
   return res.data.data;
 }
 
@@ -53,7 +55,9 @@ export async function updateOrganization(payload: Partial<CreateOrganizationPayl
 }
 
 export async function fetchAllOrganizations(params: OrganizationListParams = {}): Promise<{ data: Organization[]; total: number }> {
+  const lang = (i18n.language || 'en').split('-')[0];
   const qs = new URLSearchParams();
+  qs.append('locale', lang);
   Object.entries(params).forEach(([k, v]) => { if (v != null) qs.append(k, String(v)); });
   const res = await http.get<ApiResponse<{ data: Organization[]; total: number }>>(`/api/admin/organizations?${qs}`);
   return res.data.data;

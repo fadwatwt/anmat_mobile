@@ -56,11 +56,12 @@ export default function GeneralSettingsTab() {
   const { locale, setLocale } = useLocale();
   const { mode, setThemeMode } = useTheme();
   const { isRTL } = useLocale();
-  const { permissions } = useAuth();
+  const { permissions, user } = useAuth();
+  const isSubscriber = user?.type === 'Subscriber';
 
   const has = (perm: string) =>
     Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm));
-  const canEditRegional = has('organizations.manage_settings');
+  const canEditRegional = has('organizations.manage_settings') || isSubscriber;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -76,7 +77,7 @@ export default function GeneralSettingsTab() {
       (async () => {
         setLoading(true);
         try {
-          const org = await fetchOrganizationSettings();
+          const org = await fetchOrganizationSettings(isSubscriber);
           setTimezone(org.timezone || 'UTC');
           setTimeFormat(org.time_format || '24h');
           setDateFormat(org.date_format || 'yyyy-mm-dd');
@@ -96,7 +97,7 @@ export default function GeneralSettingsTab() {
         timezone,
         time_format: timeFormat,
         date_format: dateFormat,
-      });
+      }, isSubscriber);
       if (selectedLang !== locale) {
         setLocale(selectedLang);
       }

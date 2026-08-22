@@ -76,29 +76,29 @@ export function EmployeeAnalytics() {
 
       <SectionTitle>{t('Tasks Analytics')}</SectionTitle>
       {tasksSummary.length > 0 && (
-        <AnalyticsCard title="Tasks Summary">
+        <AnalyticsCard title={t('Tasks Summary')}>
           <DonutChart data={tasksSummary} total={sumValues(tasksSummary)} subtitle={t('TASKS')} />
         </AnalyticsCard>
       )}
       {tasksPerf.length > 0 && (
-        <AnalyticsCard title="Tasks Performance">
+        <AnalyticsCard title={t('Tasks Performance')}>
           <BarChart data={tasksPerf} />
         </AnalyticsCard>
       )}
       {tasksRating.length > 0 && (
-        <AnalyticsCard title="Tasks Rating">
+        <AnalyticsCard title={t('Tasks Rating')}>
           <DonutChart data={tasksRating} total={sumValues(tasksRating)} subtitle={t('TASKS')} />
         </AnalyticsCard>
       )}
 
       <SectionTitle>{t('Projects Analysis')}</SectionTitle>
       {projectsPerf.length > 0 && (
-        <AnalyticsCard title="Projects Performance">
+        <AnalyticsCard title={t('Projects Performance')}>
           <BarChart data={projectsPerf} color="#10B981" />
         </AnalyticsCard>
       )}
-      <ProjectsList projects={data.projectsPerformance || []} title="Projects Performance" />
-      <ProjectsList projects={data.recentProjects || []} title="Last Projects" />
+      <ProjectsList projects={data.projectsPerformance || []} title={t('Projects Performance')} />
+      <ProjectsList projects={data.recentProjects || []} title={t('Last Projects')} />
     </View>
   );
 }

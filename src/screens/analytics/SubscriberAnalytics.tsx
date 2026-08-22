@@ -101,7 +101,7 @@ export function SubscriberAnalytics() {
 
       {/* Subscription Usage */}
       <SectionTitle>{t('Subscription Usage')}</SectionTitle>
-      <AnalyticsCard title="Employees Quota">
+      <AnalyticsCard title={t('Employees Quota')}>
         <GaugeChart
           percentage={subUsage.employees.percentage}
           label={t('EMPLOYEES')}
@@ -112,7 +112,7 @@ export function SubscriberAnalytics() {
           ]}
         />
       </AnalyticsCard>
-      <AnalyticsCard title="Storage Quota">
+      <AnalyticsCard title={t('Storage Quota')}>
         <GaugeChart
           percentage={subUsage.storage.percentage}
           label={t('STORAGE')}
@@ -127,39 +127,39 @@ export function SubscriberAnalytics() {
       {/* Tasks Analytics */}
       <SectionTitle>{t('Tasks Analytics')}</SectionTitle>
       {tasksSummary.length > 0 && (
-        <AnalyticsCard title="Tasks Summary">
+        <AnalyticsCard title={t('Tasks Summary')}>
           <DonutChart data={tasksSummary} total={data.overview?.totalTasks ?? sumValues(tasksSummary)} subtitle={t('TASKS')} />
         </AnalyticsCard>
       )}
       {tasksPerf.length > 0 && (
-        <AnalyticsCard title="Tasks Performance">
+        <AnalyticsCard title={t('Tasks Performance')}>
           <BarChart data={tasksPerf} />
         </AnalyticsCard>
       )}
       {tasksRating.length > 0 && (
-        <AnalyticsCard title="Tasks Rating">
+        <AnalyticsCard title={t('Tasks Rating')}>
           <DonutChart data={tasksRating} total={sumValues(tasksRating)} subtitle={t('TASKS')} />
         </AnalyticsCard>
       )}
 
       {/* Projects Analytics */}
       <SectionTitle>{t('Projects Analytics')}</SectionTitle>
-      <ProjectsProgressCard projects={data.projectsProgress || []} title="Projects Performance" />
-      <ProjectsProgressCard projects={data.recentProjects || []} title="Last 4 Projects" />
+      <ProjectsProgressCard projects={data.projectsProgress || []} title={t('Projects Performance')} />
+      <ProjectsProgressCard projects={data.recentProjects || []} title={t('Last 4 Projects')} />
 
       {/* Employees Analytics */}
       <SectionTitle>{t('Employees Analytics')}</SectionTitle>
       {employeeAttendance.length > 0 && (
-        <AnalyticsCard title="Employee Attendance">
+        <AnalyticsCard title={t('Employee Attendance')}>
           <DonutChart data={employeeAttendance} total={sumValues(employeeAttendance)} subtitle={t('DAYS')} />
         </AnalyticsCard>
       )}
       {employeeAdherence.length > 0 && (
-        <AnalyticsCard title="Employee Adherence">
+        <AnalyticsCard title={t('Employee Adherence')}>
           <DonutChart data={employeeAdherence} total={sumValues(employeeAdherence)} subtitle={t('RECORDS')} />
         </AnalyticsCard>
       )}
-      <AnalyticsCard title="Tasks Delay">
+      <AnalyticsCard title={t('Tasks Delay')}>
         <GaugeChart
           percentage={tasksDelay.percentage}
           label={t('DELAY')}
@@ -174,17 +174,17 @@ export function SubscriberAnalytics() {
       {/* Department Analytics */}
       <SectionTitle>{t('Department Analytics')}</SectionTitle>
       {departmentAdherence.length > 0 && (
-        <AnalyticsCard title="Department Adherence">
+        <AnalyticsCard title={t('Department Adherence')}>
           <DonutChart data={departmentAdherence} total={sumValues(departmentAdherence)} subtitle={t('Tasks')} />
         </AnalyticsCard>
       )}
       {departmentPerformance.length > 0 && (
-        <AnalyticsCard title="Department Performance">
+        <AnalyticsCard title={t('Department Performance')}>
           <DonutChart data={departmentPerformance} total={sumValues(departmentPerformance)} subtitle={t('TASKS')} />
         </AnalyticsCard>
       )}
       {deptRanking.length > 0 && (
-        <AnalyticsCard title="Departments Ranking">
+        <AnalyticsCard title={t('Departments Ranking')}>
           <View style={styles.rankList}>
             {deptRanking.map((row, i) => (
               <View key={row._id || `${row.name}-${i}`} style={[styles.rankRow, { borderBottomColor: colors.border }]}>
@@ -231,7 +231,7 @@ function TopEmployeesCard({ employees }: { employees: SubscriberAnalyticsData['t
   const { isRTL } = useLocale();
   if (!employees || employees.length === 0) return null;
   return (
-    <AnalyticsCard title="Top 3 Employees">
+    <AnalyticsCard title={t('Top 3 Employees')}>
       <View style={styles.rankList}>
         {employees.map((e, i) => (
           <View key={e._id || `${e.name}-${i}`} style={[styles.rankRow, { borderBottomColor: colors.border }]}>

@@ -34,7 +34,8 @@ export default function TasksSettingsTab() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
-  const { permissions } = useAuth();
+  const { permissions, user } = useAuth();
+  const isSubscriber = user?.type === 'Subscriber';
 
   const has = (perm: string) =>
     Array.isArray(permissions) && (permissions.includes('*') || permissions.includes(perm));
@@ -59,7 +60,7 @@ export default function TasksSettingsTab() {
         try {
           const [prefs, org] = await Promise.all([
             fetchUserPreferences(),
-            fetchOrganizationSettings(),
+            fetchOrganizationSettings(isSubscriber),
           ]);
           if (prefs.min_tasks !== undefined) setMinTasks(String(prefs.min_tasks));
           setIsPointsActive(org.is_points_system_active ?? true);
@@ -99,7 +100,7 @@ export default function TasksSettingsTab() {
         is_points_system_active: isPointsActive,
         default_evaluation_method: evalMethod,
         rating_types: filtered.length ? filtered : ['Time Evaluation'],
-      });
+      }, isSubscriber);
       Alert.alert(t('Success'), t('Rating settings updated successfully'));
     } catch (e: any) {
       Alert.alert(t('Error'), e?.response?.data?.message || t('Failed to update rating settings'));

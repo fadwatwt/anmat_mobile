@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { Badge } from '../components/Badge';
 import { ListScreen } from '../generators/ListScreen';
 import { fetchPermissions, Permission } from '../services/permissions';
+import { getPermissionLabel } from '../config/permissionTranslations';
 import { font } from '../theme';
 
 export function PermissionsScreen() {
@@ -30,7 +31,7 @@ export function PermissionsScreen() {
       width: 200,
       render: (item: Permission) => (
         <Text style={{ color: colors.ink, fontWeight: font.weights.semibold, fontSize: font.sizes.sm, textAlign: align }} numberOfLines={2}>
-          {item.name}
+          {getPermissionLabel(item.name, item)}
         </Text>
       ),
     },

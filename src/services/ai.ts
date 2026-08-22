@@ -1,4 +1,5 @@
 import { http } from '../lib/http';
+import i18n from '../i18n';
 import { ApiResponse } from '../types';
 
 export type PendingAction = {
@@ -70,7 +71,8 @@ export async function fetchTokenBalance(): Promise<TokenBalance> {
 }
 
 export async function fetchTokenPackages(): Promise<TokenPackage[]> {
-  const response = await http.get<ApiResponse<TokenPackage[]>>('/api/ai/tokens/packages');
+  const lang = (i18n.language || 'en').split('-')[0];
+  const response = await http.get<ApiResponse<TokenPackage[]>>('/api/ai/tokens/packages', { params: { locale: lang } });
   return response.data.data || response.data;
 }
 

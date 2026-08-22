@@ -405,29 +405,30 @@ export default function ProjectsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {canViewTemplates && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.tabsContent, { flexDirection: rowDir }]}
-          style={[styles.tabs, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}
-        >
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'projects' && { backgroundColor: colors.primaryLight }]}
-            onPress={() => setActiveTab('projects')}
+        <View style={[styles.tabs, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[styles.tabsContent, { flexDirection: rowDir }]}
           >
-            <Text numberOfLines={1} style={[styles.tabText, { color: activeTab === 'projects' ? colors.primary : colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
-              {t('Projects')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'templates' && { backgroundColor: colors.primaryLight }]}
-            onPress={() => setActiveTab('templates')}
-          >
-            <Text numberOfLines={1} style={[styles.tabText, { color: activeTab === 'templates' ? colors.primary : colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
-              {t('Templates')}
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'projects' && { backgroundColor: colors.primaryLight }]}
+              onPress={() => setActiveTab('projects')}
+            >
+              <Text numberOfLines={1} style={[styles.tabText, { color: activeTab === 'projects' ? colors.primary : colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+                {t('Projects')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'templates' && { backgroundColor: colors.primaryLight }]}
+              onPress={() => setActiveTab('templates')}
+            >
+              <Text numberOfLines={1} style={[styles.tabText, { color: activeTab === 'templates' ? colors.primary : colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
+                {t('Templates')}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
       )}
 
       {activeTab === 'projects' ? (
@@ -498,22 +499,24 @@ export default function ProjectsScreen() {
 
 const styles = StyleSheet.create({
   tabs: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
     borderBottomWidth: 1,
   },
   tabsContent: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   tab: {
     borderRadius: radii.lg,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingVertical: 2,
+    paddingHorizontal: spacing.sm,
+    minHeight: 28,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   tabText: {
-    fontSize: font.sizes.sm,
+    fontSize: 12,
     fontWeight: '700',
   },
   statusOption: {

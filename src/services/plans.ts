@@ -1,5 +1,22 @@
 import { http } from '../lib/http';
+import i18n from '../i18n';
 import { ApiResponse } from '../types';
+import {
+  fetchTokenPackageTranslations,
+  fetchFeatureTypeTranslations,
+  fetchPlanTranslations,
+} from './translations';
+
+export {
+  fetchPlanTranslations,
+  createPlanTranslation,
+  updatePlanTranslation,
+  deletePlanTranslation,
+} from './translations';
+export type {
+  PlanTranslation,
+  PlanFeatureTranslation,
+} from './translations';
 
 // ===== Feature types (for plan creation) =====
 export type FeatureTypeAttribute = { key: string; data_type: 'number' | 'string' };
@@ -13,12 +30,37 @@ export type FeatureType = {
 };
 
 export async function fetchFeatureTypes(): Promise<FeatureType[]> {
+  const lang = (i18n.language || 'en').split('-')[0];
   const response = await http.get<ApiResponse<FeatureType[]> | FeatureType[]>(
     '/api/admin/subscriptions-feature-types',
-    { params: { filter: 'active' } },
+    { params: { filter: 'active', locale: lang } },
   );
   const data = (response.data as ApiResponse<FeatureType[]>).data ?? response.data;
-  return Array.isArray(data) ? data : [];
+  const featureTypes = Array.isArray(data) ? data : [];
+
+  if (lang !== 'en' && featureTypes.length > 0) {
+    return applyTranslationsToFeatureTypes(featureTypes, lang);
+  }
+
+  return featureTypes;
+}
+
+async function applyTranslationsToFeatureTypes(featureTypes: FeatureType[], locale: string): Promise<FeatureType[]> {
+  const results = [...featureTypes];
+  for (let i = 0; i < results.length; i++) {
+    try {
+      const translations = await fetchFeatureTypeTranslations(results[i]._id);
+      const t = translations.find((tr) => tr.locale === locale);
+      if (t) {
+        results[i] = {
+          ...results[i],
+          title: t.title || results[i].title,
+          details: t.details || results[i].details,
+        };
+      }
+    } catch { /* keep original */ }
+  }
+  return results;
 }
 
 // ===== Subscription plans (web: subscriptionPlansApi) =====
@@ -30,6 +72,7 @@ export type PlanFeature = {
 };
 
 export type PlanPricing = {
+  _id?: string;
   price: number;
   discount?: number;
   interval: string;
@@ -67,11 +110,58 @@ export async function updateSubscriptionPlan(id: string, payload: CreatePlanPayl
 }
 
 export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+  const lang = (i18n.language || 'en').split('-')[0];
   const response = await http.get<ApiResponse<SubscriptionPlan[]> | SubscriptionPlan[]>(
     '/api/admin/subscription-plans',
+    { params: { locale: lang } },
+  );
+  const data = (response.data as ApiResponse<SubscriptionPlan[]>).data ?? response.data;
+  const plans = Array.isArray(data) ? data : [];
+
+  if (lang !== 'en' && plans.length > 0) {
+    const translated = await applyTranslationsToPlans(plans, lang);
+    return translated;
+  }
+
+  return plans;
+}
+
+export async function fetchPublicSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+  const lang = (i18n.language || 'en').split('-')[0];
+  const response = await http.get<ApiResponse<SubscriptionPlan[]> | SubscriptionPlan[]>(
+    '/api/subscription-plans/public',
+    { params: { locale: lang } },
   );
   const data = (response.data as ApiResponse<SubscriptionPlan[]>).data ?? response.data;
   return Array.isArray(data) ? data : [];
+}
+
+export async function fetchSubscriberSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+  const lang = (i18n.language || 'en').split('-')[0];
+  const response = await http.get<ApiResponse<SubscriptionPlan[]> | SubscriptionPlan[]>(
+    '/api/subscriber/subscription-plans',
+    { params: { locale: lang } },
+  );
+  const data = (response.data as ApiResponse<SubscriptionPlan[]>).data ?? response.data;
+  return Array.isArray(data) ? data : [];
+}
+
+async function applyTranslationsToPlans(plans: SubscriptionPlan[], locale: string): Promise<SubscriptionPlan[]> {
+  const results = [...plans];
+  for (let i = 0; i < results.length; i++) {
+    try {
+      const translations = await fetchPlanTranslations(results[i]._id);
+      const t = translations.find((tr) => tr.locale === locale);
+      if (t) {
+        results[i] = {
+          ...results[i],
+          name: t.name || results[i].name,
+          description: t.description || results[i].description,
+        };
+      }
+    } catch { /* keep original */ }
+  }
+  return results;
 }
 
 export async function deleteSubscriptionPlan(id: string): Promise<void> {
@@ -84,54 +174,6 @@ export async function toggleSubscriptionPlanActive(id: string): Promise<void> {
 
 export async function toggleSubscriptionPlanTrial(id: string): Promise<void> {
   await http.patch(`/api/admin/subscription-plans/${id}/trial/toggle-activity`);
-}
-
-// ===== Subscription plan translations (web: planTranslationsApi) =====
-export type PlanFeatureTranslation = {
-  feature_type_id: string;
-  title?: string;
-  details?: string;
-};
-
-export type PlanTranslation = {
-  _id?: string;
-  plan_id?: string;
-  locale: string;
-  name?: string;
-  description?: string;
-  feature_translations?: {
-    feature_type_id?: string;
-    plan_feature?: { _id?: string };
-    title?: string;
-    details?: string;
-  }[];
-};
-
-export type PlanTranslationPayload = {
-  locale: string;
-  name?: string;
-  description?: string;
-  feature_translations?: PlanFeatureTranslation[];
-};
-
-export async function fetchPlanTranslations(planId: string): Promise<PlanTranslation[]> {
-  const response = await http.get<ApiResponse<PlanTranslation[]> | PlanTranslation[]>(
-    `/api/admin/subscription-plans/${planId}/translations`,
-  );
-  const data = (response.data as ApiResponse<PlanTranslation[]>).data ?? response.data;
-  return Array.isArray(data) ? data : [];
-}
-
-export async function createPlanTranslation(planId: string, payload: PlanTranslationPayload): Promise<void> {
-  await http.post(`/api/admin/subscription-plans/${planId}/translations`, payload);
-}
-
-export async function updatePlanTranslation(planId: string, locale: string, payload: Omit<PlanTranslationPayload, 'locale'>): Promise<void> {
-  await http.patch(`/api/admin/subscription-plans/${planId}/translations/${locale}`, payload);
-}
-
-export async function deletePlanTranslation(planId: string, locale: string): Promise<void> {
-  await http.delete(`/api/admin/subscription-plans/${planId}/translations/${locale}`);
 }
 
 // ===== AI token packages (web: tokenPackagesApi) =====
@@ -167,11 +209,38 @@ export async function updateTokenPackage(id: string, payload: CreateTokenPackage
 }
 
 export async function fetchTokenPackages(): Promise<TokenPackage[]> {
+  const lang = (i18n.language || 'en').split('-')[0];
   const response = await http.get<ApiResponse<TokenPackage[]> | TokenPackage[]>(
     '/api/ai/admin/token-packages',
+    { params: { locale: lang } },
   );
   const data = (response.data as ApiResponse<TokenPackage[]>).data ?? response.data;
-  return Array.isArray(data) ? data : [];
+  const packages = Array.isArray(data) ? data : [];
+
+  if (lang !== 'en' && packages.length > 0) {
+    return applyTranslationsToTokenPackages(packages, lang);
+  }
+
+  return packages;
+}
+
+async function applyTranslationsToTokenPackages(packages: TokenPackage[], locale: string): Promise<TokenPackage[]> {
+  const results = [...packages];
+  for (let i = 0; i < results.length; i++) {
+    try {
+      const translations = await fetchTokenPackageTranslations(results[i]._id);
+      const t = translations.find((tr) => tr.locale === locale);
+      if (t) {
+        results[i] = {
+          ...results[i],
+          name: t.name || results[i].name,
+          description: t.description || results[i].description,
+          features: t.features?.length ? t.features : results[i].features,
+        };
+      }
+    } catch { /* keep original */ }
+  }
+  return results;
 }
 
 export async function deleteTokenPackage(id: string): Promise<void> {

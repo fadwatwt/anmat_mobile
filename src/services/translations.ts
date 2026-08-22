@@ -106,3 +106,38 @@ export async function updateTokenPackageTranslation(
 export async function deleteTokenPackageTranslation(packageId: string, locale: string): Promise<void> {
   await http.delete(`/api/admin/token-packages/${packageId}/translations/${locale}`);
 }
+
+// ===== Feature type translations =====
+export type FeatureTypeTranslation = {
+  _id?: string;
+  locale: string;
+  title?: string;
+  details?: string;
+};
+
+export async function fetchFeatureTypeTranslations(featureTypeId: string): Promise<FeatureTypeTranslation[]> {
+  const res = await http.get<ApiResponse<FeatureTypeTranslation[]> | FeatureTypeTranslation[]>(
+    `/api/admin/subscription-feature-types/${featureTypeId}/translations`,
+  );
+  const data = (res.data as ApiResponse<FeatureTypeTranslation[]>).data ?? res.data;
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createFeatureTypeTranslation(
+  featureTypeId: string,
+  body: { locale: string; title?: string; details?: string },
+): Promise<void> {
+  await http.post(`/api/admin/subscription-feature-types/${featureTypeId}/translations`, body);
+}
+
+export async function updateFeatureTypeTranslation(
+  featureTypeId: string,
+  locale: string,
+  body: { title?: string; details?: string },
+): Promise<void> {
+  await http.patch(`/api/admin/subscription-feature-types/${featureTypeId}/translations/${locale}`, body);
+}
+
+export async function deleteFeatureTypeTranslation(featureTypeId: string, locale: string): Promise<void> {
+  await http.delete(`/api/admin/subscription-feature-types/${featureTypeId}/translations/${locale}`);
+}

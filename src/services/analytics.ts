@@ -1,4 +1,5 @@
 import { http } from '../lib/http';
+import i18n from '../i18n';
 import { ApiResponse } from '../types';
 
 // ===== Analytics payload shapes (web-matching) =====
@@ -93,16 +94,19 @@ export type AdminAnalyticsData = {
 };
 
 export async function fetchAdminAnalyticsFull(): Promise<AdminAnalyticsData> {
-  const res = await http.get<ApiResponse<AdminAnalyticsData>>('/api/admin/analytics');
+  const lang = (i18n.language || 'en').split('-')[0];
+  const res = await http.get<ApiResponse<AdminAnalyticsData>>('/api/admin/analytics', { params: { locale: lang } });
   return res.data.data || {};
 }
 
 export async function fetchSubscriberAnalyticsFull(): Promise<SubscriberAnalyticsData> {
-  const res = await http.get<ApiResponse<SubscriberAnalyticsData>>('/api/subscriber/organization/analytics');
+  const lang = (i18n.language || 'en').split('-')[0];
+  const res = await http.get<ApiResponse<SubscriberAnalyticsData>>('/api/subscriber/organization/analytics', { params: { locale: lang } });
   return res.data.data || {};
 }
 
 export async function fetchEmployeeAnalyticsFull(): Promise<EmployeeAnalyticsData> {
-  const res = await http.get<ApiResponse<EmployeeAnalyticsData>>('/api/employee/analytics');
+  const lang = (i18n.language || 'en').split('-')[0];
+  const res = await http.get<ApiResponse<EmployeeAnalyticsData>>('/api/employee/analytics', { params: { locale: lang } });
   return res.data.data || {};
 }

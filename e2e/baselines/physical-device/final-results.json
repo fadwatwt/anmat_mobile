@@ -1,0 +1,47 @@
+﻿{
+  "date": "2026-08-19",
+  "device": "Samsung Galaxy A56 (SM_A566B) 1080x2340",
+  "admin": {
+    "conversations": {"status": "OK", "realIssues": 0},
+    "analytics": {"status": "OK", "realIssues": 0},
+    "ai_assistant": {"status": "OK", "realIssues": 0},
+    "system_admins": {"status": "OK", "realIssues": 0},
+    "roles": {"status": "OK", "realIssues": 0},
+    "permissions": {"status": "OK", "realIssues": 0},
+    "industries": {"status": "OK", "realIssues": 0},
+    "subscribers": {"status": "OK", "realIssues": 0},
+    "plans": {"status": "OK", "realIssues": 0},
+    "money_methods": {"status": "OK", "realIssues": 0},
+    "translations": {"status": "OK", "realIssues": 0},
+    "notifications": {"status": "OK", "realIssues": 0, "note": "Fixed route mapping in Sidebar.tsx"},
+    "support_tickets": {"status": "OK", "realIssues": 0},
+    "settings": {"status": "OK", "realIssues": 0}
+  },
+  "subscriber": {
+    "conversations": {"status": "OK", "realIssues": 0},
+    "analytics": {"status": "OK", "realIssues": 0},
+    "ai_assistant": {"status": "OK", "realIssues": 0},
+    "roles": {"status": "OK", "realIssues": 0},
+    "permissions": {"status": "OK", "realIssues": 0},
+    "notifications": {"status": "OK", "realIssues": 0},
+    "support_tickets": {"status": "OK", "realIssues": 0},
+    "settings": {"status": "OK", "realIssues": 0}
+  },
+  "employee": {
+    "subscription_inactive": {"status": "OK", "note": "Expired subscription screen displays correctly"}
+  },
+  "fixes_applied": [
+    "Sidebar: Added missing Notifications route mapping",
+    "BarChart: Fixed negative bar heights (clamped to 0)",
+    "ListScreen: Fixed table overflow by adding proper minWidth",
+    "SubscribersScreen: Added defensive error handling for API response",
+    "Header: Enhanced touch targets to 44x44 minimum",
+    "DashboardLayout: Improved SafeArea padding",
+    "14 files: Fixed RTL directional properties (marginLeft/Right to marginStart/End)",
+    "13 files: Fixed FAB positioning for RTL (right to end)",
+    "FormScreen/DetailScreen: Fixed RTL footer layout",
+    "ConversationsScreen: Fixed RTL touch targets",
+    "HRChatsScreen: Fixed RTL avatar overlap",
+    "StatusActions: Fixed RTL touch targets"
+  ]
+}

@@ -24,6 +24,7 @@ import { CreateTokenPackageModal } from '../modals/CreateTokenPackageModal';
 import { PlanTranslationsModal } from '../modals/PlanTranslationsModal';
 import {
   fetchSubscriptionPlans,
+  fetchPublicSubscriptionPlans,
   deleteSubscriptionPlan,
   toggleSubscriptionPlanActive,
   toggleSubscriptionPlanTrial,
@@ -51,7 +52,9 @@ function SubscriptionPlansTab() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL, locale } = useLocale();
-  const { permissions } = useAuth();
+  const { permissions, user } = useAuth();
+  const isSubscriber = user?.type === 'Subscriber';
+  const needsPublicPlans = isSubscriber && user?.has_subscription_access === false;
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,14 +76,14 @@ function SubscriptionPlansTab() {
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     try {
-      setPlans(await fetchSubscriptionPlans());
+      setPlans(needsPublicPlans ? await fetchPublicSubscriptionPlans() : await fetchSubscriptionPlans());
     } catch {
       setPlans([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [needsPublicPlans]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 

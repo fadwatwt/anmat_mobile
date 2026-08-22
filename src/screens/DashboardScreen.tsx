@@ -161,7 +161,7 @@ function AdminDashboardContent() {
         {industryData.length > 0 && (
           <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[s.chartCardTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Industries')}</Text>
-            <DonutChart data={industryData} subtitle="ORGANIZATIONS" size={140} strokeWidth={24} />
+            <DonutChart data={industryData} subtitle={t('ORGANIZATIONS')} size={140} strokeWidth={24} />
           </View>
         )}
         {subscriptionData.length > 0 && (
@@ -465,7 +465,7 @@ export default function DashboardScreen() {
       case 'Admin': return <AdminDashboardContent />;
       case 'Subscriber': return <SubscriberDashboardContent />;
       case 'Employee': return <EmployeeDashboardContent />;
-      default: return <EmptyState title="Dashboard" message={t('Unknown user type')} icon="❓" />;
+      default: return <EmptyState title={t('Dashboard')} message={t('Unknown user type')} icon="❓" />;
     }
   };
 

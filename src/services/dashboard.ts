@@ -1,4 +1,5 @@
 import { http } from '../lib/http';
+import i18n from '../i18n';
 import {
   ApiResponse,
   AdminAnalytics,
@@ -15,7 +16,8 @@ import {
 // ===== Admin =====
 
 export async function fetchAdminAnalytics(): Promise<AdminAnalytics> {
-  const response = await http.get<ApiResponse<AdminAnalytics>>('/api/admin/analytics');
+  const lang = (i18n.language || 'en').split('-')[0];
+  const response = await http.get<ApiResponse<AdminAnalytics>>('/api/admin/analytics', { params: { locale: lang } });
   return response.data.data;
 }
 
@@ -27,7 +29,8 @@ export async function fetchAdminSubscriptions(page = 1, limit = 10): Promise<{ d
 }
 
 export async function fetchIndustriesOrganizationsCount(): Promise<IndustryCount[]> {
-  const response = await http.get<ApiResponse<IndustryCount[]>>('/api/admin/industries/organizations-count');
+  const lang = (i18n.language || 'en').split('-')[0];
+  const response = await http.get<ApiResponse<IndustryCount[]>>('/api/admin/industries/organizations-count', { params: { locale: lang } });
   return response.data.data;
 }
 

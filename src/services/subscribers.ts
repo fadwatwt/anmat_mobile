@@ -1,4 +1,5 @@
 import { http } from '../lib/http';
+import i18n from '../i18n';
 import { ApiResponse } from '../types';
 
 export type Subscriber = {
@@ -62,12 +63,14 @@ export type SubscriberSocialQuota = {
 };
 
 export async function fetchSubscribers(): Promise<Subscriber[]> {
-  const response = await http.get<ApiResponse<Subscriber[]>>('/api/admin/subscribers');
+  const lang = (i18n.language || 'en').split('-')[0];
+  const response = await http.get<ApiResponse<Subscriber[]>>('/api/admin/subscribers', { params: { locale: lang } });
   return response.data.data;
 }
 
 export async function fetchSubscriberById(id: string): Promise<Subscriber> {
-  const response = await http.get<ApiResponse<Subscriber>>(`/api/admin/subscribers/${id}`);
+  const lang = (i18n.language || 'en').split('-')[0];
+  const response = await http.get<ApiResponse<Subscriber>>(`/api/admin/subscribers/${id}`, { params: { locale: lang } });
   return response.data.data;
 }
 
@@ -78,8 +81,9 @@ export async function toggleSubscriberActivation(id: string): Promise<void> {
 // ===== Subscriber detail: subscriptions, quota, mutations =====
 
 export async function fetchSubscriberSubscriptions(subscriberId: string): Promise<Subscription[]> {
+  const lang = (i18n.language || 'en').split('-')[0];
   const res = await http.get<ApiResponse<Subscription[]> | Subscription[]>(
-    `/api/subscriptions/admin/list?subscriber_id=${subscriberId}`,
+    `/api/subscriptions/admin/list?subscriber_id=${subscriberId}&locale=${lang}`,
   );
   const data = (res.data as ApiResponse<Subscription[]>).data ?? res.data;
   return Array.isArray(data) ? data : [];

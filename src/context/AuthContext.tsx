@@ -28,7 +28,7 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>;
   adminLogin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<User | null>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -182,10 +182,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (res.data?.data) {
         setUser(res.data.data);
         await SecureStore.setItemAsync(USER_KEY, JSON.stringify(res.data.data));
+        return res.data.data;
       }
     } catch {
       // Keep existing user on refresh failure
     }
+    return null;
   }, []);
 
   const logout = useCallback(async () => {

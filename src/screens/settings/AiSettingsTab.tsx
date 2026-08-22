@@ -90,7 +90,7 @@ export default function AiSettingsTab() {
             value={limit}
             onChangeText={setLimit}
             keyboardType="number-pad"
-            placeholder="e.g. 5000"
+            placeholder={t('e.g. 5000')}
             placeholderTextColor={colors.textMuted}
           />
         </View>

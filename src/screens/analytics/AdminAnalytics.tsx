@@ -70,23 +70,23 @@ export function AdminAnalytics() {
 
       <SectionTitle>{t('Companies Analytics')}</SectionTitle>
       {industries.length > 0 && (
-        <AnalyticsCard title="Industries">
+        <AnalyticsCard title={t('Industries')}>
           <DonutChart data={industries} subtitle={t('ORGANIZATIONS')} />
         </AnalyticsCard>
       )}
-      <AnalyticsCard title="Subscriptions">
+      <AnalyticsCard title={t('Subscriptions')}>
         <View style={styles.statRow}>
           <Stat label={t('Total Companies')} value={data.totalCompanies ?? 0} color="#375DFB" />
           <Stat label={t('System Users')} value={data.totalUsers ?? 0} color="#38C793" />
         </View>
       </AnalyticsCard>
       {subsMonthly.length > 0 && (
-        <AnalyticsCard title="Companies Subscriptions">
+        <AnalyticsCard title={t('Companies Subscriptions')}>
           <BarChart data={subsMonthly} color="#38C793" />
         </AnalyticsCard>
       )}
       {topCompanies.length > 0 && (
-        <AnalyticsCard title="Top Companies">
+        <AnalyticsCard title={t('Top Companies')}>
           <View style={styles.list}>
             {topCompanies.map((c, i) => (
               <View key={c._id || `${c.name}-${i}`} style={[styles.rankRow, { borderBottomColor: colors.border }]}>
@@ -101,12 +101,12 @@ export function AdminAnalytics() {
 
       <SectionTitle>{t('Projects Analytics')}</SectionTitle>
       {projectsPerf.length > 0 && (
-        <AnalyticsCard title="Projects Performance">
+        <AnalyticsCard title={t('Projects Performance')}>
           <BarChart data={projectsPerf} />
         </AnalyticsCard>
       )}
       {lastProjects.length > 0 && (
-        <AnalyticsCard title="Last Projects">
+        <AnalyticsCard title={t('Last Projects')}>
           <View style={styles.list}>
             {lastProjects.map((p, i) => (
               <View key={p._id || `${p.name}-${i}`} style={[styles.rankRow, { borderBottomColor: colors.border }]}>
@@ -120,7 +120,7 @@ export function AdminAnalytics() {
 
       <SectionTitle>{t('Revenues & Engagement')}</SectionTitle>
       {revenues.length > 0 && (
-        <AnalyticsCard title="Revenues">
+        <AnalyticsCard title={t('Revenues')}>
           <BarChart data={revenues} color="#7E3AF2" />
         </AnalyticsCard>
       )}

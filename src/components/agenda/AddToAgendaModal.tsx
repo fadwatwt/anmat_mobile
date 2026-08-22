@@ -50,9 +50,9 @@ export function AddToAgendaModal({ visible, onClose, task, onCreated, role }: Pr
         priority: priority as any,
         category: 'other',
         is_personal: true,
-        notes: isArabic ? `مرتبطة بالمهمة: ${task.title || task.name}` : `Linked to task: ${task.title || task.name}`,
+        notes: t('Linked to task: {{name}}', { name: task.title || task.name }),
       });
-      Alert.alert(t('Success'), isArabic ? 'تمت الإضافة إلى الأجندة' : 'Added to agenda');
+      Alert.alert(t('Success'), t('Added to agenda'));
       onCreated();
       onClose();
     } catch (e) {
