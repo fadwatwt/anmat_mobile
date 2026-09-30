@@ -59,6 +59,16 @@ const settleProcessing = (config: any) => {
   }
 };
 
+// --- Global 401 handling ------------------------------------------------------
+// AuthContext registers a logout callback here to avoid a circular import
+// (AuthContext -> http, so http cannot import AuthContext).
+type UnauthorizedHandler = () => void;
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+export function onUnauthorized(handler: UnauthorizedHandler | null) {
+  unauthorizedHandler = handler;
+}
+
 http.interceptors.response.use(
   (response) => {
     settleProcessing(response.config);
@@ -66,6 +76,14 @@ http.interceptors.response.use(
   },
   (error) => {
     settleProcessing(error?.config);
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      // Don't fire for the login endpoints themselves (wrong password != expired session).
+      const url = String(error.config?.url || '');
+      const isAuthEndpoint = url.includes('/auth/login');
+      if (!isAuthEndpoint) {
+        unauthorizedHandler?.();
+      }
+    }
     return Promise.reject(error);
   },
 );
@@ -84,9 +102,24 @@ export function setLanguageHeader(lang: string) {
 
 export function extractErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as { message?: string } | undefined;
-    return data?.message || error.message || 'Request failed';
+    const data = error.response?.data as
+      | { message?: string | string[]; errors?: Record<string, string | string[]> | string[]; error?: string }
+      | undefined;
+    if (Array.isArray(data?.message)) return data.message.join('\n');
+    if (typeof data?.message === 'string' && data.message) return data.message;
+    // Laravel-style validation bags: { errors: { email: [...] } }
+    if (data?.errors) {
+      if (Array.isArray(data.errors)) return data.errors.join('\n');
+      const first = Object.values(data.errors)
+        .flat()
+        .filter(Boolean)
+        .join('\n');
+      if (first) return first;
+    }
+    if (data?.error) return data.error;
+    return error.message || 'Request failed';
   }
+  if (error instanceof Error && error.message) return error.message;
 
   return 'Something went wrong';
 }

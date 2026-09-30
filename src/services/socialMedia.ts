@@ -52,6 +52,7 @@ export type UpdateTwitterAccountPayload = {
   Category?: string;
   description?: string;
   SecretKey?: string;
+  newPassword?: string;
 };
 
 export async function fetchSocialMediaQuota(): Promise<SocialMediaQuota> {

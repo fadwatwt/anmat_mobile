@@ -7,7 +7,7 @@ import { DateField } from '../DateField';
 import { useTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LanguageContext';
 import { font, radii, spacing } from '../../theme';
-import { Appointment, updateAppointment } from '../../services/appointments';
+import { Appointment, deleteAppointment, updateAppointment } from '../../services/appointments';
 import { extractErrorMessage } from '../../lib/http';
 import { UserType } from '../../types';
 import { todayISO } from './agendaShared';
@@ -18,10 +18,11 @@ type Props = {
   reminder: Appointment | null;
   onClose: () => void;
   onSaved: () => void;
+  onDeleted?: () => void;
   role: UserType | undefined;
 };
 
-export function EditReminderModal({ visible, reminder, onClose, onSaved, role }: Props) {
+export function EditReminderModal({ visible, reminder, onClose, onSaved, onDeleted, role }: Props) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const { isRTL } = useLocale();
@@ -66,6 +67,29 @@ export function EditReminderModal({ visible, reminder, onClose, onSaved, role }:
     }
   };
 
+  const handleDelete = () => {
+    if (!reminder) return;
+    Alert.alert(t('Delete Reminder?'), t('Are you sure?'), [
+      { text: t('Cancel'), style: 'cancel' },
+      {
+        text: t('Delete'),
+        style: 'destructive',
+        onPress: async () => {
+          setLoading(true);
+          try {
+            await deleteAppointment(role, reminder._id);
+            onDeleted?.();
+            onClose();
+          } catch (e) {
+            Alert.alert(t('Error'), extractErrorMessage(e) || t('Failed to delete. Please try again.'));
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+    ]);
+  };
+
   const inputStyle = [styles.input, { color: colors.ink, backgroundColor: colors.statusBg, borderColor: colors.border, textAlign: (isRTL ? 'right' : 'left') as 'right' | 'left' }];
 
   return (
@@ -93,6 +117,9 @@ export function EditReminderModal({ visible, reminder, onClose, onSaved, role }:
         </Field>
 
         <Button label={t('Save')} onPress={handleSave} loading={loading} />
+        {onDeleted && (
+          <Button label={t('Delete')} onPress={handleDelete} loading={loading} variant="danger" />
+        )}
       </View>
     </Modal>
   );

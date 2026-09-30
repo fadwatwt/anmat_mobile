@@ -25,7 +25,12 @@ function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
 function arcPath(cx: number, cy: number, r: number, startPct: number, endPct: number) {
   const start = polarToCartesian(cx, cy, r, startPct * 180);
   const end = polarToCartesian(cx, cy, r, endPct * 180);
-  const largeArc = endPct - startPct > 0.5 ? 1 : 0;
+  // The gauge spans 180° total, so a value fraction f covers f*180°.
+  // SVG large-arc must be set only when the span exceeds 180° — comparing
+  // the raw fraction (> 0.5) is wrong here and flips the arc for values
+  // above 50%. Max span is exactly 180°, so this is always 0.
+  const spanDeg = (endPct - startPct) * 180;
+  const largeArc = spanDeg > 180 ? 1 : 0;
   return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
 }
 

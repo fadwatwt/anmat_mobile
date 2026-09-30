@@ -54,23 +54,24 @@ describe('Static Layout Analysis - SafeArea', () => {
 
   test('All screen files should use SafeAreaView or have safe area handling', () => {
     const screenFiles = findAllTsxFiles(SCREENS_DIR);
-    const issues = [];
+    const layoutContent = readFile(path.join(LAYOUT_DIR, 'DashboardLayout.tsx'));
+    const layoutHasSafeArea = layoutContent.includes('useSafeAreaInsets') && layoutContent.includes('insets.');
+    // DashboardLayout provides SafeArea via insets for all wrapped screens — individual screens don't need SafeAreaView
+    expect(layoutHasSafeArea).toBe(true);
 
+    const issues = [];
     for (const file of screenFiles) {
       const content = readFile(file);
-      const fileName = path.basename(file);
-
       if (content.includes('SafeAreaView') || content.includes('useSafeAreaInsets')) {
         continue;
       }
-
+      // Screens rely on DashboardLayout for SafeArea — informational only, not a failure
       if (content.includes('flex: 1') && !content.includes('SafeAreaView')) {
         issues.push(relPath(file));
       }
     }
-
     if (issues.length > 0) {
-      console.log('Screens without SafeArea:', issues);
+      console.log('Info: Screens rely on DashboardLayout SafeArea (insets.bottom/top):', issues.length, 'files');
     }
   });
 });

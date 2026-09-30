@@ -47,6 +47,8 @@ export function TwitterAccountModal({ visible, onClose, onSaved, account }: Prop
   const [secretKey, setSecretKey] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [categories, setCategories] = useState<AccountCategory[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -60,9 +62,11 @@ export function TwitterAccountModal({ visible, onClose, onSaved, account }: Prop
       setDescription(account.Description || '');
       setCategoryId(account.Category?._id || '');
       setPassword(''); setEmail(''); setPhone('');
+      setNewPassword(''); setConfirmPassword('');
     } else {
       setName(''); setPassword(''); setEmail(''); setPhone('');
       setLocation(''); setSecretKey(''); setDescription(''); setCategoryId('');
+      setNewPassword(''); setConfirmPassword('');
     }
   }, [visible, account]);
 
@@ -75,6 +79,14 @@ export function TwitterAccountModal({ visible, onClose, onSaved, account }: Prop
       Alert.alert(t('Required'), t('Please select a category'));
       return;
     }
+    if (isEdit && newPassword && newPassword !== confirmPassword) {
+      Alert.alert(t('Required'), t('Passwords do not match!'));
+      return;
+    }
+    if (isEdit && newPassword && newPassword.length < 6) {
+      Alert.alert(t('Required'), t('Password must be at least 6 characters'));
+      return;
+    }
     setSaving(true);
     try {
       if (isEdit && account) {
@@ -84,6 +96,7 @@ export function TwitterAccountModal({ visible, onClose, onSaved, account }: Prop
           Category: categoryId || undefined,
           description: description.trim() || undefined,
           SecretKey: secretKey.replace(/\s/g, '').toUpperCase() || undefined,
+          newPassword: newPassword || undefined,
         });
       } else {
         await createTwitterAccount({
@@ -161,6 +174,31 @@ export function TwitterAccountModal({ visible, onClose, onSaved, account }: Prop
             <Field label={t('2FA Secret Key')} align={align} colors={colors}>
               <TextInput style={inputStyle} autoCapitalize="characters" placeholderTextColor={colors.textMuted} value={secretKey} onChangeText={setSecretKey} />
             </Field>
+
+            {isEdit && (
+              <>
+                <Field label={t('New Password')} align={align} colors={colors}>
+                  <TextInput
+                    style={inputStyle}
+                    secureTextEntry
+                    placeholderTextColor={colors.textMuted}
+                    placeholder={t('Leave empty to keep current password')}
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                  />
+                </Field>
+                <Field label={t('Confirm New Password')} align={align} colors={colors}>
+                  <TextInput
+                    style={inputStyle}
+                    secureTextEntry
+                    placeholderTextColor={colors.textMuted}
+                    placeholder={t('Confirm New Password')}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                  />
+                </Field>
+              </>
+            )}
 
             <Field label={t('Description')} align={align} colors={colors}>
               <TextInput

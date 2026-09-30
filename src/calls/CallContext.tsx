@@ -67,12 +67,33 @@ export const useGroupCall = () => {
   return ctx;
 };
 
-const ICE_CONFIG = {
-  iceServers: [
+// STUN alone fails behind strict NAT / corporate networks — a TURN relay is
+// required for reliable P2P. Credentials must be short-lived and issued by the
+// backend; for now they are injected via env so no secret is hardcoded.
+// EAS / .env: EXPO_PUBLIC_TURN_URLS (comma-separated), EXPO_PUBLIC_TURN_USERNAME, EXPO_PUBLIC_TURN_CREDENTIAL
+function buildIceConfig(): any {
+  const servers: any[] = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-  ],
-};
+  ];
+  const turnUrls = String(process.env.EXPO_PUBLIC_TURN_URLS || '')
+    .split(',')
+    .map((s: string) => s.trim())
+    .filter(Boolean);
+  const username = process.env.EXPO_PUBLIC_TURN_USERNAME;
+  const credential = process.env.EXPO_PUBLIC_TURN_CREDENTIAL;
+  if (turnUrls.length > 0 && username && credential) {
+    servers.push({ urls: turnUrls.length === 1 ? turnUrls[0] : turnUrls, username, credential });
+  } else if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    // Visible in dev only — production without TURN will drop calls behind symmetric NAT.
+    console.warn(
+      '[Call] No TURN server configured (EXPO_PUBLIC_TURN_URLS/USERNAME/CREDENTIAL). Calls may fail behind strict NAT.',
+    );
+  }
+  return { iceServers: servers };
+}
+
+const ICE_CONFIG = buildIceConfig();
 
 /** Normalize a relayed ICE candidate payload into RTCIceCandidateInit. */
 const normalizeCandidate = (candidate: any): any => {

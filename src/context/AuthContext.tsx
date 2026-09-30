@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react';
 
-import { extractErrorMessage, http, setAuthToken } from '../lib/http';
+import { extractErrorMessage, http, onUnauthorized, setAuthToken } from '../lib/http';
 import { adminLoginWithEmail, loginWithEmail } from '../services/auth';
 import { initPushNotifications, logoutPushNotifications } from '../services/pushNotifications';
 import { ApiResponse, LoginData, User } from '../types';
@@ -190,24 +190,43 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return null;
   }, []);
 
-  const logout = useCallback(async () => {
-    logoutPushNotifications();
-
-    // Notify backend to clear current_token_id
-    try {
-      await http.get('/api/user/auth/logout');
-    } catch {
-      // Ignore logout API errors — clear local state anyway
-    }
-
+  const clearLocalSession = useCallback(async () => {
     setToken(null);
     setUser(null);
+    setPermissions([]);
+    setPermissionsLoaded(false);
     setAuthToken(null);
     await Promise.all([
       SecureStore.deleteItemAsync(TOKEN_KEY),
       SecureStore.deleteItemAsync(USER_KEY),
     ]);
   }, []);
+
+  // Auto-logout when any API returns 401 (expired/revoked token).
+  useEffect(() => {
+    onUnauthorized(() => {
+      logoutPushNotifications();
+      void clearLocalSession();
+    });
+    return () => onUnauthorized(null);
+  }, [clearLocalSession]);
+
+  const logout = useCallback(async () => {
+    logoutPushNotifications();
+
+    // Notify backend to clear current_token_id (POST preferred; GET fallback for old backend).
+    try {
+      await http.post('/api/user/auth/logout');
+    } catch {
+      try {
+        await http.get('/api/user/auth/logout');
+      } catch {
+        // Ignore logout API errors — clear local state anyway
+      }
+    }
+
+    await clearLocalSession();
+  }, [clearLocalSession]);
 
   const value = useMemo(
     () => ({

@@ -35,6 +35,8 @@ import SubscriptionsScreen from '../screens/SubscriptionsScreen';
 import SubscribersScreen from '../screens/SubscribersScreen';
 import { SubscriberDetailScreen } from '../screens/SubscriberDetailScreen';
 import IndustriesScreen from '../screens/IndustriesScreen';
+import CompaniesScreen from '../screens/CompaniesScreen';
+import OrdersScreen from '../screens/OrdersScreen';
 import SystemAdminsScreen from '../screens/SystemAdminsScreen';
 import SupportTicketsScreen from '../screens/SupportTicketsScreen';
 import SupportTicketDetailScreen from '../screens/SupportTicketDetailScreen';
@@ -78,6 +80,7 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import TimelineScreen from '../screens/TimelineScreen';
 import EscalationScreen from '../screens/EscalationScreen';
 import TranslationsScreen from '../screens/TranslationsScreen';
+import KnowledgeBaseScreen from '../screens/KnowledgeBaseScreen';
 import SubscriberPlansScreen from '../screens/SubscriberPlansScreen';
 import StripePaymentScreen from '../screens/StripePaymentScreen';
 
@@ -136,7 +139,7 @@ export function RootNavigator() {
       ) : subscriberNeedsPlans ? (
         <Stack.Group>
           <Stack.Screen name="SubscriberPlans" component={SubscriberPlansScreen} />
-          <Stack.Screen name="StripePayment" component={StripePaymentScreen} />
+          <Stack.Screen name="StripePayment" component={StripePaymentScreen as unknown as React.ComponentType<any>} />
           <Stack.Screen name="Settings">
             {() => <Layout><SettingsScreen /></Layout>}
           </Stack.Screen>
@@ -254,6 +257,12 @@ export function RootNavigator() {
           <Stack.Screen name="Industries">
             {() => <Layout><IndustriesScreen /></Layout>}
           </Stack.Screen>
+          <Stack.Screen name="Companies">
+            {() => <Layout><CompaniesScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="Orders">
+            {() => <Layout><OrdersScreen /></Layout>}
+          </Stack.Screen>
           <Stack.Screen name="SystemAdmins">
             {() => <Layout><SystemAdminsScreen /></Layout>}
           </Stack.Screen>
@@ -340,6 +349,9 @@ export function RootNavigator() {
           </Stack.Screen>
           <Stack.Screen name="Translations">
             {() => <Layout><TranslationsScreen /></Layout>}
+          </Stack.Screen>
+          <Stack.Screen name="KnowledgeBase">
+            {() => <Layout><KnowledgeBaseScreen /></Layout>}
           </Stack.Screen>
         </Stack.Group>
       )}

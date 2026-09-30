@@ -211,6 +211,7 @@ export type ActivityLogItem = {
   description?: string;
   type?: string;
   createdAt?: string;
+  created_at?: string;
   employee?: { _id: string; name: string; avatar?: string };
 };
 

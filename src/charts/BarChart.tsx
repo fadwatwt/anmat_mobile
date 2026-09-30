@@ -64,7 +64,7 @@ export function BarChart({
   const maxValue = yDomain?.[1] ?? Math.max(...values, 1);
   const range = maxValue - minValue;
 
-  const padding = { top: 10, right: 10, bottom: 30, left: yAxisLabel ? 40 : 30 };
+  const padding = { top: 10, right: 10, bottom: 56, left: yAxisLabel ? 40 : 30 };
   const chartWidth = data.length * (barSize + 12) + padding.left + padding.right;
   const chartHeight = height;
   const plotHeight = chartHeight - padding.top - padding.bottom;
@@ -109,6 +109,10 @@ export function BarChart({
           const barH = Math.max(rawBarH, 0);
           const x = padding.left + i * (barSize + 12) + (plotWidth - data.length * (barSize + 12)) / 2;
           const y = padding.top + plotHeight - barH;
+          // X labels are rotated -45° so adjacent labels never overlap,
+          // even with long or Arabic names in narrow slots.
+          const labelX = x + barSize / 2 + 3;
+          const labelY = chartHeight - 10;
           return (
             <G key={d.key}>
               <Path
@@ -116,11 +120,12 @@ export function BarChart({
                 fill={d.color ?? color}
               />
               <SvgText
-                x={x + barSize / 2}
-                y={chartHeight - 6}
+                x={labelX}
+                y={labelY}
                 fill={colors.textMuted}
                 fontSize={10}
-                textAnchor="middle"
+                textAnchor="end"
+                transform={`rotate(-45 ${labelX} ${labelY})`}
               >
                 {d.label}
               </SvgText>

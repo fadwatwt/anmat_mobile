@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -25,7 +26,6 @@ import {
   CheckCircle2,
   Paperclip,
   Search,
-  Info,
   SquarePen,
   FileText,
   Phone,
@@ -33,6 +33,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -78,6 +79,7 @@ export default function ConversationsScreen() {
   const { isRTL } = useLocale();
   const rowDir = isRTL ? ('row-reverse' as const) : ('row' as const);
   const { user, token, permissions } = useAuth();
+  const navigation = useNavigation<any>();
   const { initiateCall } = useCall();
   const { initiateGroupCall } = useGroupCall();
   const has = useCallback(
@@ -120,6 +122,45 @@ export default function ConversationsScreen() {
   }, [userId, showArchived]);
 
   useEffect(() => { loadChats(); }, [loadChats]);
+
+  // Hardware back button: inside a conversation, go back to the list
+  // instead of exiting the whole screen (list + detail share one route
+  // via activeChat state, so the navigator would otherwise pop away).
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (searchMode) {
+        setSearchMode(false);
+        setSearchQuery('');
+        return true;
+      }
+      if (activeChat) {
+        setActiveChat(null);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [activeChat, searchMode]);
+
+  // Safety net: the navigator itself may consume the back press before our
+  // BackHandler runs (subscription order). beforeRemove fires on every pop
+  // attempt — hardware button, gesture, or header back — so intercepting
+  // here guarantees the list is shown instead of leaving the screen.
+  useEffect(() => {
+    const unsub = navigation.addListener('beforeRemove', (e: { preventDefault: () => void }) => {
+      if (searchMode) {
+        e.preventDefault();
+        setSearchMode(false);
+        setSearchQuery('');
+        return;
+      }
+      if (activeChat) {
+        e.preventDefault();
+        setActiveChat(null);
+      }
+    });
+    return unsub;
+  }, [navigation, activeChat, searchMode]);
 
   useEffect(() => {
     if (!token) return;
@@ -574,12 +615,7 @@ export default function ConversationsScreen() {
           />
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[s.segmentContent, { flexDirection: rowDir }]}
-          style={[s.segment, { backgroundColor: colors.statusBg }]}
-        >
+        <View style={[s.segment, { backgroundColor: colors.statusBg, flexDirection: rowDir }]}>
           {([
             { key: false, label: t('Active') },
             { key: true, label: t('Archived') },
@@ -592,7 +628,7 @@ export default function ConversationsScreen() {
               <Text numberOfLines={1} style={[s.segmentText, { color: showArchived === seg.key ? colors.primary : colors.textMuted }]}>{seg.label}</Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
 
         {loadingChats ? (
           <View style={s.center}><ActivityIndicator color={colors.primary} /></View>
@@ -658,15 +694,23 @@ export default function ConversationsScreen() {
             <TouchableOpacity onPress={() => setActiveChat(null)} style={s.backBtn}>
               <ArrowLeft size={20} color={colors.ink} style={{ transform: [{ scaleX: isRTL ? -1 : 1 }] }} />
             </TouchableOpacity>
-            <Image source={{ uri: avatarUrl(chatTitle(activeChat), activeChat.image) }} style={[s.chatAvatar, { borderColor: colors.border }]} />
-            <View style={s.chatHeaderInfo}>
-              <Text style={[s.chatHeaderName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{chatTitle(activeChat)}</Text>
-              {typing ? (
-                <Text style={[s.typingText, { color: colors.primary }]}>{t('typing...')}</Text>
-              ) : !socketConnected ? (
-                <Text style={[s.offlineText, { color: colors.danger }]}>{t('Offline')}</Text>
-              ) : null}
-            </View>
+            {/* Avatar + name open the details sheet (standard chat UX).
+                This also frees header space by removing the extra info button. */}
+            <TouchableOpacity
+              onPress={() => setDetailsVisible(true)}
+              style={{ alignItems: 'center', flex: 1, flexDirection: rowDir, gap: spacing.sm }}
+              accessibilityLabel={t('Chat Details')}
+            >
+              <Image source={{ uri: avatarUrl(chatTitle(activeChat), activeChat.image) }} style={[s.chatAvatar, { borderColor: colors.border }]} />
+              <View style={s.chatHeaderInfo}>
+                <Text style={[s.chatHeaderName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{chatTitle(activeChat)}</Text>
+                {typing ? (
+                  <Text style={[s.typingText, { color: colors.primary }]} numberOfLines={1}>{t('typing...')}</Text>
+                ) : !socketConnected ? (
+                  <Text style={[s.offlineText, { color: colors.danger }]} numberOfLines={1}>{t('Offline')}</Text>
+                ) : null}
+              </View>
+            </TouchableOpacity>
             <View style={{ flexDirection: rowDir, alignItems: 'center', gap: spacing.xs }}>
               {has('chats.call') && activeChat?.is_group ? (
                 <>
@@ -689,9 +733,6 @@ export default function ConversationsScreen() {
               ) : null}
               <TouchableOpacity style={s.iconBtn} onPress={() => setSearchMode(true)}>
                 <Search size={18} color={colors.textMuted} />
-              </TouchableOpacity>
-              <TouchableOpacity style={s.iconBtn} onPress={() => setDetailsVisible(true)}>
-                <Info size={18} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
           </>
@@ -728,13 +769,31 @@ export default function ConversationsScreen() {
           ref={flatListRef}
           data={messages}
           keyExtractor={m => m._id}
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const isMe = isMyMessage(item);
             if (item.message_type === 'call_log') {
+              // Collapse consecutive identical call logs ("Group call" ×4)
+              // into a single chip instead of spamming one pill per event.
+              const prev = messages[index - 1];
+              if (prev && prev.message_type === 'call_log' && prev.content === item.content) {
+                return null;
+              }
+              let count = 1;
+              let j = index + 1;
+              while (
+                j < messages.length &&
+                messages[j].message_type === 'call_log' &&
+                messages[j].content === item.content
+              ) {
+                count += 1;
+                j += 1;
+              }
               return (
                 <View style={s.center}>
                   <View style={[s.callChip, { backgroundColor: colors.statusBg, borderColor: colors.border }]}>
-                    <Text style={{ color: colors.textMuted, fontSize: font.sizes.xs }}>{item.content}</Text>
+                    <Text style={{ color: colors.textMuted, fontSize: font.sizes.xs }}>
+                      {item.content}{count > 1 ? ` ×${count}` : ''}
+                    </Text>
                   </View>
                 </View>
               );
@@ -902,7 +961,7 @@ const s = StyleSheet.create({
   chatLastMsg: { fontSize: font.sizes.xs, flex: 1 },
   chatName: { fontSize: font.sizes.base, fontWeight: font.weights.semibold, flex: 1 },
   chatTime: { fontSize: font.sizes.xs },
-  chatTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  chatTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, justifyContent: 'space-between' },
   container: { flex: 1 },
   editBar: { alignItems: 'center', borderRadius: radii.lg, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.sm, paddingVertical: 6 },
   editHint: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
@@ -936,7 +995,7 @@ const s = StyleSheet.create({
   pollClosed: { fontSize: font.sizes.xs, fontWeight: font.weights.bold },
   pollCloseBtn: { padding: spacing.xs, minHeight: 44, minWidth: 44 },
   pollCloseText: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
-  pollFooter: { alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.xs },
+  pollFooter: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, justifyContent: 'space-between', marginTop: spacing.xs },
   pollHeader: { alignItems: 'center', gap: spacing.sm },
   pollOptRow: { alignItems: 'center', gap: spacing.sm },
   pollOptText: { fontSize: font.sizes.sm },
@@ -957,9 +1016,8 @@ const s = StyleSheet.create({
   searchResultName: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
   searchResultsTitle: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold, marginBottom: spacing.sm },
   searchResultsWrap: { flex: 1, padding: spacing.md },
-  segment: { borderRadius: radii.xl, margin: spacing.md, marginBottom: 0, padding: spacing.xs },
-  segmentBtn: { alignItems: 'center', borderRadius: radii.lg, borderWidth: 1, borderColor: 'transparent', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
-  segmentContent: { gap: spacing.xs },
+  segment: { borderRadius: radii.xl, gap: spacing.xs, margin: spacing.md, marginBottom: 0, padding: spacing.xs },
+  segmentBtn: { alignItems: 'center', borderRadius: radii.lg, borderWidth: 1, borderColor: 'transparent', flex: 1, justifyContent: 'center', minHeight: 40, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   segmentText: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
   sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   textInput: {

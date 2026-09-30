@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { ListScreen } from '../generators/ListScreen';
-import { fetchMyOrganizationLogs, fetchMyLogs, fetchAllLogs, ActivityLog } from '../services/activityLogs';
+import { fetchMyOrganizationLogs, fetchMyLogs, fetchAllLogs, ActivityLog, activityActionTitle, activityLogDate } from '../services/activityLogs';
 import { font, spacing, radii } from '../theme';
 
 export default function ActivityLogsScreen() {
@@ -35,7 +35,7 @@ export default function ActivityLogsScreen() {
     const chipColor = typeColors[item.type?.toLowerCase() || ''] || typeColors.login;
     return (
       <View style={[s.chip, { backgroundColor: chipColor + '20' }]}>
-        <Text style={[s.chipText, { color: chipColor }]}>{item.action || item.type}</Text>
+        <Text style={[s.chipText, { color: chipColor }]}>{activityActionTitle(item, t)}</Text>
       </View>
     );
   };
@@ -79,7 +79,7 @@ export default function ActivityLogsScreen() {
       width: 140,
       render: (item: ActivityLog) => (
         <Text style={[s.cellText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>
-          {formatDate(item.createdAt)}
+          {formatDate(activityLogDate(item))}
         </Text>
       ),
     },

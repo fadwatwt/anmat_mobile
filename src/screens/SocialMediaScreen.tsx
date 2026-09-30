@@ -57,15 +57,15 @@ function TwitterTab() {
     [permissions],
   );
 
-  const canCreate = has('social_media_accounts.create');
-  const canUpdate = has('social_media_accounts.update');
-  const canDelete = has('social_media_accounts.delete');
-  const canImport = has('social_media_accounts.import');
-  const canManageCategories = has('social_media_categories.list');
-  const canPost = has('social_media_actions.post');
-  const canFollow = has('social_media_actions.follow');
-  const canLike = has('social_media_actions.like');
-  const canReply = has('social_media_actions.reply');
+  const canCreate = has('twitter_accounts.create');
+  const canUpdate = has('twitter_accounts.update');
+  const canDelete = has('twitter_accounts.delete');
+  const canImport = has('twitter_accounts.import');
+  const canManageCategories = has('twitter_categories.list');
+  const canPost = has('twitter_actions.post');
+  const canFollow = has('twitter_actions.follow');
+  const canLike = has('twitter_actions.like');
+  const canReply = has('twitter_actions.reply');
 
   const load = useCallback(async () => {
     try {

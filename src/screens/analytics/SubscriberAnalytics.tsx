@@ -229,6 +229,7 @@ function ProjectsProgressCard({ projects, title }: { projects: SubscriberAnalyti
 function TopEmployeesCard({ employees }: { employees: SubscriberAnalyticsData['topEmployees'] }) {
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const { t } = useTranslation();
   if (!employees || employees.length === 0) return null;
   return (
     <AnalyticsCard title={t('Top 3 Employees')}>
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
   pageTitle: { fontSize: font.sizes.xxl, fontWeight: font.weights.bold, marginBottom: spacing.xs },
   progressFill: { borderRadius: radii.full, height: '100%' },
   progressTrack: { borderRadius: radii.full, height: 6, overflow: 'hidden' },
-  projectHead: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  projectHead: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, justifyContent: 'space-between' },
   projectName: { flex: 1, fontSize: font.sizes.sm, fontWeight: font.weights.medium },
   projectPct: { fontSize: font.sizes.xs, fontWeight: font.weights.semibold },
   projectRow: { gap: spacing.xs },

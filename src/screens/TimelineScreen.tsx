@@ -1,179 +1,98 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Text, View, StyleSheet, ActivityIndicator, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { Text, View, StyleSheet, ScrollView, Image, TextInput, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Circle, CheckCircle2, Clock, AlertCircle } from 'lucide-react-native';
+import { Send } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
-import { fetchTasks } from '../services/tasks';
-import { TaskItem } from '../types';
-import { EmptyState } from '../components/EmptyState';
-import { useNavigation } from '@react-navigation/native';
 import { font, spacing, radii } from '../theme';
 
-const statusIcons: Record<string, typeof Circle> = {
-  completed: CheckCircle2,
-  in_progress: Clock,
-  pending: Circle,
-  cancelled: AlertCircle,
-  overdue: AlertCircle,
+// Mock data identical to web src/components/TimeLine/TimeLine.jsx
+const account = {
+  name: 'Ahmed Mohamed',
+  imageProfile: 'https://i.pinimg.com/originals/17/9e/25/179e258f61d2d0f56b850b7d85c76493.jpg',
+};
+const images = [
+  'https://mybayutcdn.bayut.com/mybayut/wp-content/uploads/Heydar-Aliyev-Center-Baku-Azerbaijan-ar02072020-1024x640.jpg',
+  'https://www.alquds.co.uk/wp-content/uploads/2024/02/07-11.jpg',
+  'https://i.cdn.turner.com/dr/cnnarabic/cnnarabic/release/sites/default/files/styles/landscape_780x440/public/image/1_6.JPG?itok=pmNMX7TP',
+  'https://cdn.cgway.net/wp-content/uploads/2023/12/the-most-famous-arab-architects-01.jpg',
+];
+const myAccount = {
+  imageProfile: 'https://sowarprofil.com/wp-content/uploads/2024/04/%D8%B5%D9%88%D8%B1%D8%A9-%D8%A7%D9%84%D9%85%D9%84%D9%81-%D8%A7%D9%84%D8%B4%D8%AE%D8%B5%D9%8A-%D9%81%D9%8A-%D8%A7%D9%84%D9%81%D9%8A%D8%B3%D8%A8%D9%88%D9%83-1-1024x1024.png.webp',
 };
 
-const statusColors: Record<string, string> = {
-  completed: '#1F7A3F',
-  in_progress: '#1E40AF',
-  pending: '#6B7280',
-  cancelled: '#C9372C',
-  overdue: '#C9372C',
-};
+function ContentOfTimeLine({ withImages = true }: { withImages?: boolean }) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  return (
+    <View style={[s.contentCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={[s.headerRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <Image source={{ uri: account.imageProfile }} style={s.avatar} />
+        <View style={{ flex: 1 }}>
+          <Text style={[s.accountName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{account.name}</Text>
+          <Text style={[s.dateText, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{`25 ${t('Dec')} - 1:30 ${t('PM')}`}</Text>
+        </View>
+      </View>
+      <Text style={[s.bodyText, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>
+        {`We're excited to welcome `}<Text style={{ color: colors.primary }}>@Ahemd</Text>{` to our team! Next month, we'll be unveiling a range of new features designed to elevate your experience with our software. Keep an eye out for more updates!`}
+      </Text>
+      {withImages && (
+        <View style={s.imagesGrid}>
+          {images.map((uri, idx) => (
+            <Image key={idx} source={{ uri }} style={s.gridImage} resizeMode="cover" />
+          ))}
+        </View>
+      )}
+      <View style={[s.myAccountRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <Image source={{ uri: myAccount.imageProfile }} style={s.myAvatar} />
+        <Text style={[s.myAccountText, { color: colors.textMuted }]}>{t('Add a comment...')}</Text>
+      </View>
+    </View>
+  );
+}
 
 export default function TimelineScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const { isRTL } = useLocale();
-  const navigation = useNavigation<any>();
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const loadData = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    try {
-      const result = await fetchTasks();
-      const items = Array.isArray(result) ? result : [];
-      items.sort((a, b) => {
-        const dateA = a.due_date || a.createdAt || '';
-        const dateB = b.due_date || b.createdAt || '';
-        return dateA.localeCompare(dateB);
-      });
-      setTasks(items);
-    } catch {
-      setTasks([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => { loadData(); }, [loadData]);
-
-  const renderItem = ({ item }: { item: TaskItem }) => {
-    const Icon = statusIcons[item.status || 'pending'] || Circle;
-    const color = statusColors[item.status || 'pending'] || '#6B7280';
-    const title = item.title || item.name || '—';
-
-    return (
-      <TouchableOpacity
-        style={[s.itemRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-        onPress={() => navigation.navigate('TaskDetail', { id: item._id })}
-        activeOpacity={0.7}
-      >
-        <View style={s.timelineLeft}>
-          <Icon size={18} color={color} />
-          <View style={[s.line, { backgroundColor: colors.border }]} />
-        </View>
-        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[s.title, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{title}</Text>
-          {item.description && (
-            <Text style={[s.description, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
-              {item.description}
-            </Text>
-          )}
-          <View style={[s.metaRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            {item.due_date && (
-              <Text style={[s.meta, { color: colors.textMuted }]}>
-                {t('Due')}: {new Date(item.due_date).toLocaleDateString('en-GB')}
-              </Text>
-            )}
-            {item.project?.name && (
-              <Text style={[s.meta, { color: colors.primary }]}>{item.project.name}</Text>
-            )}
-          </View>
-          {item.assignee?.name && (
-            <Text style={[s.assignee, { color: colors.textMuted }]}>
-              {t('Assignee')}: {item.assignee.name}
-            </Text>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  if (loading) {
-    return (
-      <View style={[s.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
-    );
-  }
-
-  if (tasks.length === 0) {
-    return (
-      <EmptyState title={t('No timeline items')} message={t('No tasks or items to display on the timeline')} />
-    );
-  }
-
   return (
-    <FlatList
-      data={tasks}
-      keyExtractor={(item) => item._id}
-      renderItem={renderItem}
-      contentContainerStyle={s.list}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} colors={[colors.primary]} />}
-      showsVerticalScrollIndicator={false}
-    />
+    <ScrollView style={[s.root, { backgroundColor: colors.background }]} contentContainerStyle={s.container} showsVerticalScrollIndicator={false}>
+      <Text style={[s.title, { color: colors.ink }]}>{t('Timeline')}</Text>
+      <View style={[s.timelineContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <ScrollView showsVerticalScrollIndicator={false} style={s.innerScroll}>
+          <ContentOfTimeLine withImages />
+          <View style={{ height: spacing.md }} />
+          <ContentOfTimeLine withImages={false} />
+        </ScrollView>
+        <View style={[s.commentInputRow, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: 'row' }]}>
+          <TextInput placeholder={t('Write a comment...')} placeholderTextColor={colors.textMuted} style={[s.commentInput, { color: colors.ink }]} />
+          <Pressable style={[s.sendBtn, { backgroundColor: colors.primary }]}>
+            <Send size={16} color="#fff" />
+          </Pressable>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  assignee: {
-    fontSize: font.sizes.xs,
-    marginTop: spacing.xs,
-  },
-  card: {
-    borderWidth: 1,
-    borderRadius: radii.xxl,
-    flex: 1,
-    padding: spacing.md,
-  },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  description: {
-    fontSize: font.sizes.sm,
-    marginTop: spacing.xs,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingStart: spacing.md,
-  },
-  line: {
-    flex: 1,
-    width: 2,
-    marginVertical: spacing.xs,
-  },
-  list: {
-    gap: spacing.sm,
-    paddingBottom: spacing.xxl,
-  },
-  meta: {
-    fontSize: font.sizes.xs,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.xs,
-    flexWrap: 'wrap',
-  },
-  title: {
-    fontSize: font.sizes.base,
-    fontWeight: font.weights.semibold,
-  },
-  timelineLeft: {
-    alignItems: 'center',
-    width: 24,
-  },
+  accountName: { fontSize: font.sizes.sm, fontWeight: font.weights.semibold },
+  avatar: { width: 36, height: 36, borderRadius: 18 },
+  bodyText: { fontSize: font.sizes.sm, lineHeight: 20, marginTop: spacing.sm },
+  commentInput: { flex: 1, fontSize: font.sizes.sm, paddingVertical: spacing.sm },
+  commentInputRow: { alignItems: 'center', borderRadius: radii.xl, borderWidth: 1, gap: spacing.sm, marginTop: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  container: { padding: spacing.md, gap: spacing.md },
+  contentCard: { borderRadius: radii.xl, borderWidth: 1, gap: spacing.sm, padding: spacing.md },
+  dateText: { fontSize: font.sizes.xs },
+  gridImage: { width: '48%', height: 80, borderRadius: radii.md },
+  headerRow: { alignItems: 'center', gap: spacing.sm },
+  imagesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm },
+  innerScroll: { maxHeight: 420 },
+  myAccountRow: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
+  myAccountText: { fontSize: font.sizes.sm },
+  myAvatar: { width: 28, height: 28, borderRadius: 14 },
+  root: { flex: 1 },
+  sendBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  timelineContainer: { borderRadius: radii.xl, borderWidth: 1, padding: spacing.md, gap: spacing.md },
+  title: { fontSize: font.sizes.lg, fontWeight: font.weights.bold, textAlign: 'left', paddingVertical: spacing.sm },
 });

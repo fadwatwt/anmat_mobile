@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import { http } from '../lib/http';
+import { logger } from '../lib/logger';
 
 // expo-notifications crashes in Expo Go (SDK 53+). Detect Expo Go via appOwnership.
 // IMPORTANT: Do NOT require('expo-notifications') at module level — the package
@@ -54,14 +55,18 @@ export function clearLastNotificationResponse() {
 async function registerTokenWithBackend(token: string) {
   try {
     await http.post('/api/notifications/push-token/register', { token });
-  } catch {
+  } catch (e) {
+    // Previously silent: a failed registration means this device never
+    // receives push notifications. Log it so it surfaces in diagnostics.
+    logger.warn('Push token registration failed', (e as Error)?.message);
   }
 }
 
 async function unregisterTokenWithBackend(token: string) {
   try {
     await http.delete('/api/notifications/push-token/remove', { data: { token } });
-  } catch {
+  } catch (e) {
+    logger.warn('Push token unregistration failed', (e as Error)?.message);
   }
 }
 

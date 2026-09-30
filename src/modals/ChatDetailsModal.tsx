@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Archive, Download, Trash2, UserPlus } from 'lucide-react-native';
 import { Modal } from '../components/Modal';
 import { Button } from '../components/Button';
@@ -88,15 +89,41 @@ export function ChatDetailsModal({ visible, onClose, chat, onChanged }: Props) {
     }
   };
 
-  const handleExport = () => {
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
     if (!canExport) {
       Alert.alert(t('Error'), t("You don't have permission to export chats."));
       return;
     }
+    if (exporting) return;
     const token = getAuthToken();
-    Linking.openURL(`${API_URL}/api/chats/${chat._id}/export?token=${encodeURIComponent(token || '')}`).catch(() =>
-      Alert.alert(t('Error'), t('Failed to open export link')),
-    );
+    if (!token) {
+      Alert.alert(t('Error'), t('Session expired. Please login again.'));
+      return;
+    }
+    setExporting(true);
+    try {
+      // SECURITY FIX: token is sent ONLY in the Authorization header, never in the URL
+      // (query params leak into proxy logs, history, and analytics).
+      const url = `${API_URL}/api/chats/${chat._id}/export`;
+      const fileUri = `${FileSystem.documentDirectory}chat-${chat._id}-export.json`;
+      const result = await FileSystem.downloadAsync(
+        url,
+        fileUri,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (result.status !== 200) {
+        throw new Error(`Export failed with status ${result.status}`);
+      }
+      await Linking.openURL(result.uri).catch(() =>
+        Alert.alert(t('Success'), `${t('Export saved to')}:\n${result.uri}`),
+      );
+    } catch (e) {
+      Alert.alert(t('Error'), extractErrorMessage(e) || t('Failed to open export link'));
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleAdd = async () => {
@@ -157,8 +184,12 @@ export function ChatDetailsModal({ visible, onClose, chat, onChanged }: Props) {
           </TouchableOpacity>
         )}
         {canExport && (
-          <TouchableOpacity style={actionBtn(colors.statusBg, colors.border)} onPress={handleExport}>
-            <Download size={16} color={colors.textMuted} />
+          <TouchableOpacity style={actionBtn(colors.statusBg, colors.border)} onPress={handleExport} disabled={exporting}>
+            {exporting ? (
+              <ActivityIndicator size="small" color={colors.textMuted} />
+            ) : (
+              <Download size={16} color={colors.textMuted} />
+            )}
             <Text style={[styles.actionText, { color: colors.ink, textAlign: align }]}>{t('Export Chat History')}</Text>
           </TouchableOpacity>
         )}

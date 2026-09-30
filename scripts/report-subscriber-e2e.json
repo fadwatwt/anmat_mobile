@@ -1,0 +1,1368 @@
+{
+  "api": "https://api.anmaat.com",
+  "email": "nextsub1@anmat.test",
+  "user": {
+    "_id": "69d3c8def2653225906863dd",
+    "name": "Subscriber 4",
+    "email": "nextsub1@anmat.test",
+    "type": "Subscriber",
+    "phone": "+123456789333",
+    "is_active": true,
+    "admin_system_roles": [],
+    "createdAt": "2026-04-06T14:53:18.693Z",
+    "updatedAt": "2026-09-05T08:38:56.157Z",
+    "stripe_customer_id": "cus_UHo8MkeoBl1vUv",
+    "active_subscription_id": "6a71ac0cc5a6abfe6f1de79d",
+    "auto_renew_subscription": false,
+    "last_token_renewal_at": "2026-08-08T09:14:56.273Z",
+    "monthly_free_consumed": 0,
+    "ai_tokens_balance": 2100121,
+    "avatar": "https://api.anmaat.com/uploads/User/69d3c8def2653225906863dd/1785153752577.png",
+    "preferences": {
+      "min_tasks": 4,
+      "notifications": {
+        "newsUpdates": true,
+        "remindersEvents": true,
+        "leaveAttendance": true,
+        "deadlineNotification": true
+      }
+    },
+    "push_tokens": [],
+    "social_media_quota_override": -1,
+    "social_media_grants": [
+      "twitter"
+    ],
+    "is_organization_registered": true,
+    "email_verification": {
+      "email": "nextsub1@anmat.test",
+      "is_verified": true,
+      "expires_at": "2026-04-06T20:23:18.337Z",
+      "next_send_at": "2026-04-06T14:53:58.163Z"
+    },
+    "subscription_status": "active",
+    "has_subscription_access": true
+  },
+  "results": [
+    {
+      "name": "0.1 Connectivity — GET /api/user/auth (expect 401 without token)",
+      "status": "PASS",
+      "ms": 1440,
+      "data": {
+        "status": 401
+      }
+    },
+    {
+      "name": "1.1 Login POST /api/user/auth/login",
+      "status": "PASS",
+      "ms": 1527,
+      "data": {
+        "token": "eyJhbGciOiJIUzI1NiIs...",
+        "user": {
+          "email": "nextsub1@anmat.test",
+          "type": "Subscriber",
+          "name": "Subscriber 4"
+        }
+      }
+    },
+    {
+      "name": "1.2 Fetch profile GET /api/user/auth (has_subscription_access)",
+      "status": "PASS",
+      "ms": 460,
+      "data": {
+        "email": "nextsub1@anmat.test",
+        "type": "Subscriber",
+        "has_subscription_access": true,
+        "subscription_status": "active",
+        "is_organization_registered": true,
+        "is_active": true
+      }
+    },
+    {
+      "name": "1.3 Permissions GET /api/user/auth/permissions",
+      "status": "PASS",
+      "ms": 600,
+      "data": {
+        "permissions": [
+          "*"
+        ],
+        "social_media_grants": [
+          "twitter"
+        ]
+      }
+    },
+    {
+      "name": "1.4 Identity GET /api/user/auth/me",
+      "status": "PASS",
+      "ms": 1329,
+      "data": {
+        "_id": "69d3c8def2653225906863dd",
+        "email": "nextsub1@anmat.test",
+        "name": "Subscriber 4",
+        "type": "Subscriber",
+        "subscriber_id": "69d3c8def2653225906863dd",
+        "organization_id": "69d3ca9cf265322590686433",
+        "social_media_grants": [
+          "twitter"
+        ]
+      }
+    },
+    {
+      "name": "1.5 Guard: Subscriber blocked? (mobile RootNavigator gating)",
+      "status": "PASS",
+      "ms": 0,
+      "data": {
+        "gating": "OK — has_subscription_access=true, can access dashboard"
+      }
+    },
+    {
+      "name": "2.1 Analytics overview GET /api/subscriber/organization/analytics",
+      "status": "PASS",
+      "ms": 2769,
+      "data": {
+        "overview": {
+          "totalProjects": 12,
+          "totalTasks": 16,
+          "totalDepartments": 20,
+          "totalEmployees": 7
+        },
+        "subscriptionUsage": {
+          "employees": {
+            "current": 7,
+            "max": 8,
+            "percentage": 88
+          },
+          "storage": {
+            "currentBytes": 2389539,
+            "maxBytes": 31958499328,
+            "percentage": 0
+          }
+        },
+        "tasksSummary": [
+          {
+            "name": "completed",
+            "value": 2
+          },
+          {
+            "name": "done",
+            "value": 2
+          },
+          {
+            "name": "in-progress",
+            "value": 1
+          },
+          {
+            "name": "pending",
+            "value": 4
+          },
+          {
+            "name": "open",
+            "value": 6
+          },
+          {
+            "name": "rejected",
+            "value": 1
+          }
+        ],
+        "tasksRatingData": [
+          {
+            "name": "Medium Rating",
+            "value": 8
+          },
+          {
+            "name": "Low Rating",
+            "value": 2
+          },
+          {
+            "name": "High Rating",
+            "value": 4
+          }
+        ],
+        "tasksPerformanceMonthly": [
+          {
+            "name": "Apr",
+            "onTime": 1,
+            "late": 1
+          },
+          {
+            "name": "May",
+            "onTime": 0,
+            "late": 3
+          },
+          {
+            "name": "Jun",
+            "onTime": 0,
+            "late": 0
+          },
+          {
+            "name": "Jul",
+            "onTime": 0,
+            "late": 0
+          },
+          {
+            "name": "Aug",
+            "onTime": 0,
+            "late": 0
+          },
+          {
+            "name": "Sep",
+            "onTime": 0,
+            "late": 0
+          }
+        ],
+        "tasksTimelineMonthly": [
+          {
+            "name": "Apr",
+            "Expected Time": 336,
+            "Actual Time": 72
+          },
+          {
+            "name": "May",
+            "Expected Time": 168,
+            "Actual Time": 240
+          },
+          {
+            "name": "Jun",
+            "Expected Time": 0,
+            "Actual Time": 0
+          },
+          {
+            "name": "Jul",
+            "Expected Time": 168,
+            "Actual Time": 0
+          },
+          {
+            "name": "Aug",
+            "Expected Time": 0,
+            "Actual Time": 0
+          },
+          {
+            "name": "Sep",
+            "Expected Time": 0,
+            "Actual Time": 0
+          }
+        ],
+        "projectsPerformanceMonthly": [
+          {
+            "name": "Apr",
+            "onTime": 1,
+            "late": 1
+          },
+          {
+            "name": "May",
+            "onTime": 0,
+            "late": 1
+          },
+          {
+            "name": "Jun",
+            "onTime": 0,
+            "late": 0
+          },
+          {
+            "name": "Jul",
+            "onTime": 0,
+            "late": 0
+          },
+          {
+            "name": "Aug",
+            "onTime": 0,
+            "late": 0
+          },
+          {
+            "name": "Sep",
+            "onTime": 0,
+            "late": 0
+          }
+        ],
+        "projectTimelineMonthly": [
+          {
+            "name": "Apr",
+            "Expected Time": 960,
+            "Actual Time": 528
+          },
+          {
+            "name": "May",
+            "Expected Time": 0,
+            "Actual Time": 0
+          },
+          {
+            "name": "Jun",
+            "Expected Time": 0,
+            "Actual Time": 0
+          },
+          {
+            "name": "Jul",
+            "Expected Time": 744,
+            "Actual Time": 0
+          },
+          {
+            "name": "Aug",
+            "Expected Time": 0,
+            "Actual Time": 0
+          },
+          {
+            "name": "Sep",
+            "Expected Time": 0,
+            "Actual Time": 0
+          }
+        ],
+        "projectsProgress": [
+          {
+            "name": "Project Test-2",
+            "completedTasks": 0,
+            "totalTasks": 1,
+            "daysLeft": 0
+          },
+          {
+            "name": "Anmat",
+            "completedTasks": 1,
+            "totalTasks": 4,
+            "daysLeft": 0
+          },
+          {
+            "name": "project test",
+            "completedTasks": 0,
+            "totalTasks": 1,
+            "daysLeft": 0
+          },
+          {
+            "name": "Test Template 6",
+            "completedTasks": 0,
+            "totalTasks": 1,
+            "daysLeft": 0
+          },
+          {
+            "name": "Test Noti.",
+            "completedTasks": 0,
+            "totalTasks": 1,
+            "daysLeft": 0
+          }
+        ],
+        "recentProjects": [
+          {
+            "name": "Sample Project Name Updated",
+            "department": "General"
+          },
+          {
+            "name": "Test Noti.",
+            "department": "Dep 2 updated"
+          },
+          {
+            "name": "test",
+            "department": "General"
+          },
+          {
+            "name": "Test Template 6",
+            "department": "Dep 2 updated"
+          }
+        ],
+        "employeeAttendance": [
+          {
+            "name": "Attended",
+            "value": 0
+          },
+          {
+            "name": "Absent",
+            "value": 210
+          }
+        ],
+        "employeeAdherence": [
+          {
+            "name": "On Time",
+            "value": 0
+          },
+          {
+            "name": "Late",
+            "value": 0
+          }
+        ],
+        "employeePerformanceWeeks": [
+          {
+            "name": "W1",
+            "rating": 0
+          },
+          {
+            "name": "W2",
+            "rating": 0
+          },
+          {
+            "name": "W3",
+            "rating": 0
+          },
+          {
+            "name": "W4",
+            "rating": 0
+          }
+        ],
+        "accomplishmentMonthly": [
+          {
+            "name": "Apr",
+            "Expected Time": 336,
+            "Actual Time": 72
+          },
+          {
+            "name": "May",
+            "Expected Time": 168,
+            "Actual Time": 240
+          },
+          {
+            "name": "Jun",
+            "Expected Time": 0,
+            "Actual Time": 0
+          },
+          {
+            "name": "Jul",
+            "Expected Time": 168,
+            "Actual Time": 0
+          },
+          {
+            "name": "Aug",
+            "Expected Time": 0,
+            "Actual Time": 0
+          },
+          {
+            "name": "Sep",
+            "Expected Time": 0,
+            "Actual Time": 0
+          }
+        ],
+        "tasksDelay": {
+          "percentage": 0,
+          "expectedHours": 0,
+          "actualHours": 0
+        },
+        "topEmployees": [
+          {
+            "name": "Emp 1 Org 1",
+            "department": "General",
+            "points": 293.33333333333337
+          },
+          {
+            "name": "Emp 2 Org 2",
+            "department": "Dep 2 updated",
+            "points": 216.66666666666669
+          },
+          {
+            "name": "Test",
+            "department": "General",
+            "points": 73.33333333333334
+          }
+        ],
+        "departmentAdherence": [
+          {
+            "name": "On Time",
+            "value": 1
+          },
+          {
+            "name": "Late",
+            "value": 4
+          }
+        ],
+        "departmentPerformance": [
+          {
+            "name": "Completed on time",
+            "value": 1
+          },
+          {
+            "name": "Overdue",
+            "value": 4
+          }
+        ],
+        "departmentsRanking": [
+          {
+            "rank": 1,
+            "name": "test task Depatment",
+            "manager": "N/A",
+            "rating": 1.5,
+            "headPoints": 0,
+            "performance": 50,
+            "attendance": 0
+          },
+          {
+            "rank": 2,
+            "name": "Department Test-2",
+            "manager": "Belal Test",
+            "rating": 5,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 3,
+            "name": "الاساسي",
+            "manager": "N/A",
+            "rating": 4.5,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 4,
+            "name": "Human Dept 1787503157494",
+            "manager": "N/A",
+            "rating": 3,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 5,
+            "name": "Human Dept 1787503673055 Edited",
+            "manager": "N/A",
+            "rating": 3,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 6,
+            "name": "Human Dept 1787503844199 Edited",
+            "manager": "N/A",
+            "rating": 3,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 7,
+            "name": "Dep 2 updated",
+            "manager": "Emp 2 Org 2",
+            "rating": 2.8,
+            "headPoints": 216.66666666666669,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 8,
+            "name": "Nx Org",
+            "manager": "bayan hasan",
+            "rating": 2.5,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 9,
+            "name": "PW UI Dept 1786356727152",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 10,
+            "name": "PW Probe 1786357721569",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 11,
+            "name": "PW Flake 1786357927208 0",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 12,
+            "name": "PW Flake 1786357930553 1",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 13,
+            "name": "PW Flake 1786357932851 2",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 14,
+            "name": "PW Flake 1786357934660 3",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 15,
+            "name": "PW Flake 1786357938831 4",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 16,
+            "name": "PW Repr 1786358383853",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 17,
+            "name": "PW UI Dept 1786359144174",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 18,
+            "name": "PW UI Dept 1786359441511",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 19,
+            "name": "PW UI Dept 1786359598877",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          },
+          {
+            "rank": 20,
+            "name": "PW UI Dept 1786360012588",
+            "manager": "N/A",
+            "rating": 0,
+            "headPoints": 0,
+            "performance": 0,
+            "attendance": 0
+          }
+        ],
+        "activeSubscription": {
+          "_id": "6a5e32e3d09a8c558fa370e9",
+          "subscriber_id": "69d3c8def2653225906863dd",
+          "plan_id": {
+            "_id": "69d3cfa3f265322590686487",
+            "name": "Advanced",
+            "description": "Testing advanced plan desc...",
+            "pricing": [
+              {
+                "interval": "month",
+                "interval_count": 1,
+                "price": 25,
+                "discount": 10,
+                "is_active": true,
+                "_id": "69f9594de0513dd038cfdf23",
+                "createdAt": "2026-05-05T02:43:25.091Z",
+                "updatedAt": "2026-08-10T14:07:31.072Z",
+                "stripe_price_id": "price_1U2trSLm7nEhLsMvk11rvu9Z"
+              },
+              {
+                "interval": "year",
+                "interval_count": 1,
+                "price": 250,
+                "discount": 8,
+                "is_active": true,
+                "_id": "69f9594de0513dd038cfdf24",
+                "createdAt": "2026-05-05T02:43:25.091Z",
+                "updatedAt": "2026-08-10T14:07:31.072Z",
+                "stripe_price_id": "price_1U2trTLm7nEhLsMvLvWsGx1H"
+              }
+            ],
+            "features": [
+              {
+                "feature_type_id": {
+                  "_id": "69d3ce18f265322590686458",
+                  "type": "allowed_space",
+                  "title": "Allowed Space Size",
+                  "details": "Maximm size of subscriber allowed space on server.",
+                  "attributes_definitions": [
+                    {
+                      "key": "size",
+                      "data_type": "number",
+                      "createdAt": "2026-04-06T15:15:36.540Z",
+                      "updatedAt": "2026-04-06T15:15:36.540Z"
+                    }
+                  ],
+                  "is_active": true,
+                  "createdAt": "2026-04-06T15:15:36.540Z",
+                  "updatedAt": "2026-04-06T15:15:36.540Z",
+                  "__v": 0
+                },
+                "properties": [
+                  {
+                    "key": "size",
+                    "value": 30478
+                  }
+                ],
+                "_id": "69f9594de0513dd038cfdf25",
+                "createdAt": "2026-05-05T02:43:25.091Z",
+                "updatedAt": "2026-05-05T02:43:25.091Z"
+              },
+              {
+                "feature_type_id": {
+                  "_id": "69d3ce73f265322590686460",
+                  "type": "max_employees_number",
+                  "title": "Organization Max Employees Number",
+                  "details": "Maximm number of employees allowed under specific plan for the subscriber.",
+                  "attributes_definitions": [
+                    {
+                      "key": "max_emp_num",
+                      "data_type": "number",
+                      "createdAt": "2026-04-06T15:17:07.631Z",
+                      "updatedAt": "2026-04-06T15:17:07.631Z"
+                    }
+                  ],
+                  "is_active": true,
+                  "createdAt": "2026-04-06T15:17:07.632Z",
+                  "updatedAt": "2026-04-06T15:17:07.632Z",
+                  "__v": 0
+                },
+                "properties": [
+                  {
+                    "key": "max_emp_num",
+                    "value": 8
+                  }
+                ],
+                "_id": "69f9594de0513dd038cfdf26",
+                "createdAt": "2026-05-05T02:43:25.091Z",
+                "updatedAt": "2026-05-05T02:43:25.091Z"
+              }
+            ],
+            "trial": {
+              "trial_days": 14,
+              "is_active": false,
+              "_id": "69f9594de0513dd038cfdf27",
+              "createdAt": "2026-05-05T02:43:25.091Z",
+              "updatedAt": "2026-05-05T02:43:25.091Z"
+            },
+            "is_active": true,
+            "stripe_price_ids": [
+              "price_1U2trSLm7nEhLsMvk11rvu9Z",
+              "price_1U2trTLm7nEhLsMvLvWsGx1H"
+            ],
+            "createdAt": "2026-04-06T15:22:11.461Z",
+            "updatedAt": "2026-08-10T14:07:31.073Z",
+            "__v": 2,
+            "stripe_product_id": "prod_UHobXdqScdxCgN",
+            "version": 2
+          },
+          "status": "active",
+          "starts_at": "2026-07-20T14:38:27.022Z",
+          "expires_at": "2026-10-03T14:38:27.000Z",
+          "auto_renew": true,
+          "stripe_subscription_id": "sub_1TvIKtLm7nEhLsMvyqgXfBkN",
+          "stripe_customer_id": "cus_UHo8MkeoBl1vUv",
+          "plan_version": 2,
+          "extra_features": [],
+          "createdAt": "2026-07-20T14:38:27.028Z",
+          "updatedAt": "2026-09-04T03:00:02.389Z",
+          "__v": 0,
+          "interval": "month",
+          "pricing_id": "69f9594de0513dd038cfdf23",
+          "amount": 0,
+          "renewal_date": "2026-10-03"
+        }
+      }
+    },
+    {
+      "name": "2.2 Task stats GET /api/subscriber/organization/tasks/statistics/status",
+      "status": "PASS",
+      "ms": 3744,
+      "data": {
+        "total": 16,
+        "status_counts": {
+          "completed": 2,
+          "rejected": 1,
+          "open": 6,
+          "pending": 4,
+          "in-progress": 1,
+          "done": 2
+        }
+      }
+    },
+    {
+      "name": "2.3 Departments GET /api/subscriber/organization/departments",
+      "status": "PASS",
+      "ms": 857,
+      "data": {
+        "count": 20,
+        "sample": [
+          {
+            "_id": "69f4ae55b919511b7e7061bd",
+            "organization_id": "69d3ca9cf265322590686433",
+            "name": "Nx Org",
+            "description": "aaa",
+            "rate": 2.5,
+            "positions_ids": [
+              {
+                "_id": "69d3d295f26532259068651c",
+                "organization_id": "69d3ca9cf265322590686433",
+                "title": "Pos 1",
+                "description": "Desc ...",
+                "createdAt": "2026-04-06T15:34:45.181Z",
+                "updatedAt": "2026-04-06T15:34:45.181Z",
+                "__v": 0
+              },
+              {
+                "_id": "69d3d2a4f265322590686527",
+                "organization_id": "69d3ca9cf265322590686433",
+                "title": "Pos 2",
+                "description": "Desc ...",
+                "createdAt": "2026-04-06T15:35:00.826Z",
+                "updatedAt": "2026-04-06T15:35:00.826Z",
+                "__v": 0
+              }
+            ],
+            "evaluation_method": "AUTO",
+            "manual_rating": null,
+            "overall_rating": 0,
+            "ratings": [],
+            "createdAt": "2026-05-01T13:44:53.280Z",
+            "updatedAt": "2026-05-01T13:44:53.280Z",
+            "__v": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "2.4 Projects (paged) GET /api/subscriber/organization/projects?page=1&limit=10",
+      "status": "PASS",
+      "ms": 862,
+      "data": {
+        "count": 12,
+        "isArray": true
+      }
+    },
+    {
+      "name": "2.5 Activity logs GET /api/activity-logs/my-organization?limit=10",
+      "status": "PASS",
+      "ms": 1557,
+      "data": {
+        "count": 10
+      }
+    },
+    {
+      "name": "3.1 Fetch projects GET /api/subscriber/organization/projects",
+      "status": "PASS",
+      "ms": 600,
+      "data": {
+        "count": 12
+      }
+    },
+    {
+      "name": "3.2 Project templates GET /api/subscriber/organization/project-templates",
+      "status": "PASS",
+      "ms": 504,
+      "data": {
+        "count": 3,
+        "raw": "[{\"_id\":\"6a6469944c8d47aac6fd1629\",\"organization_id\":\"69d3ca9cf265322590686433\",\"department_id\":\"69d798c1bdfd81a39e389be2\",\"manager_id\":\"69dc9da7781b7523b58733ea\",\"name\":\"Test Temaplat 3\",\"description"
+      }
+    },
+    {
+      "name": "4.1 Fetch tasks GET /api/subscriber/organization/tasks",
+      "status": "PASS",
+      "ms": 590,
+      "data": {
+        "count": 16
+      }
+    },
+    {
+      "name": "5.1 Employees GET /api/subscriber/organization/employees",
+      "status": "PASS",
+      "ms": 571,
+      "data": {
+        "count": 8,
+        "sample": "[{\"shift_type\":\"HOURS\",\"total_points\":0,\"used_storage\":0,\"_id\":\"69dc9da7781b7523b58733ef\",\"user_id\":\"69dc9da7781b7523b58733ea\",\"organization_id\":\"69d3ca9cf265322590686433\",\"department_id\":\"69dca066781b7523b587348d\",\"position_id\":\"69d3d2a4f265322590686527\",\"roles_ids\":[\"69d79a14bdfd81a39e389c01\",\"69d"
+      }
+    },
+    {
+      "name": "5.2 Positions GET /api/subscriber/organization/positions",
+      "status": "PASS",
+      "ms": 380,
+      "data": {
+        "count": 3
+      }
+    },
+    {
+      "name": "5.3 Employee requests GET /api/subscriber/organization/employees-requests",
+      "status": "PASS",
+      "ms": 2189,
+      "data": {
+        "total": 30
+      }
+    },
+    {
+      "name": "6.1 My organization GET /api/subscriber/organization",
+      "status": "PASS",
+      "ms": 1060,
+      "data": {
+        "allocated_storage": 0,
+        "_id": "69d3ca9cf265322590686433",
+        "subscriber_id": "69d3c8def2653225906863dd",
+        "name": "Org 1",
+        "industry_id": "69d3ca50f26532259068641a",
+        "email": "nxorg1@anmat.test",
+        "phone": "+321654987",
+        "website": "https://www.test.test",
+        "country": "Palestine",
+        "city": "Gaza",
+        "createdAt": "2026-04-06T15:00:44.954Z",
+        "updatedAt": "2026-08-24T23:48:29.548Z",
+        "__v": 0,
+        "used_storage": 2389539,
+        "default_evaluation_method": "AUTO",
+        "is_points_system_active": true,
+        "rating_types": [
+          {
+            "_id": "6a5c7630535b8307043e27a0",
+            "title": "نوع 1"
+          },
+          {
+            "_id": "6a5c7630535b8307043e27a1",
+            "title": "نوع 2"
+          },
+          {
+            "_id": "6a5c7630535b8307043e27a2",
+            "title": "نوع 3"
+          }
+        ],
+        "date_format": "month-dd-yyyy",
+        "time_format": "12hr",
+        "timezone": "Africa/Cairo",
+        "industry": {
+          "_id": "69d3ca50f26532259068641a",
+          "name": "Graphic Design",
+          "icon_name": "Gallery",
+          "is_by_subscriber": false,
+          "is_allowed": true,
+          "createdAt": "2026-04-06T14:59:28.884Z",
+          "updatedAt": "2026-04-06T14:59:28.884Z",
+          "__v": 0
+        },
+        "id": "69d3ca9cf265322590686433"
+      }
+    },
+    {
+      "name": "6.2 Industries (subscriber) GET /api/subscriber/industries",
+      "status": "PASS",
+      "ms": 504,
+      "data": {
+        "count": 4,
+        "sample": "[{\"_id\":\"69d3ca3ff265322590686415\",\"name\":\"AI Engineering\",\"icon_name\":\"Cpu\",\"is_by_subscriber\":false,\"is_allowed\":true,\"createdAt\":\"2026-04-06T14:59:11.289Z\",\"updatedAt\":\"2026-05-05T14:13:19.158Z\",\"organizations_count\":5,\"subscribers_count\":0},{\"_id\":\"69d3ca1bf26532259068640b\",\"name\":\"Computer Engi"
+      }
+    },
+    {
+      "name": "6.3 Subscription plans public GET /api/subscription-plans/public",
+      "status": "PASS",
+      "ms": 970,
+      "data": {
+        "count": 4,
+        "sample": "[{\"_id\":\"69f3688b7f925110a0ae43d7\",\"name\":\"Nx Org\",\"description\":\"Testing plan created by frontend system.\",\"pricing\":[{\"interval\":\"month\",\"interval_count\":1,\"price\":12,\"discount\":0,\"is_active\":true,\"_id\":\"69f3688b7f925110a0ae43d8\",\"createdAt\":\"2026-04-30T14:34:51.606Z\",\"updatedAt\":\"2026-08-10T14:07:29.634Z\",\"stripe_price_id\":\"price_1TRvg0Lm7nEhLsMvE3Dofn2L\"}],\"features\":[{\"properties\":[{\"key\":\"si"
+      }
+    },
+    {
+      "name": "7.1 My subscription GET /api/subscriptions/subscriber/my-subscription",
+      "status": "PASS",
+      "ms": 588,
+      "data": {
+        "_id": "6a5e32e3d09a8c558fa370e9",
+        "subscriber_id": "69d3c8def2653225906863dd",
+        "plan_id": {
+          "_id": "69d3cfa3f265322590686487",
+          "name": "Advanced",
+          "description": "Testing advanced plan desc...",
+          "pricing": [
+            {
+              "interval": "month",
+              "interval_count": 1,
+              "price": 25,
+              "discount": 10,
+              "is_active": true,
+              "_id": "69f9594de0513dd038cfdf23",
+              "createdAt": "2026-05-05T02:43:25.091Z",
+              "updatedAt": "2026-08-10T14:07:31.072Z",
+              "stripe_price_id": "price_1U2trSLm7nEhLsMvk11rvu9Z"
+            },
+            {
+              "interval": "year",
+              "interval_count": 1,
+              "price": 250,
+              "discount": 8,
+              "is_active": true,
+              "_id": "69f9594de0513dd038cfdf24",
+              "createdAt": "2026-05-05T02:43:25.091Z",
+              "updatedAt": "2026-08-10T14:07:31.072Z",
+              "stripe_price_id": "price_1U2trTLm7nEhLsMvLvWsGx1H"
+            }
+          ],
+          "features": [
+            {
+              "feature_type_id": {
+                "_id": "69d3ce18f265322590686458",
+                "type": "allowed_space",
+                "title": "Allowed Space Size",
+                "details": "Maximm size of subscriber allowed space on server.",
+                "attributes_definitions": [
+                  {
+                    "key": "size",
+                    "data_type": "number",
+                    "createdAt": "2026-04-06T15:15:36.540Z",
+                    "updatedAt": "2026-04-06T15:15:36.540Z"
+                  }
+                ],
+                "is_active": true,
+                "createdAt": "2026-04-06T15:15:36.540Z",
+                "updatedAt": "2026-04-06T15:15:36.540Z",
+                "__v": 0
+              },
+              "properties": [
+                {
+                  "key": "size",
+                  "value": 30478
+                }
+              ],
+              "_id": "69f9594de0513dd038cfdf25",
+              "createdAt": "2026-05-05T02:43:25.091Z",
+              "updatedAt": "2026-05-05T02:43:25.091Z"
+            },
+            {
+              "feature_type_id": {
+                "_id": "69d3ce73f265322590686460",
+                "type": "max_employees_number",
+                "title": "Organization Max Employees Number",
+                "details": "Maximm number of employees allowed under specific plan for the subscriber.",
+                "attributes_definitions": [
+                  {
+                    "key": "max_emp_num",
+                    "data_type": "number",
+                    "createdAt": "2026-04-06T15:17:07.631Z",
+                    "updatedAt": "2026-04-06T15:17:07.631Z"
+                  }
+                ],
+                "is_active": true,
+                "createdAt": "2026-04-06T15:17:07.632Z",
+                "updatedAt": "2026-04-06T15:17:07.632Z",
+                "__v": 0
+              },
+              "properties": [
+                {
+                  "key": "max_emp_num",
+                  "value": 8
+                }
+              ],
+              "_id": "69f9594de0513dd038cfdf26",
+              "createdAt": "2026-05-05T02:43:25.091Z",
+              "updatedAt": "2026-05-05T02:43:25.091Z"
+            }
+          ],
+          "trial": {
+            "trial_days": 14,
+            "is_active": false,
+            "_id": "69f9594de0513dd038cfdf27",
+            "createdAt": "2026-05-05T02:43:25.091Z",
+            "updatedAt": "2026-05-05T02:43:25.091Z"
+          },
+          "is_active": true,
+          "stripe_price_ids": [
+            "price_1U2trSLm7nEhLsMvk11rvu9Z",
+            "price_1U2trTLm7nEhLsMvLvWsGx1H"
+          ],
+          "createdAt": "2026-04-06T15:22:11.461Z",
+          "updatedAt": "2026-08-10T14:07:31.073Z",
+          "__v": 2,
+          "stripe_product_id": "prod_UHobXdqScdxCgN",
+          "version": 2
+        },
+        "status": "active",
+        "starts_at": "2026-07-20T14:38:27.022Z",
+        "expires_at": "2026-10-03T14:38:27.000Z",
+        "auto_renew": true,
+        "stripe_subscription_id": "sub_1TvIKtLm7nEhLsMvyqgXfBkN",
+        "stripe_customer_id": "cus_UHo8MkeoBl1vUv",
+        "plan_version": 2,
+        "extra_features": [],
+        "createdAt": "2026-07-20T14:38:27.028Z",
+        "updatedAt": "2026-09-04T03:00:02.389Z",
+        "__v": 0,
+        "interval": "month",
+        "pricing_id": "69f9594de0513dd038cfdf23",
+        "amount": 0,
+        "renewal_date": "2026-10-03",
+        "usage": {
+          "employees": 7
+        }
+      }
+    },
+    {
+      "name": "7.2 My payments GET /api/subscriptions/subscriber/my-payments",
+      "status": "PASS",
+      "ms": 725,
+      "data": {
+        "count": 5,
+        "raw": "[{\"_id\":\"6a71ac0dc5a6abfe6f1de7a6\",\"subscriber_id\":\"69d3c8def2653225906863dd\",\"subscription_id\":\"6a71ac0cc5a6abfe6f1de79d\",\"payment_method_id\":null,\"amount\":0,\"currency\":\"usd\",\"status\":\"paid\",\"is_approved\":true,\"stripe_invoice_id\":\"in_1U0eKlLm7nEhLsMvS6zrUK4O\",\"stripe_metadata\":[\"plan_name: Basic\",\"interval: month\"],\"description\":null,\"createdAt\":\"2026-08-04T09:08:29.400Z\",\"updatedAt\":\"2026-08-04T09:08:29.400Z\",\"__v\":0},{\"_id\":\"6a5e32e3d09a8c558fa370f2\",\"subscriber_id\":\"69d3c8def2653225906863dd\""
+      }
+    },
+    {
+      "name": "7.3 Subscriber plans GET /api/subscriber/subscription-plans",
+      "status": "PASS",
+      "ms": 1205,
+      "data": {
+        "count": 4,
+        "sample": "[{\"_id\":\"69f3688b7f925110a0ae43d7\",\"name\":\"Nx Org\",\"description\":\"Testing plan created by frontend system.\",\"pricing\":[{\"interval\":\"month\",\"interval_count\":1,\"price\":12,\"discount\":0,\"is_active\":true,\"_id\":\"69f3688b7f925110a0ae43d8\",\"createdAt\":\"2026-04-30T14:34:51.606Z\",\"updatedAt\":\"2026-08-10T14:07:29.634Z\",\"stripe_price_id\":\"price_1TRvg0Lm7nEhLsMvE3Dofn2L\"}],\"features\":[{\"properties\":[{\"key\":\"si"
+      }
+    },
+    {
+      "name": "7.4 Payment methods GET /api/subscriber/payment-methods/",
+      "status": "PASS",
+      "ms": 331,
+      "data": {
+        "count": 2,
+        "raw": "[{\"_id\":\"6a78c3bd71a44e9fe2e04605\",\"subscriber_id\":\"69d3c8def2653225906863dd\",\"type\":\"CARD\",\"is_default\":true,\"is_active\":true,\"attributes\":[{\"key\":\"name\",\"value\":\"بلال\",\"_id\":\"6a78c3bd71a44e9fe2e04606\"},{\"key\":\"last4\",\"value\":\"4242\",\"_id\":\"6a78c3bd71a44e9fe2e04607\"},{\"key\":\"brand\",\"value\":\"Visa\",\"_"
+      }
+    },
+    {
+      "name": "8.1 Roles GET /api/subscriber/organization/roles",
+      "status": "PASS",
+      "ms": 716,
+      "data": {
+        "count": 9,
+        "sample": "[{\"_id\":\"69d799edbdfd81a39e389bf5\",\"organization_id\":\"69d3ca9cf265322590686433\",\"name\":\"Creator\",\"permissions_ids\":[],\"createdAt\":\"2026-04-09T12:22:05.218Z\",\"updatedAt\":\"2026-04-09T12:22:05.218Z\",\"__v\":0},{\"_id\":\"69d79a14bdfd81a39e389c01\",\"organization_id\":\"69d3ca9cf265322590686433\",\"name\":\"Viewer\","
+      }
+    },
+    {
+      "name": "8.2 Permissions GET /api/subscriber/permissions",
+      "status": "PASS",
+      "ms": 1495,
+      "data": {
+        "count": 160,
+        "sample": "[{\"_id\":\"69f35f5189f140605a4255c8\",\"name\":\"chats.cross_department_scope\",\"action\":\"cross_department_scope\",\"model_type\":\"chats\",\"__v\":0,\"createdAt\":\"2026-04-30T13:55:28.706Z\",\"updatedAt\":\"2026-09-03T08:53:33.440Z\",\"title\":\"Cross-Department Chat Scope\"},{\"_id\":\"69f35f5189f140605a4255c9\",\"action\":\"man"
+      }
+    },
+    {
+      "name": "9.1 My notifications GET /api/notifications/my-notifications",
+      "status": "PASS",
+      "ms": 1087,
+      "data": {
+        "count": 20,
+        "sample": "[{\"_id\":\"6a8b2ef7a643e16035616a77\",\"recipient_id\":\"69d3c8def2653225906863dd\",\"recipient_type\":\"Subscriber\",\"triggered_by_id\":\"69d3d25af265322590686505\",\"triggered_by_type\":\"Employee\",\"model_type\":\"User\",\"model_id\":\"69d3d25af265322590686505\",\"title\":\"Employee Logged In\",\"message\":\"Emp 1 Org 1 has log"
+      }
+    },
+    {
+      "name": "9.2 Subscriber notifications types GET /api/subscriber-notifications/types",
+      "status": "PASS",
+      "ms": 390,
+      "data": [
+        {
+          "_id": "69f7249519317729944acf5e",
+          "name": "Alert",
+          "description": "Used to alert employees about urgent action items or deadlines.",
+          "icon": "RiBellLine",
+          "color": "yellow",
+          "is_active": true,
+          "is_default": true,
+          "created_at": "2026-05-03T10:33:57.613Z",
+          "updated_at": "2026-05-03T10:33:57.613Z",
+          "__v": 0
+        },
+        {
+          "_id": "69f7249619317729944acf62",
+          "name": "Info",
+          "description": "Used to share general information or announcements with employees.",
+          "icon": "RiInformationLine",
+          "color": "blue",
+          "is_active": true,
+          "is_default": true,
+          "created_at": "2026-05-03T10:33:58.399Z",
+          "updated_at": "2026-05-03T10:33:58.399Z",
+          "__v": 0
+        },
+        {
+          "_id": "69f7249319317729944acf57",
+          "name": "Warning",
+          "description": "Used to warn employees about important matters or policy violations.",
+          "icon": "RiErrorWarningLine",
+          "color": "red",
+          "is_active": true,
+          "is_default": true,
+          "created_at": "2026-05-03T10:33:55.559Z",
+          "updated_at": "2026-05-03T10:33:55.559Z",
+          "__v": 0
+        }
+      ]
+    },
+    {
+      "name": "9.3 Subscriber notifications my GET /api/subscriber-notifications/my (Employee-only → expect 401 for Subscriber)",
+      "status": "PASS",
+      "ms": 900,
+      "note": "expected fail: Access denied, unauthorized user [401]"
+    },
+    {
+      "name": "10.1 Support tickets GET /api/support-tickets",
+      "status": "PASS",
+      "ms": 482,
+      "data": {
+        "count": 8
+      }
+    },
+    {
+      "name": "10.2 Social media quota GET /api/subscriber/social-media-quota",
+      "status": "PASS",
+      "ms": 458,
+      "data": {
+        "used": 0,
+        "limit": -1,
+        "unlimited": true,
+        "source": "override",
+        "override": -1
+      }
+    },
+    {
+      "name": "10.3 AI tokens balance GET /api/ai/tokens/balance",
+      "status": "PASS",
+      "ms": 404,
+      "data": {
+        "balance": 2100121,
+        "free_limit": 30000,
+        "free_consumed": 0,
+        "last_renewal": "2026-08-08T09:14:56.273Z",
+        "daily_usage": [],
+        "is_unlimited": false
+      }
+    },
+    {
+      "name": "10.3b AI tokens packages GET /api/ai/tokens/packages",
+      "status": "PASS",
+      "ms": 282,
+      "data": {
+        "count": 4,
+        "sample": "[{\"_id\":\"6a118c0557b3ee4ee962e5ea\",\"name\":\"Starter Pack\",\"description\":\"Perfect for trying out AI features with basic usage.\",\"price_cents\":500,\"price_label\":\"$5\",\"tokens\":10000,\"features\":[\"10,000 AI Tokens\",\"Basic AI Chat\",\"Email Support\"],\"is_active\":true,\"sort_order\":1,\"__v\":0,\"created_at\":\"2026"
+      }
+    },
+    {
+      "name": "10.4 Appointments GET /api/subscriber/organization/appointments",
+      "status": "PASS",
+      "ms": 1259,
+      "data": {
+        "count": 18
+      }
+    },
+    {
+      "name": "10.5 Attendances GET /api/subscriber/organization/attendances",
+      "status": "PASS",
+      "ms": 728,
+      "data": {
+        "count": 19
+      }
+    },
+    {
+      "name": "10.6 Leaves GET /api/subscriber/organization/leaves",
+      "status": "PASS",
+      "ms": 1142,
+      "data": {
+        "count": 21
+      }
+    },
+    {
+      "name": "10.6b Holidays GET /api/subscriber/organization/holidays",
+      "status": "PASS",
+      "ms": 374,
+      "data": {
+        "count": 3
+      }
+    },
+    {
+      "name": "10.6c Meetings GET /api/subscriber/organization/meetings",
+      "status": "PASS",
+      "ms": 499,
+      "data": {
+        "count": 1
+      }
+    },
+    {
+      "name": "10.7 Salary transactions GET /api/subscriber/organization/employees-salary-transactions",
+      "status": "PASS",
+      "ms": 527,
+      "data": {
+        "count": 2
+      }
+    },
+    {
+      "name": "10.8 Activity logs full GET /api/activity-logs?limit=5 (Admin-only → expect 401 for Subscriber, correct)",
+      "status": "PASS",
+      "ms": 229,
+      "note": "expected fail: Access denied, unauthorized user [401]"
+    },
+    {
+      "name": "10.9 Daily tasks GET /api/subscriber/organization/daily-tasks",
+      "status": "PASS",
+      "ms": 404,
+      "data": {
+        "count": 13
+      }
+    },
+    {
+      "name": "10.10 Chats GET /api/chats",
+      "status": "PASS",
+      "ms": 661,
+      "data": {
+        "count": 5
+      }
+    },
+    {
+      "name": "11.1 Accept-Language header (ar) reflected",
+      "status": "PASS",
+      "ms": 418,
+      "data": {
+        "langSent": "ar",
+        "ok": true
+      }
+    },
+    {
+      "name": "11.2 Wrong password should fail (negative)",
+      "status": "PASS",
+      "ms": 285,
+      "note": "expected fail: Invalid credentials [400]"
+    },
+    {
+      "name": "11.3 AdminSignIn guard — subscriber must be rejected on /api/admin/auth/login",
+      "status": "PASS",
+      "ms": 325,
+      "note": "expected fail: Access denied, unauthorized user [401]"
+    },
+    {
+      "name": "11.4 Profile re-fetch GET /api/user/auth (verify mobile persistSession)",
+      "status": "PASS",
+      "ms": 654,
+      "data": {
+        "email": "nextsub1@anmat.test",
+        "type": "Subscriber"
+      }
+    },
+    {
+      "name": "11.5 Chats candidates GET /api/chats/candidates (mobile HR chats)",
+      "status": "PASS",
+      "ms": 566,
+      "data": {
+        "count": 5
+      }
+    }
+  ],
+  "summary": {
+    "total": 47,
+    "passed": 47,
+    "failed": 0
+  },
+  "timestamp": "2026-09-05T08:40:19.502Z"
+}

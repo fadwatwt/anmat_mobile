@@ -36,6 +36,7 @@ import type {
   EmployeeDashboardTask,
 } from '../types';
 import { useTranslation } from 'react-i18next';
+import { activityActionTitle, activityLogDate } from '../services/activityLogs';
 
 // ===== Color Maps (web-matching) =====
 
@@ -256,7 +257,7 @@ function SubscriberDashboardContent() {
   })) : [];
 
   const deptBarData = departments.map(d => ({
-    key: d._id, value: Math.round((d.rate || 0) * 5), label: d.name.length > 6 ? d.name.slice(0, 6) + '..' : d.name,
+    key: d._id, value: Math.round((d.rate || 0) * 5), label: d.name.length > 12 ? d.name.slice(0, 12) + '..' : d.name,
     color: '#375DFB',
   }));
 
@@ -316,8 +317,8 @@ function SubscriberDashboardContent() {
             <View key={log._id || i} style={[s.logItem, i < logs.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
               <View style={[s.logDot, { backgroundColor: colors.primary }]} />
               <View style={s.logContent}>
-                <Text style={[s.logAction, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{log.action || log.description || 'Activity'}</Text>
-                <Text style={[s.logTime, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(log.createdAt, locale)}</Text>
+                <Text style={[s.logAction, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{activityActionTitle(log, t)}</Text>
+                <Text style={[s.logTime, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(activityLogDate(log), locale)}</Text>
               </View>
             </View>
           ))}
@@ -440,8 +441,8 @@ function EmployeeDashboardContent() {
             <View key={log._id || i} style={[s.logItem, i < logs.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
               <View style={[s.logDot, { backgroundColor: colors.primary }]} />
               <View style={s.logContent}>
-                <Text style={[s.logAction, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{log.action || log.description || 'Activity'}</Text>
-                <Text style={[s.logTime, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(log.createdAt, locale)}</Text>
+                <Text style={[s.logAction, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{activityActionTitle(log, t)}</Text>
+                <Text style={[s.logTime, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(activityLogDate(log), locale)}</Text>
               </View>
             </View>
           ))}

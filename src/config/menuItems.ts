@@ -217,7 +217,7 @@ export const menuItems: MenuItemType[] = [
     icon: Share2,
     allowedTo: ['Subscriber', 'Employee'],
     section: 'Content Management',
-    permissionAnyOf: ['social_media_accounts.list'],
+    permissionAnyOf: ['twitter_accounts.list'],
   },
 
   // ═══════════════════════════════════════════
@@ -238,6 +238,13 @@ export const menuItems: MenuItemType[] = [
   {
     titleKey: 'AI Assistant',
     route: 'AI',
+    icon: Bot,
+    allowedTo: ['Admin', 'Subscriber', 'Employee'],
+    section: 'Smart Tools',
+  },
+  {
+    titleKey: 'Knowledge Base',
+    route: 'KnowledgeBase',
     icon: Bot,
     allowedTo: ['Admin', 'Subscriber', 'Employee'],
     section: 'Smart Tools',
@@ -277,6 +284,20 @@ export const menuItems: MenuItemType[] = [
     allowedTo: ['Admin'],
     section: 'System Administration',
     permission: 'admin.industries.list',
+  },
+  {
+    titleKey: 'Companies',
+    route: 'Companies',
+    icon: Building2,
+    allowedTo: ['Admin'],
+    section: 'System Administration',
+  },
+  {
+    titleKey: 'Orders',
+    route: 'Orders',
+    icon: ClipboardList,
+    allowedTo: ['Admin'],
+    section: 'System Administration',
   },
 
   // ═══════════════════════════════════════════

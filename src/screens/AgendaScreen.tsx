@@ -65,12 +65,6 @@ function TodayTab({ canUpdate, canDelete }: { canUpdate: boolean; canDelete: boo
   const handleCompleteTask = async (id: string) => { await completeDailyTask(role, id).catch(() => {}); load(); };
   const handleDeleteTask = async (id: string) => { await deleteDailyTask(role, id).catch(() => {}); load(); };
   const handleCompleteReminder = async (id: string) => { await completeAppointment(role, id).catch(() => {}); load(); };
-  const handleDeleteReminder = (id: string) => {
-    Alert.alert(t('Delete Reminder?'), t('Are you sure?'), [
-      { text: t('Cancel'), style: 'cancel' },
-      { text: t('Delete'), style: 'destructive', onPress: async () => { await deleteAppointment(role, id).catch(() => {}); load(); } },
-    ]);
-  };
 
   if (loading) return <ActivityIndicator style={styles.loading} color={colors.primary} size="large" />;
 
@@ -126,7 +120,6 @@ function TodayTab({ canUpdate, canDelete }: { canUpdate: boolean; canDelete: boo
               reminder={r}
               onComplete={canUpdate ? handleCompleteReminder : undefined}
               onEdit={canUpdate ? setEditingReminder : undefined}
-              onDelete={canDelete ? handleDeleteReminder : undefined}
             />
           ))
         )}
@@ -144,6 +137,7 @@ function TodayTab({ canUpdate, canDelete }: { canUpdate: boolean; canDelete: boo
         reminder={editingReminder}
         onClose={() => setEditingReminder(null)}
         onSaved={load}
+        onDeleted={canDelete ? load : undefined}
         role={role}
       />
     </ScrollView>

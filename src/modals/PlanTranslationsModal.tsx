@@ -69,7 +69,7 @@ export function PlanTranslationsModal({ visible, plan, onClose, onSaved }: Props
         setDescription(found.description || '');
         setFeatures(
           found.feature_translations?.map((ft) => ({
-            feature_type_id: ft.feature_type_id || ft.plan_feature?._id || '',
+            feature_type_id: ft.feature_type_id || '',
             title: ft.title || '',
             details: ft.details || '',
           })) || [],
@@ -118,7 +118,7 @@ export function PlanTranslationsModal({ visible, plan, onClose, onSaved }: Props
             setDescription(found.description || '');
             setFeatures(
               found.feature_translations?.map((ft) => ({
-                feature_type_id: ft.feature_type_id || ft.plan_feature?._id || '',
+                feature_type_id: ft.feature_type_id || '',
                 title: ft.title || '',
                 details: ft.details || '',
               })) || [],
