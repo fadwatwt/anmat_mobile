@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
   Building2, FolderKanban, CheckSquare, Users, TrendingUp, TrendingDown,
   Clock, XCircle, HelpCircle, AlertTriangle, Info, CheckCircle,
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react-native';
 import { Badge } from '../components/Badge';
 import { EmptyState } from '../components/EmptyState';
+import { Skeleton, SummaryCardsSkeleton } from '../components/Skeleton';
 import { DonutChart } from '../charts/DonutChart';
 import { BarChart } from '../charts/BarChart';
 import { GroupedBarChart } from '../charts/GroupedBarChart';
@@ -71,9 +72,61 @@ function statusLabel(s?: string, t?: (key: string) => string): string {
   return t ? t(key) : key;
 }
 
+// Shared loading / error UI so screens never show misleading zeros while
+// fetching, and offer a retry instead of a dead empty screen on failure.
+function DashboardLoading() {
+  const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  return (
+    <View style={s.section}>
+      <View style={s.summaryGrid}>
+        <SummaryCardsSkeleton count={4} />
+      </View>
+      <View style={[s.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Skeleton width="40%" height={14} />
+        <Skeleton height={140} />
+      </View>
+    </View>
+  );
+}
+
+function DashboardError({ onRetry }: { onRetry: () => void }) {
+  const { colors } = useTheme();
+  const { isRTL } = useLocale();
+  const { t } = useTranslation();
+  return (
+    <View style={[s.tableCard, { backgroundColor: colors.surface, borderColor: colors.border, alignItems: 'center', gap: spacing.sm }]}>
+      <Text style={[s.sectionTitle, { color: colors.ink, textAlign: 'center' }]}>{t('Failed to load dashboard')}</Text>
+      <Text style={[s.emptyText, { color: colors.textMuted, textAlign: 'center' }]}>{t('Check your connection and try again')}</Text>
+      <TouchableOpacity
+        onPress={onRetry}
+        activeOpacity={0.85}
+        style={{ backgroundColor: colors.primary, borderRadius: radii.lg, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm }}
+      >
+        <Text style={{ color: '#FFF', fontWeight: font.weights.semibold, textAlign: 'center' }}>{t('Retry')}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 function fmtDate(d?: string, locale: string = 'en') {
   if (!d) return '--';
-  return new Date(d).toLocaleDateString(locale);
+  const dt = new Date(d);
+  const date = dt.toLocaleDateString(locale);
+  const hh = String(dt.getHours()).padStart(2, '0');
+  const mm = String(dt.getMinutes()).padStart(2, '0');
+  return `${date} ${hh}:${mm}`;
+}
+
+function logDotColor(action?: string): string {
+  const a = (action || '').toLowerCase();
+  if (a.includes('delete') || a.includes('cancel') || a.includes('reject') || a.includes('overdue')) return '#DF1C41';
+  if (a.includes('create')) return '#38C793';
+  if (a.includes('update') || a.includes('status') || a.includes('evaluat')) return '#375DFB';
+  if (a.includes('comment') || a.includes('attachment') || a.includes('upload')) return '#7E3AF2';
+  if (a.includes('login') || a.includes('logout') || a.includes('password')) return '#6B7280';
+  if (a.includes('leave') || a.includes('attendance') || a.includes('request')) return '#F17B2C';
+  return '#375DFB';
 }
 
 // ===== Summary Card =====
@@ -83,17 +136,18 @@ function SummaryCard({ title, value, icon: Icon, color, trend }: {
 }) {
   const { colors } = useTheme();
   const { isRTL } = useLocale();
+  const rowDir = isRTL ? 'row-reverse' : 'row';
   return (
-    <View style={[s.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <View style={[s.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: rowDir }]}>
       <View style={[s.summaryIconWrap, { backgroundColor: color + '18' }]}>
         <Icon size={22} color={color} strokeWidth={1.5} />
       </View>
       <View style={s.summaryInfo}>
         <Text style={[s.summaryTitle, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{title}</Text>
-        <View style={s.summaryValueRow}>
+        <View style={[s.summaryValueRow, { flexDirection: rowDir }]}>
           <Text style={[s.summaryValue, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{value}</Text>
           {trend && (
-            <View style={[s.trendBadge, { backgroundColor: trend.up ? '#E7F8ED' : '#FEE2E5' }]}>
+            <View style={[s.trendBadge, { backgroundColor: trend.up ? '#E7F8ED' : '#FEE2E5', flexDirection: rowDir }]}>
               {trend.up ? <TrendingUp size={12} color="#1F7A3F" /> : <TrendingDown size={12} color="#C9372C" />}
               <Text style={[s.trendText, { color: trend.up ? '#1F7A3F' : '#C9372C', textAlign: isRTL ? 'right' : 'left' }]}>{Math.abs(trend.value)}%</Text>
             </View>
@@ -115,27 +169,36 @@ function AdminDashboardContent() {
   const [subscriptions, setSubscriptions] = useState<SubscriptionBasic[]>([]);
   const [industries, setIndustries] = useState<IndustryCount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
+      setLoading(true);
+      setLoadError(false);
       try {
         const [a, subs, inds] = await Promise.all([
           fetchAdminAnalytics(),
           fetchAdminSubscriptions(1, 5),
           fetchIndustriesOrganizationsCount(),
         ]);
+        if (cancelled) return;
         setAnalytics(a);
         setSubscriptions(subs.data || []);
         setIndustries(inds || []);
       } catch (e) {
         console.error('Admin dashboard error:', e);
+        if (!cancelled) setLoadError(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, []);
+    return () => { cancelled = true; };
+  }, [reloadKey]);
 
-  if (loading) return <ActivityIndicator style={s.loadingState} color={colors.primary} />;
+  if (loading) return <DashboardLoading />;
+  if (loadError && !analytics) return <DashboardError onRetry={() => setReloadKey((k) => k + 1)} />;
 
   const summaryCards = [
     { title: t('Total Companies'), value: analytics?.totalCompanies ?? 0, icon: Building2, color: '#375DFB', trend: { value: 12, up: true } },
@@ -213,9 +276,14 @@ function SubscriberDashboardContent() {
   const [projects, setProjects] = useState<DashboardProject[]>([]);
   const [logs, setLogs] = useState<ActivityLogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
+      setLoading(true);
+      setLoadError(false);
       try {
         const [ov, ts, deps, projs, lgs] = await Promise.all([
           fetchSubscriberAnalyticsOverview(),
@@ -224,6 +292,7 @@ function SubscriberDashboardContent() {
           fetchSubscriberProjects(1, 5).catch(() => ({ data: [] })),
           fetchOrganizationLogs(5).catch(() => []),
         ]);
+        if (cancelled) return;
         setOverview(ov);
         setTaskStats(ts);
         setDepartments(deps);
@@ -231,33 +300,38 @@ function SubscriberDashboardContent() {
         setLogs(lgs || []);
       } catch (e) {
         console.error('Subscriber dashboard error:', e);
+        if (!cancelled) setLoadError(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, []);
+    return () => { cancelled = true; };
+  }, [reloadKey]);
 
-  if (loading) return <ActivityIndicator style={s.loadingState} color={colors.primary} />;
+  if (loading) return <DashboardLoading />;
+  if (loadError && !overview && !taskStats) return <DashboardError onRetry={() => setReloadKey((k) => k + 1)} />;
 
   const statCards = [
-    { title: t('Tasks'), value: overview?.total_tasks ?? 0, icon: CheckSquare, color: '#375DFB' },
-    { title: t('Projects'), value: overview?.total_projects ?? 0, icon: FolderKanban, color: '#7E3AF2' },
-    { title: t('Departments'), value: overview?.total_departments ?? 0, icon: Building2, color: '#F17B2C' },
+    { title: t('Tasks'), value: overview?.total_tasks || taskStats?.total || 0, icon: CheckSquare, color: '#375DFB' },
+    { title: t('Projects'), value: overview?.total_projects || projects.length || 0, icon: FolderKanban, color: '#7E3AF2' },
+    { title: t('Departments'), value: overview?.total_departments || departments.length || 0, icon: Building2, color: '#F17B2C' },
     { title: t('Employees'), value: overview?.total_employees ?? 0, icon: Users, color: '#38C793' },
   ];
 
   const statusLabels: Record<string, string> = {
-    open: t('Open'), in_progress: t('In Progress'), completed: t('Completed'),
+    open: t('Active'), active: t('Active'),
+    in_progress: t('In Progress'), inprogress: t('In Progress'), 'in-progress': t('In Progress'),
+    completed: t('Completed'), completed_before_due_date: t('Completed Before Due Date'),
     late_completed: t('Late Completed'), cancelled: t('Cancelled'),
     on_hold: t('On Hold'), pending: t('Pending'), overdue: t('Overdue'),
     done: t('Done'), rejected: t('Rejected'),
   };
   const taskDonutData = taskStats ? Object.entries(taskStats.status_counts || {}).map(([key, value], i) => ({
-    key, value, color: statusColorMap[key] || donutColors[i % donutColors.length], label: statusLabels[key] || t(key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')),
+    key, value, color: statusColorMap[key.toLowerCase()] || statusColorMap[key.toLowerCase().replace(/-/g, '_')] || donutColors[i % donutColors.length], label: statusLabels[key.toLowerCase()] || t(key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')),
   })) : [];
 
   const deptBarData = departments.map(d => ({
-    key: d._id, value: Math.round((d.rate || 0) * 5), label: d.name.length > 12 ? d.name.slice(0, 12) + '..' : d.name,
+    key: d._id, value: Math.round((d.rate || 0) * 5), label: d.name,
     color: '#375DFB',
   }));
 
@@ -314,8 +388,8 @@ function SubscriberDashboardContent() {
         <View style={[s.logsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[s.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Activity Logs')}</Text>
           {logs.map((log, i) => (
-            <View key={log._id || i} style={[s.logItem, i < logs.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
-              <View style={[s.logDot, { backgroundColor: colors.primary }]} />
+            <View key={log._id || i} style={[s.logItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }, i < logs.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
+              <View style={[s.logDot, { backgroundColor: logDotColor(log.action) }]} />
               <View style={s.logContent}>
                 <Text style={[s.logAction, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{activityActionTitle(log, t)}</Text>
                 <Text style={[s.logTime, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(activityLogDate(log), locale)}</Text>
@@ -340,9 +414,14 @@ function EmployeeDashboardContent() {
   const [tasks, setTasks] = useState<EmployeeDashboardTask[]>([]);
   const [logs, setLogs] = useState<ActivityLogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
+      setLoading(true);
+      setLoadError(false);
       try {
         const [ov, ts, tks, lgs] = await Promise.all([
           fetchEmployeeAnalyticsOverview(),
@@ -350,35 +429,41 @@ function EmployeeDashboardContent() {
           fetchEmployeeTasks(1, 5).catch(() => ({ data: [] })),
           fetchEmployeeLogs(5).catch(() => []),
         ]);
+        if (cancelled) return;
         setOverview(ov);
         setTaskStats(ts);
         setTasks(tks.data || []);
         setLogs(lgs || []);
       } catch (e) {
         console.error('Employee dashboard error:', e);
+        if (!cancelled) setLoadError(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, []);
+    return () => { cancelled = true; };
+  }, [reloadKey]);
 
-  if (loading) return <ActivityIndicator style={s.loadingState} color={colors.primary} />;
+  if (loading) return <DashboardLoading />;
+  if (loadError && !overview && !taskStats) return <DashboardError onRetry={() => setReloadKey((k) => k + 1)} />;
 
   const statCards = [
-    { title: t('My Tasks'), value: overview?.total_tasks ?? 0, icon: CheckSquare, color: '#375DFB' },
-    { title: t('Projects'), value: overview?.total_projects ?? 0, icon: FolderKanban, color: '#7E3AF2' },
+    { title: t('My Tasks'), value: overview?.total_tasks || taskStats?.total || 0, icon: CheckSquare, color: '#375DFB' },
+    { title: t('Projects'), value: overview?.total_projects || tasks.length || 0, icon: FolderKanban, color: '#7E3AF2' },
     { title: t('Attendance'), value: overview?.total_departments ?? 0, icon: Clock, color: '#F17B2C' },
     { title: t('Requests'), value: overview?.total_employees ?? 0, icon: ListChecks, color: '#38C793' },
   ];
 
   const statusLabels: Record<string, string> = {
-    open: t('Open'), in_progress: t('In Progress'), completed: t('Completed'),
+    open: t('Active'), active: t('Active'),
+    in_progress: t('In Progress'), inprogress: t('In Progress'), 'in-progress': t('In Progress'),
+    completed: t('Completed'), completed_before_due_date: t('Completed Before Due Date'),
     late_completed: t('Late Completed'), cancelled: t('Cancelled'),
     on_hold: t('On Hold'), pending: t('Pending'), overdue: t('Overdue'),
     done: t('Done'), rejected: t('Rejected'),
   };
   const taskDonutData = taskStats ? Object.entries(taskStats.status_counts || {}).map(([key, value], i) => ({
-    key, value, color: statusColorMap[key] || donutColors[i % donutColors.length], label: statusLabels[key] || t(key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')),
+    key, value, color: statusColorMap[key.toLowerCase()] || statusColorMap[key.toLowerCase().replace(/-/g, '_')] || donutColors[i % donutColors.length], label: statusLabels[key.toLowerCase()] || t(key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')),
   })) : [];
 
   const green = '#38C793', orange = '#F17B2C';
@@ -438,8 +523,8 @@ function EmployeeDashboardContent() {
         <View style={[s.logsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[s.sectionTitle, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>{t('Recent Activity')}</Text>
           {logs.map((log, i) => (
-            <View key={log._id || i} style={[s.logItem, i < logs.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
-              <View style={[s.logDot, { backgroundColor: colors.primary }]} />
+            <View key={log._id || i} style={[s.logItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }, i < logs.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
+              <View style={[s.logDot, { backgroundColor: logDotColor(log.action) }]} />
               <View style={s.logContent}>
                 <Text style={[s.logAction, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{activityActionTitle(log, t)}</Text>
                 <Text style={[s.logTime, { color: colors.textMuted, textAlign: isRTL ? 'right' : 'left' }]}>{fmtDate(activityLogDate(log), locale)}</Text>

@@ -242,13 +242,6 @@ export const menuItems: MenuItemType[] = [
     allowedTo: ['Admin', 'Subscriber', 'Employee'],
     section: 'Smart Tools',
   },
-  {
-    titleKey: 'Knowledge Base',
-    route: 'KnowledgeBase',
-    icon: Bot,
-    allowedTo: ['Admin', 'Subscriber', 'Employee'],
-    section: 'Smart Tools',
-  },
 
   // ═══════════════════════════════════════════
   // Section: System Administration (Admin only)

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import Svg, { Path, Line, Text as SvgText, G } from 'react-native-svg';
 import { useTheme } from '../context/ThemeContext';
 import { font } from '../theme';
@@ -64,8 +64,9 @@ export function BarChart({
   const maxValue = yDomain?.[1] ?? Math.max(...values, 1);
   const range = maxValue - minValue;
 
-  const padding = { top: 10, right: 10, bottom: 56, left: yAxisLabel ? 40 : 30 };
-  const chartWidth = data.length * (barSize + 12) + padding.left + padding.right;
+  const padding = { top: 10, right: 15, bottom: 56, left: yAxisLabel ? 45 : 35 };
+  const minItemWidth = barSize + 20;
+  const chartWidth = Math.max(data.length * minItemWidth + padding.left + padding.right, 280);
   const chartHeight = height;
   const plotHeight = chartHeight - padding.top - padding.bottom;
   const plotWidth = chartWidth - padding.left - padding.right;
@@ -79,64 +80,70 @@ export function BarChart({
   });
 
   return (
-    <View style={styles.wrapper}>
-      <Svg width={chartWidth} height={chartHeight}>
-        {showGrid &&
-          gridLines.map((gl, i) => (
-            <G key={i}>
-              <Line
-                x1={padding.left}
-                y1={gl.y}
-                x2={chartWidth - padding.right}
-                y2={gl.y}
-                stroke={colors.borderLight}
-                strokeWidth={1}
-              />
-              <SvgText
-                x={padding.left - 8}
-                y={gl.y + 4}
-                fill={colors.textMuted}
-                fontSize={10}
-                textAnchor="end"
-              >
-                {gl.value}
-              </SvgText>
-            </G>
-          ))}
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContainer}
+    >
+      <View style={styles.wrapper}>
+        <Svg width={chartWidth} height={chartHeight}>
+          {showGrid &&
+            gridLines.map((gl, i) => (
+              <G key={i}>
+                <Line
+                  x1={padding.left}
+                  y1={gl.y}
+                  x2={chartWidth - padding.right}
+                  y2={gl.y}
+                  stroke={colors.borderLight}
+                  strokeWidth={1}
+                />
+                <SvgText
+                  x={padding.left - 8}
+                  y={gl.y + 4}
+                  fill={colors.textMuted}
+                  fontSize={10}
+                  textAnchor="end"
+                >
+                  {gl.value}
+                </SvgText>
+              </G>
+            ))}
 
-        {data.map((d, i) => {
-          const rawBarH = range > 0 ? ((d.value - minValue) / range) * plotHeight : 0;
-          const barH = Math.max(rawBarH, 0);
-          const x = padding.left + i * (barSize + 12) + (plotWidth - data.length * (barSize + 12)) / 2;
-          const y = padding.top + plotHeight - barH;
-          // X labels are rotated -45° so adjacent labels never overlap,
-          // even with long or Arabic names in narrow slots.
-          const labelX = x + barSize / 2 + 3;
-          const labelY = chartHeight - 10;
-          return (
-            <G key={d.key}>
-              <Path
-                d={topRoundedRect(x, y, barSize, barH, barRadius)}
-                fill={d.color ?? color}
-              />
-              <SvgText
-                x={labelX}
-                y={labelY}
-                fill={colors.textMuted}
-                fontSize={10}
-                textAnchor="end"
-                transform={`rotate(-45 ${labelX} ${labelY})`}
-              >
-                {d.label}
-              </SvgText>
-            </G>
-          );
-        })}
-      </Svg>
-    </View>
+          {data.map((d, i) => {
+            const rawBarH = range > 0 ? ((d.value - minValue) / range) * plotHeight : 0;
+            const barH = Math.max(rawBarH, 0);
+            const x = padding.left + i * minItemWidth + (minItemWidth - barSize) / 2;
+            const y = padding.top + plotHeight - barH;
+            // X labels are rotated -45° so adjacent labels never overlap
+            const labelX = x + barSize / 2 + 3;
+            const labelY = chartHeight - 10;
+            return (
+              <G key={d.key}>
+                <Path
+                  d={topRoundedRect(x, y, barSize, barH, barRadius)}
+                  fill={d.color ?? color}
+                />
+                <SvgText
+                  x={labelX}
+                  y={labelY}
+                  fill={colors.textMuted}
+                  fontSize={10}
+                  textAnchor="end"
+                  transform={`rotate(-45 ${labelX} ${labelY})`}
+                >
+                  {d.label}
+                </SvgText>
+              </G>
+            );
+          })}
+        </Svg>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: { flexGrow: 1, justifyContent: 'center' },
   wrapper: { alignItems: 'center' },
 });

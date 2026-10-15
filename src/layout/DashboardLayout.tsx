@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
+import { flushPendingNotification } from '../navigation/navigationRef';
 import { useLocale } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { spacing } from '../theme';
@@ -99,6 +100,11 @@ export function DashboardLayout({ children }: Props) {
     const key = routeTitleMap[currentRouteName];
     return key ? t(key) : '';
   }, [currentRouteName, t]);
+
+  // A notification tap that arrived before login navigates once we're inside.
+  useEffect(() => {
+    flushPendingNotification();
+  }, []);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background, overflow: 'hidden' }]}>

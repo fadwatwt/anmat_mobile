@@ -55,7 +55,7 @@ export type RootStackParamList = {
   Leaves: undefined;
   Requests: undefined;
   Analytics: undefined;
-  Conversations: undefined;
+  Conversations: { chatId?: string } | undefined;
   Notifications: undefined;
   SocialMedia: undefined;
   AI: undefined;

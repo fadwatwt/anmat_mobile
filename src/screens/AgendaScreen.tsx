@@ -78,7 +78,7 @@ function TodayTab({ canUpdate, canDelete }: { canUpdate: boolean; canDelete: boo
       showsVerticalScrollIndicator={false}
     >
       {/* Summary bar */}
-      <View style={[styles.summaryBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={[styles.summaryBar, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <Summary value={appointments.length} label={t('Appointments')} color="#375DFB" />
         <Summary value={tasks.length} label={t('Daily Tasks')} color="#10B981" />
         <Summary value={priorities.length} label={t('Priorities')} color="#EF4444" />
@@ -335,6 +335,7 @@ function ListTab({ canUpdate, canDelete }: { canUpdate: boolean; canDelete: bool
 export default function AgendaScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const { isRTL } = useLocale();
   const { permissions } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -354,10 +355,17 @@ export default function AgendaScreen() {
     { name: 'List', component: ListTab, icon: List, title: t('List') },
   ] as const;
 
+  // RTL: اعكس ترتيب التابس نفسه بدل قلب الـ container بـ row-reverse
+  // لأن الـ indicator في material-top-tabs يُحسب حسب ترتيب الشاشات،
+  // فـ row-reverse كان يفصل المؤشر (يسار) عن الأسماء (يمين).
+  // بعكس المصفوفة يبقى المؤشر متزامناً: اليوم يمين في العربية.
+  const orderedTabs = isRTL ? [...tabs].reverse() : tabs;
+
   return (
     <View style={styles.container}>
       <Tab.Navigator
-        key={reloadKey}
+        key={`${reloadKey}-${isRTL ? 'rtl' : 'ltr'}`}
+        initialRouteName="Today"
         screenOptions={({ route }) => {
           const cfg = tabs.find((tb) => tb.name === route.name);
           return {
@@ -370,15 +378,18 @@ export default function AgendaScreen() {
             tabBarInactiveTintColor: colors.textMuted,
             tabBarStyle: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border, elevation: 0 },
             tabBarIndicatorStyle: { backgroundColor: colors.primary, height: 3 },
-            tabBarLabelStyle: { fontSize: 11, fontWeight: '600', textTransform: 'none' },
-            tabBarScrollEnabled: true,
-            tabBarItemStyle: { width: 'auto', minWidth: 80, paddingHorizontal: spacing.xs },
+            tabBarLabelStyle: { fontSize: 11, fontWeight: '600', textTransform: 'none', textAlign: 'center', writingDirection: isRTL ? 'rtl' : 'ltr' } as any,
+            // 3 تابس فقط: وزعها بعرض كامل بدل تجميعها يسار (scroll كان يترك فراغ يمين في العربي)
+            tabBarScrollEnabled: false,
+            tabBarGap: 0,
+            // فقط داخل الزر اعكس الأيقونة مع النص، هذا لا يؤثر على المؤشر
+            tabBarItemStyle: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xs, flexDirection: isRTL ? 'row-reverse' : 'row' } as any,
             sceneStyle: { backgroundColor: colors.background },
             headerShown: false,
           };
         }}
       >
-        {tabs.map(({ name, component: Cmp }) => (
+        {orderedTabs.map(({ name, component: Cmp }) => (
           <Tab.Screen key={name} name={name}>
             {() => {
               if (name === 'Today') return <TodayTab canUpdate={canUpdate} canDelete={canDelete} />;

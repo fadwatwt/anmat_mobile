@@ -19,6 +19,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import {
   Send,
   ArrowLeft,
+  ArrowRight,
   Check,
   CheckCheck,
   BarChart3,
@@ -33,7 +34,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -64,8 +65,51 @@ import { ThreadModal } from '../modals/ThreadModal';
 
 const EMOJI_LIST = ['👍', '❤️', '😂', '😮', '😢', '👏'];
 
+const AVATAR_BG_COLORS = ['375DFB', '7E3AF2', '0F9D58', 'F17B2C', 'DF1C41', '0EA5E9', '10B981', 'F59E0B'];
+
+const avatarBg = (name?: string) => {
+  const n = name || '?';
+  let hash = 0;
+  for (let i = 0; i < n.length; i++) hash = (hash * 31 + n.charCodeAt(i)) >>> 0;
+  return AVATAR_BG_COLORS[hash % AVATAR_BG_COLORS.length];
+};
+
 const avatarUrl = (name?: string, image?: string) =>
-  image || `https://ui-avatars.com/api/?background=375DFB&color=fff&name=${encodeURIComponent(name || '?')}`;
+  image || `https://ui-avatars.com/api/?background=${avatarBg(name)}&color=fff&name=${encodeURIComponent(name || '?')}`;
+
+// Backend sends system messages in English, e.g. Task "X" status changed: open → done.
+// Render them localized so Arabic users don't see mixed-language bubbles.
+const STATUS_I18N_KEYS: Record<string, string> = {
+  open: 'Active', active: 'Active', in_progress: 'In Progress', inprogress: 'In Progress',
+  completed: 'Completed', done: 'Done', pending: 'Pending', cancelled: 'Cancelled',
+  overdue: 'Overdue', on_hold: 'On Hold', late_completed: 'Late Completed',
+  completed_before_due_date: 'Completed Before Due Date', rejected: 'Rejected',
+};
+
+const formatSystemText = (text: string, t: (k: string) => string, isRTL: boolean) => {
+  const taskRe = /Task\s+"([^"]+)"\s+status changed:\s*([A-Za-z_]+)\s*(?:→|->|➝)\s*([A-Za-z_]+)/i;
+  const projRe = /Project\s+(?:status changed:\s*([A-Za-z_]+)\s*(?:→|->|➝)\s*([A-Za-z_]+)|"([^"]+)"\s+status changed:\s*([A-Za-z_]+)\s*(?:→|->|➝)\s*([A-Za-z_]+))/i;
+  let m = taskRe.exec(text);
+  if (m) {
+    const [, title, from, to] = m;
+    const fromKey = STATUS_I18N_KEYS[from.toLowerCase()] || from;
+    const toKey = STATUS_I18N_KEYS[to.toLowerCase()] || to;
+    const fromL = t(fromKey); const toL = t(toKey);
+    if (isRTL) return `تغيّرت حالة المهمة "${title}" من ${fromL} إلى ${toL}`;
+    return `Task "${title}" status changed: ${fromL} → ${toL}`;
+  }
+  m = projRe.exec(text);
+  if (m) {
+    const title = m[3] || '';
+    const from = m[4] || m[1] || ''; const to = m[5] || m[2] || '';
+    const fromKey = STATUS_I18N_KEYS[from.toLowerCase()] || from;
+    const toKey = STATUS_I18N_KEYS[to.toLowerCase()] || to;
+    const fromL = t(fromKey); const toL = t(toKey);
+    if (isRTL) return title ? `تغيّرت حالة المشروع "${title}" من ${fromL} إلى ${toL}` : `تغيّرت حالة المشروع من ${fromL} إلى ${toL}`;
+    return title ? `Project "${title}" status changed: ${fromL} → ${toL}` : `Project status changed: ${fromL} → ${toL}`;
+  }
+  return text;
+};
 
 const attachmentUrlOf = (m: ChatMessage) =>
   typeof m.attachment === 'string' ? m.attachment : m.attachment?.url || '';
@@ -122,6 +166,20 @@ export default function ConversationsScreen() {
   }, [userId, showArchived]);
 
   useEffect(() => { loadChats(); }, [loadChats]);
+
+  // Deep link from a notification tap: open the chat directly once loaded.
+  const route = useRoute<any>();
+  const routeChatId = route?.params?.chatId ? String(route.params.chatId) : null;
+  useEffect(() => {
+    if (routeChatId && !loadingChats) {
+      const chat = chats.find((c) => String(c._id) === routeChatId);
+      if (chat) {
+        setActiveChat(chat);
+        navigation.setParams({ chatId: undefined } as any);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeChatId, loadingChats, chats]);
 
   // Hardware back button: inside a conversation, go back to the list
   // instead of exiting the whole screen (list + detail share one route
@@ -442,7 +500,9 @@ export default function ConversationsScreen() {
           );
         })}
         <View style={[s.pollFooter, { flexDirection: rowDir }]}>
-          <Text style={[s.pollTotal, { color: colors.textMuted }]}>{total} {t('votes')}</Text>
+          <Text style={[s.pollTotal, { color: colors.textMuted }]}>
+            {total === 0 ? t('No votes yet') : `${total} ${total === 1 ? t('vote') : t('votes')}`}
+          </Text>
           {poll.allow_multiple_choice && !voted && !closed && (
             <TouchableOpacity
               onPress={() => handleSubmitPoll(poll)}
@@ -537,14 +597,15 @@ export default function ConversationsScreen() {
         </TouchableOpacity>
       );
     }
-    const name = typeof msg.attachment === 'object' ? msg.attachment?.name : url.split('/').pop();
+    const rawName = typeof msg.attachment === 'object' ? msg.attachment?.name : url.split('/').pop()?.split('?')[0];
+    const name = (rawName && rawName !== '.' && rawName.trim().length > 1) ? rawName : t('Document Attachment');
     return (
       <TouchableOpacity
         onPress={() => openAttachment(msg)}
-        style={[s.attFile, { backgroundColor: isMe ? 'rgba(255,255,255,0.15)' : colors.statusBg, borderColor: colors.border }]}
+        style={[s.attFile, { backgroundColor: isMe ? 'rgba(255,255,255,0.15)' : colors.statusBg, borderColor: colors.border, flexDirection: rowDir }]}
       >
-        <FileText size={16} color={isMe ? '#FFF' : colors.primary} />
-        <Text style={[s.attFileName, { color: isMe ? '#FFF' : colors.ink }]} numberOfLines={1}>{name || t('Attachment')}</Text>
+        <FileText size={18} color={isMe ? '#FFF' : colors.primary} />
+        <Text style={[s.attFileName, { color: isMe ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{name}</Text>
       </TouchableOpacity>
     );
   };
@@ -691,19 +752,23 @@ export default function ConversationsScreen() {
           </>
         ) : (
           <>
-            <TouchableOpacity onPress={() => setActiveChat(null)} style={s.backBtn}>
-              <ArrowLeft size={20} color={colors.ink} style={{ transform: [{ scaleX: isRTL ? -1 : 1 }] }} />
+            <TouchableOpacity onPress={() => setActiveChat(null)} style={s.backBtn} accessibilityLabel={t('Back')}>
+              {isRTL ? (
+                <ArrowRight size={20} color={colors.ink} />
+              ) : (
+                <ArrowLeft size={20} color={colors.ink} />
+              )}
             </TouchableOpacity>
             {/* Avatar + name open the details sheet (standard chat UX).
                 This also frees header space by removing the extra info button. */}
             <TouchableOpacity
               onPress={() => setDetailsVisible(true)}
-              style={{ alignItems: 'center', flex: 1, flexDirection: rowDir, gap: spacing.sm }}
+              style={{ alignItems: 'center', flex: 1, flexShrink: 1, minWidth: 0, flexDirection: rowDir, gap: 6 }}
               accessibilityLabel={t('Chat Details')}
             >
               <Image source={{ uri: avatarUrl(chatTitle(activeChat), activeChat.image) }} style={[s.chatAvatar, { borderColor: colors.border }]} />
-              <View style={s.chatHeaderInfo}>
-                <Text style={[s.chatHeaderName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>{chatTitle(activeChat)}</Text>
+              <View style={[s.chatHeaderInfo, { flex: 1, flexShrink: 1, minWidth: 0 }]}>
+                <Text style={[s.chatHeaderName, { color: colors.ink, textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1} ellipsizeMode="tail">{chatTitle(activeChat)}</Text>
                 {typing ? (
                   <Text style={[s.typingText, { color: colors.primary }]} numberOfLines={1}>{t('typing...')}</Text>
                 ) : !socketConnected ? (
@@ -792,21 +857,24 @@ export default function ConversationsScreen() {
                 <View style={s.center}>
                   <View style={[s.callChip, { backgroundColor: colors.statusBg, borderColor: colors.border }]}>
                     <Text style={{ color: colors.textMuted, fontSize: font.sizes.xs }}>
-                      {item.content}{count > 1 ? ` ×${count}` : ''}
+                      {t(item.content) || item.content}{count > 1 ? ` ×${count}` : ''}
                     </Text>
                   </View>
                 </View>
               );
             }
             if (item.poll) {
+              const pollRowJustify = isRTL ? (isMe ? 'flex-start' : 'flex-end') : (isMe ? 'flex-end' : 'flex-start');
               return (
-                <View style={[s.msgRow, isMe ? s.msgRowMe : s.msgRowOther]}>
+                <View style={[s.msgRow, { justifyContent: pollRowJustify }]}>
                   {renderPoll(item.poll)}
                 </View>
               );
             }
+            // RTL mirroring: in Arabic my bubbles go left, others' go right (start side).
+            const rowJustify = isRTL ? (isMe ? 'flex-start' : 'flex-end') : (isMe ? 'flex-end' : 'flex-start');
             return (
-              <View style={[s.msgRow, isMe ? s.msgRowMe : s.msgRowOther]}>
+              <View style={[s.msgRow, { justifyContent: rowJustify }]}>
                 <TouchableOpacity
                   style={[s.msgBubble, { backgroundColor: isMe ? colors.primary : colors.surface }]}
                   onLongPress={() => handleMessageLongPress(item)}
@@ -818,8 +886,8 @@ export default function ConversationsScreen() {
                   )}
                   {renderAttachment(item, isMe)}
                   {!!item.content && (
-                    <Text style={[s.msgText, { color: isMe ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left' }]}>
-                      {item.content}
+                    <Text style={[s.msgText, { color: isMe ? '#FFF' : colors.ink, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                      {formatSystemText(item.content, t, isRTL)}
                     </Text>
                   )}
                   {item.is_edited && (
@@ -948,14 +1016,14 @@ const s = StyleSheet.create({
   attImageWrap: { borderRadius: radii.lg, marginBottom: spacing.xs, overflow: 'hidden' },
   avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 1 },
   avatarText: { color: '#FFF', fontSize: font.sizes.lg, fontWeight: font.weights.bold },
-  backBtn: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center', padding: spacing.xs, marginEnd: spacing.sm },
+  backBtn: { minHeight: 38, minWidth: 38, justifyContent: 'center', alignItems: 'center', padding: 2 },
   callChip: { borderRadius: radii.full, borderWidth: 1, marginVertical: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   chatAvatar: { borderRadius: radii.full, height: 34, width: 34, borderWidth: 1 },
   chatBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  chatHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: 1, gap: spacing.sm },
-  chatHeaderInfo: { flex: 1 },
-  chatHeaderName: { fontSize: font.sizes.base, fontWeight: font.weights.semibold },
+  chatHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1, gap: spacing.xs },
+  chatHeaderInfo: { flex: 1, flexShrink: 1, minWidth: 0 },
+  chatHeaderName: { fontSize: font.sizes.base, fontWeight: font.weights.semibold, flexShrink: 1 },
   chatInfo: { flex: 1, gap: spacing.xs },
   chatItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1 },
   chatLastMsg: { fontSize: font.sizes.xs, flex: 1 },
@@ -971,7 +1039,7 @@ const s = StyleSheet.create({
   fileChipName: { flex: 1, fontSize: font.sizes.xs },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1 },
   headerTitle: { fontSize: font.sizes.xl, fontWeight: font.weights.bold, flex: 1 },
-  iconBtn: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center', padding: spacing.xs },
+  iconBtn: { minHeight: 38, minWidth: 38, justifyContent: 'center', alignItems: 'center', padding: 2 },
   inputBar: {
     alignItems: 'flex-end', flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderTopWidth: 1,
   },

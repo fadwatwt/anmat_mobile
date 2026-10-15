@@ -52,6 +52,18 @@ export function clearLastNotificationResponse() {
   lastNotificationResponse = undefined;
 }
 
+/** Tap that launched a killed app — returns the notification payload, if any. */
+export async function getColdStartNotificationData(): Promise<Record<string, any> | null> {
+  const N = getNotifications();
+  if (!N) return null;
+  try {
+    const res: any = await N.getLastNotificationResponseAsync();
+    return res?.notification?.request?.content?.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function registerTokenWithBackend(token: string) {
   try {
     await http.post('/api/notifications/push-token/register', { token });

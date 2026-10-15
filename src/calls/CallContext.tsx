@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { mediaDevices, MediaStream, RTCPeerConnection, isWebRTCSupported } from './webrtc';
 import { useAuth } from '../context/AuthContext';
 import { connectSocket, getSocket } from '../services/socket';
+import { http } from '../lib/http';
 
 
 type CallState = 'idle' | 'calling' | 'ringing' | 'connecting' | 'connected';
@@ -68,10 +69,12 @@ export const useGroupCall = () => {
 };
 
 // STUN alone fails behind strict NAT / corporate networks — a TURN relay is
-// required for reliable P2P. Credentials must be short-lived and issued by the
-// backend; for now they are injected via env so no secret is hardcoded.
-// EAS / .env: EXPO_PUBLIC_TURN_URLS (comma-separated), EXPO_PUBLIC_TURN_USERNAME, EXPO_PUBLIC_TURN_CREDENTIAL
-function buildIceConfig(): any {
+// required for reliable P2P. Short-lived credentials are issued by the
+// backend (GET /api/turn/credentials) so no secret is hardcoded; static env
+// vars remain as an offline fallback.
+// EAS / .env fallback: EXPO_PUBLIC_TURN_URLS (comma-separated),
+// EXPO_PUBLIC_TURN_USERNAME, EXPO_PUBLIC_TURN_CREDENTIAL
+function buildEnvIceConfig(): { config: any; hasTurn: boolean } {
   const servers: any[] = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
@@ -82,18 +85,50 @@ function buildIceConfig(): any {
     .filter(Boolean);
   const username = process.env.EXPO_PUBLIC_TURN_USERNAME;
   const credential = process.env.EXPO_PUBLIC_TURN_CREDENTIAL;
-  if (turnUrls.length > 0 && username && credential) {
+  const hasTurn = turnUrls.length > 0 && !!username && !!credential;
+  if (hasTurn) {
     servers.push({ urls: turnUrls.length === 1 ? turnUrls[0] : turnUrls, username, credential });
-  } else if (typeof __DEV__ !== 'undefined' && __DEV__) {
-    // Visible in dev only — production without TURN will drop calls behind symmetric NAT.
-    console.warn(
-      '[Call] No TURN server configured (EXPO_PUBLIC_TURN_URLS/USERNAME/CREDENTIAL). Calls may fail behind strict NAT.',
-    );
   }
-  return { iceServers: servers };
+  return { config: { iceServers: servers }, hasTurn };
 }
 
-const ICE_CONFIG = buildIceConfig();
+const ENV_ICE = buildEnvIceConfig();
+
+// Session cache: refreshed from the backend on login; createPeer always
+// reads through getCachedIceConfig() so calls use TURN as soon as available.
+let CACHED_ICE = ENV_ICE.config;
+let icePrefetchInFlight: Promise<void> | null = null;
+let iceWarned = false;
+
+function getCachedIceConfig(): any {
+  return CACHED_ICE;
+}
+
+export function prefetchIceConfig(): Promise<void> {
+  if (icePrefetchInFlight) return icePrefetchInFlight;
+  icePrefetchInFlight = (async () => {
+    try {
+      const res: any = await http.get('/api/turn/credentials', { silent: true } as any);
+      const data = res?.data?.data;
+      if (data?.iceServers?.length) {
+        CACHED_ICE = { iceServers: data.iceServers };
+        return;
+      }
+      if (!ENV_ICE.hasTurn && !iceWarned && typeof __DEV__ !== 'undefined' && __DEV__) {
+        iceWarned = true;
+        // Dev only — production without TURN will drop calls behind symmetric NAT.
+        console.warn(
+          '[Call] No TURN server configured (backend TURN_SECRET/TURN_URLS or EXPO_PUBLIC_TURN_*). Calls may fail behind strict NAT.',
+        );
+      }
+    } catch {
+      // Offline / backend without turn module — keep STUN + env fallback.
+    } finally {
+      icePrefetchInFlight = null;
+    }
+  })();
+  return icePrefetchInFlight;
+}
 
 /** Normalize a relayed ICE candidate payload into RTCIceCandidateInit. */
 const normalizeCandidate = (candidate: any): any => {
@@ -173,7 +208,7 @@ function CallProviderInner({ children }: PropsWithChildren) {
   }, [cleanupPeer, stopMedia]);
 
   const createPeer = useCallback((initiator: boolean, stream: MediaStream): RTCPeerConnection => {
-    const pc = new RTCPeerConnection(ICE_CONFIG);
+    const pc = new RTCPeerConnection(getCachedIceConfig());
     stream.getTracks().forEach((track: any) => pc.addTrack(track, stream));
 
     pc.onicecandidate = (event: any) => {
@@ -220,6 +255,7 @@ function CallProviderInner({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!token) return;
     const socket = connectSocket(token);
+    prefetchIceConfig();
 
     const handleIncomingCall = ({ chat_id, caller_id, caller_name, is_video }: any) => {
       if (callState !== 'idle') {
@@ -494,7 +530,7 @@ function GroupCallProviderInner({ children }: PropsWithChildren) {
       peersRef.current.delete(targetUserId);
     }
 
-    const pc = new RTCPeerConnection(ICE_CONFIG);
+    const pc = new RTCPeerConnection(getCachedIceConfig());
     stream.getTracks().forEach((track: any) => pc.addTrack(track, stream));
 
     pc.onicecandidate = (event: any) => {
@@ -531,6 +567,7 @@ function GroupCallProviderInner({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!token) return;
     const socket = connectSocket(token);
+    prefetchIceConfig();
 
     const handleIncomingGroupCall = ({ chat_id, is_video, initiator_id, initiator_name }: any) => {
       if (groupCallState !== 'idle') return;
